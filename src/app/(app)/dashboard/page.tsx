@@ -70,15 +70,15 @@ export default function DashboardPage() {
       </div>
 
       <div className="flex items-center gap-4">
-        <Link href="/orders" passHref>
+        <Link href="/orders">
           <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
             <PlusCircle className="mr-2 h-5 w-5" /> New Order
           </Button>
         </Link>
-        <Link href="/tables" passHref>
+        <Link href="/tables">
           <Button size="lg" variant="outline">View Tables</Button>
         </Link>
-        <Link href="/reports" passHref>
+        <Link href="/reports">
          <Button size="lg" variant="outline">Daily Sales Report</Button>
         </Link>
       </div>
