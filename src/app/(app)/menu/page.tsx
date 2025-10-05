@@ -23,6 +23,7 @@ import {
   SheetTitle,
   SheetDescription,
   SheetFooter,
+  SheetTrigger,
 } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
