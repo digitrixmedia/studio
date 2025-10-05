@@ -117,18 +117,18 @@ export default function OrdersPage() {
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Menu Section */}
       <div className="lg:col-span-2">
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Menu</CardTitle>
           </CardHeader>
-          <CardContent className="h-[calc(100%-6rem)]">
+          <CardContent className="flex-1 overflow-hidden">
             <Tabs
               orientation="vertical"
               defaultValue={activeCategory}
               onValueChange={setActiveCategory}
-              className="h-full"
+              className="h-full flex gap-4"
             >
-              <TabsList className="h-full">
+              <TabsList className="h-full flex-col">
                 {menuCategories.map(category => (
                   <TabsTrigger key={category.id} value={category.id} className="w-full justify-start">
                     {category.name}
@@ -136,7 +136,7 @@ export default function OrdersPage() {
                 ))}
               </TabsList>
               {menuCategories.map(category => (
-                <TabsContent key={category.id} value={category.id} className="h-full overflow-y-auto mt-0 ml-4">
+                <TabsContent key={category.id} value={category.id} className="flex-1 h-full overflow-y-auto mt-0">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
                     {menuItems
                       .filter(item => item.category === category.id)
@@ -148,7 +148,7 @@ export default function OrdersPage() {
                             disabled={!item.isAvailable}
                           >
                             <div className="relative aspect-video">
-                                <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" data-ai-hint={item.imageHint}/>
+                                <Image src={item.imageUrl} alt={item.name} fill objectFit="cover" data-ai-hint={item.imageHint}/>
                                 {!item.isAvailable && (
                                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                         <span className="text-white font-bold">Unavailable</span>
@@ -303,3 +303,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+    
