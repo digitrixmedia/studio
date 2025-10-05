@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "cappuccino",
+      "description": "A classic cappuccino with latte art.",
+      "imageUrl": "https://images.unsplash.com/photo-1498603645763-1005915e0abe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjYXBwdWNjaW5vJTIwY29mZmVlfGVufDB8fHx8MTc1OTU3ODUzMnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cappuccino coffee"
+    },
+    {
+      "id": "espresso",
+      "description": "A strong shot of espresso.",
+      "imageUrl": "https://images.unsplash.com/photo-1646257861487-60fa89bef25f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8ZXNwcmVzc28lMjBzaG90fGVufDB8fHx8MTc1OTY4MzgwN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "espresso shot"
+    },
+    {
+      "id": "latte",
+      "description": "A creamy cafe latte.",
+      "imageUrl": "https://images.unsplash.com/photo-1681838853984-697bbb001257?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxsYXR0ZSUyMGFydHxlbnwwfHx8fDE3NTk1OTE2MzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "latte art"
+    },
+    {
+      "id": "iced-coffee",
+      "description": "Refreshing iced coffee.",
+      "imageUrl": "https://images.unsplash.com/photo-1558122104-355edad709f6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxpY2VkJTIwY29mZmVlfGVufDB8fHx8MTc1OTYwNDI3N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "iced coffee"
+    },
+    {
+      "id": "croissant",
+      "description": "A buttery, flaky croissant.",
+      "imageUrl": "https://images.unsplash.com/photo-1703016402680-d12e7dc746d9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjcm9pc3NhbnQlMjBwYXN0cnl8ZW58MHx8fHwxNzU5NjUwOTMyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "croissant pastry"
+    },
+    {
+      "id": "cheesecake",
+      "description": "A slice of delicious cheesecake.",
+      "imageUrl": "https://images.unsplash.com/photo-1759303380841-55c09244fd2b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxjaGVlc2VjYWtlJTIwc2xpY2V8ZW58MHx8fHwxNzU5Njc1OTA1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cheesecake slice"
+    },
+    {
+      "id": "veg-sandwich",
+      "description": "A healthy vegetable sandwich.",
+      "imageUrl": "https://images.unsplash.com/photo-1621800043295-a73fe2f76e2c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx2ZWdldGFibGUlMjBzYW5kd2ljaHxlbnwwfHx8fDE3NTk2MDY3OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vegetable sandwich"
+    },
+    {
+      "id": "brownie",
+      "description": "A rich chocolate brownie with ice cream.",
+      "imageUrl": "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjaG9jb2xhdGUlMjBicm93bmllfGVufDB8fHx8MTc1OTY2MzM5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate brownie"
+    }
+  ]
 }

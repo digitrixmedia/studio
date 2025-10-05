@@ -1,3 +1,18 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
 export default function Home() {
-  return <></>;
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/login');
+  }, [router]);
+
+  return (
+    <main className="flex h-screen w-full items-center justify-center">
+      <p>Redirecting to login...</p>
+    </main>
+  );
 }
