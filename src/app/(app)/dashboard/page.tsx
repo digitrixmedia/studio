@@ -9,7 +9,8 @@ import Link from 'next/link';
 export default function DashboardPage() {
   const todaySales = orders.reduce((sum, order) => sum + (order.status === 'Completed' ? order.total : 0), 0);
   const totalOrders = orders.length;
-  const avgOrderValue = totalOrders > 0 ? todaySales / orders.filter(o => o.status === 'Completed').length : 0;
+  const completedOrdersCount = orders.filter(o => o.status === 'Completed').length;
+  const avgOrderValue = completedOrdersCount > 0 ? todaySales / completedOrdersCount : 0;
   const activeTables = tables.filter(t => t.status === 'Occupied' || t.status === 'Billing').length;
   
   const lowStockItems = ingredients.filter(i => i.stock < i.minStock);
