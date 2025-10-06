@@ -67,7 +67,10 @@ export default function SuperAdminDashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{(superAdminStats.totalSales / 100000).toFixed(2)}L</div>
+            <div className="text-2xl font-bold flex items-center">
+                <IndianRupee className="h-6 w-6 mr-1" />
+                {(superAdminStats.totalSales / 100000).toFixed(2)}L
+            </div>
             <p className="text-xs text-muted-foreground">From all outlets</p>
           </CardContent>
         </Card>
