@@ -93,7 +93,7 @@ export default function TablesPage() {
                 {order && (
                    <div className="mt-2 text-xs">
                      <p>Order #{order.orderNumber}</p>
-                     <p>Total: ₹{order.total.toFixed(2)}</p>
+                     <p className='flex items-center'>Total: <IndianRupee className="h-3 w-3 mx-1" />{order.total.toFixed(2)}</p>
                      <Badge variant={order.status === 'Ready' ? 'default' : 'secondary'}>{order.status}</Badge>
                    </div>
                 )}

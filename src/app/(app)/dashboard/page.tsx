@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,10 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{todaySales.toLocaleString('en-IN')}</div>
+            <div className="text-2xl font-bold flex items-center">
+              <IndianRupee className="h-6 w-6 mr-1" />
+              {todaySales.toLocaleString('en-IN')}
+            </div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
@@ -54,7 +58,10 @@ export default function DashboardPage() {
             <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₹{avgOrderValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold flex items-center">
+              <IndianRupee className="h-6 w-6 mr-1" />
+              {avgOrderValue.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground">+19% from last month</p>
           </CardContent>
         </Card>

@@ -18,7 +18,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'rec
 import { salesData, menuItems, orders, menuCategories } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, IndianRupee } from 'lucide-react';
 
 const chartConfig = {
   sales: {
@@ -45,6 +45,17 @@ const categorySales = menuCategories.map(category => {
     }, 0);
     return { name: category.name, sales };
 }).filter(c => c.sales > 0);
+
+const RupeeTick = ({ x, y, payload }: any) => {
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <text x={0} y={0} dy={16} textAnchor="end" fill="#666" transform="rotate(-35)">
+        ₹{payload.value}
+      </text>
+    </g>
+  );
+};
+
 
 export default function ReportsPage() {
   return (
@@ -77,7 +88,11 @@ export default function ReportsPage() {
                   tickLine={false}
                   axisLine={false}
                 />
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartTooltip 
+                  content={<ChartTooltipContent 
+                    formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                  />} 
+                />
                 <Line dataKey="sales" type="monotone" stroke="var(--color-sales)" strokeWidth={2} dot={true} />
               </LineChart>
             </ChartContainer>
@@ -92,11 +107,15 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent>
              <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
-               <BarChart data={itemWiseSales} layout="vertical">
+               <BarChart data={itemWiseSales} layout="vertical" margin={{ left: 20, right: 20 }}>
                  <CartesianGrid horizontal={false} />
                  <XAxis type="number" dataKey="sales" tickFormatter={(value) => `₹${value / 1000}k`} />
-                 <YAxis type="category" dataKey="name" width={120} />
-                 <ChartTooltip content={<ChartTooltipContent />} />
+                 <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }}/>
+                 <ChartTooltip 
+                    content={<ChartTooltipContent 
+                      formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                    />}
+                  />
                  <Bar dataKey="sales" fill="var(--color-sales)" radius={4} />
                </BarChart>
             </ChartContainer>
@@ -115,7 +134,11 @@ export default function ReportsPage() {
                  <CartesianGrid vertical={false} />
                  <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
                  <YAxis tickFormatter={(value) => `₹${value / 1000}k`}/>
-                 <ChartTooltip content={<ChartTooltipContent />} />
+                 <ChartTooltip 
+                    content={<ChartTooltipContent 
+                      formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                    />}
+                  />
                  <Bar dataKey="sales" fill="var(--color-sales)" radius={4} />
                </BarChart>
             </ChartContainer>

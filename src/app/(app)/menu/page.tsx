@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { menuItems, menuCategories } from '@/lib/data';
-import { PlusCircle, Edit } from 'lucide-react';
+import { PlusCircle, Edit, IndianRupee } from 'lucide-react';
 import Image from 'next/image';
 
 // This would typically be a client component to handle state, but for display purposes, we can keep it simple.
@@ -131,7 +131,12 @@ export default function MenuPage() {
                     {menuCategories.find(c => c.id === item.category)?.name}
                   </Badge>
                 </TableCell>
-                <TableCell>₹{item.price.toFixed(2)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    <IndianRupee className="h-4 w-4 mr-1" />
+                    {item.price.toFixed(2)}
+                  </div>
+                </TableCell>
                 <TableCell>
                   <Switch checked={item.isAvailable} />
                 </TableCell>

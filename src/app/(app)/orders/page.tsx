@@ -157,7 +157,10 @@ export default function OrdersPage() {
                             </div>
                             <div className="p-2">
                               <h3 className="font-semibold truncate">{item.name}</h3>
-                              <p className="text-sm">₹{item.price.toFixed(2)}</p>
+                              <p className="text-sm flex items-center">
+                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                {item.price.toFixed(2)}
+                              </p>
                             </div>
                           </button>
                         </Card>
@@ -199,8 +202,9 @@ export default function OrdersPage() {
                   <div key={item.id} className="flex items-start">
                     <div className="flex-1">
                       <p className="font-semibold">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        ₹{item.price.toFixed(2)}
+                      <p className="text-sm text-muted-foreground flex items-center">
+                        <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                        {item.price.toFixed(2)}
                       </p>
                       {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500'>Notes: {item.notes}</p>}
                     </div>
@@ -223,8 +227,9 @@ export default function OrdersPage() {
                         <PlusCircle className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="w-20 text-right font-semibold">
-                      ₹{item.totalPrice.toFixed(2)}
+                    <p className="w-20 text-right font-semibold flex items-center justify-end">
+                      <IndianRupee className="h-4 w-4 mr-1" />
+                      {item.totalPrice.toFixed(2)}
                     </p>
                     <Button
                       variant="ghost"
@@ -244,15 +249,15 @@ export default function OrdersPage() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>₹{subTotal.toFixed(2)}</span>
+                  <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{subTotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>GST (5%)</span>
-                  <span>₹{tax.toFixed(2)}</span>
+                  <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{tax.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>₹{total.toFixed(2)}</span>
+                  <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1" />{total.toFixed(2)}</span>
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
@@ -282,7 +287,7 @@ export default function OrdersPage() {
                                     <SelectContent>
                                         {customizationItem.variations.map(v => (
                                             <SelectItem key={v.id} value={v.id}>
-                                                {v.name} (+₹{v.priceModifier})
+                                                {v.name} (+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier})
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -303,5 +308,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-    
