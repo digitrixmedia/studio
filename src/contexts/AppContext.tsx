@@ -25,14 +25,28 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (user) {
         setCurrentUser(user);
       }
+    } else {
+        if (!pathname.startsWith('/login')) {
+             router.push('/login');
+        }
     }
   }, []);
 
   useEffect(() => {
-    if (!currentUser && pathname !== '/login') {
+    if (currentUser) {
+      const isSuperAdmin = currentUser.role === 'Super Admin';
+      const isSuperAdminPath = pathname.startsWith('/super-admin');
+      const isAppPath = pathname.startsWith('/(app)') || ['/dashboard', '/orders', '/tables', '/kitchen', '/menu', '/inventory', '/reports', '/staff'].some(p => pathname.startsWith(p));
+
+      if (isSuperAdmin && !isSuperAdminPath) {
+        router.push('/super-admin/dashboard');
+      } else if (!isSuperAdmin && isSuperAdminPath) {
+        router.push('/dashboard');
+      } else if (pathname === '/login') {
+         router.push(isSuperAdmin ? '/super-admin/dashboard' : '/dashboard');
+      }
+    } else if (!pathname.startsWith('/login')) {
       router.push('/login');
-    } else if (currentUser && pathname === '/login') {
-      router.push('/dashboard');
     }
   }, [currentUser, pathname, router]);
 
@@ -41,7 +55,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (user) {
       setCurrentUser(user);
       localStorage.setItem('userRole', role);
-      router.push('/dashboard');
+      if (role === 'Super Admin') {
+        router.push('/super-admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     }
   };
 

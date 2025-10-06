@@ -30,6 +30,7 @@ import Image from 'next/image';
 import { menuCategories, menuItems, tables } from '@/lib/data';
 import type { OrderItem, MenuItem } from '@/lib/types';
 import { PlusCircle, MinusCircle, X, Send, IndianRupee } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function OrdersPage() {
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -119,27 +120,26 @@ export default function OrdersPage() {
       <div className="lg:col-span-2">
         <Card className="h-full flex flex-col">
           <CardHeader>
-            <CardTitle>Menu</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-hidden">
-            <Tabs
-              orientation="vertical"
+            <CardTitle>Point of Sale</CardTitle>
+             <Tabs
               defaultValue={activeCategory}
               onValueChange={setActiveCategory}
-              className="h-full flex gap-4"
+              className="w-full"
             >
-              <TabsList className="h-full flex-col">
+              <TabsList className="grid w-full grid-cols-4">
                 {menuCategories.map(category => (
-                  <TabsTrigger key={category.id} value={category.id} className="w-full justify-start">
+                  <TabsTrigger key={category.id} value={category.id}>
                     {category.name}
                   </TabsTrigger>
                 ))}
               </TabsList>
-              {menuCategories.map(category => (
-                <TabsContent key={category.id} value={category.id} className="flex-1 h-full overflow-y-auto mt-0">
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+            </Tabs>
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden">
+                <ScrollArea className="h-full">
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
                     {menuItems
-                      .filter(item => item.category === category.id)
+                      .filter(item => item.category === activeCategory)
                       .map(item => (
                         <Card key={item.id} className="overflow-hidden">
                           <button
@@ -166,9 +166,7 @@ export default function OrdersPage() {
                         </Card>
                       ))}
                   </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+                 </ScrollArea>
           </CardContent>
         </Card>
       </div>

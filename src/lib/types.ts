@@ -1,4 +1,4 @@
-export type Role = 'Admin' | 'Manager' | 'Cashier' | 'Waiter' | 'Kitchen';
+export type Role = 'Admin' | 'Manager' | 'Cashier' | 'Waiter' | 'Kitchen' | 'Super Admin';
 
 export interface User {
   id: string;
@@ -87,4 +87,26 @@ export interface Ingredient {
   unit: 'g' | 'ml' | 'pcs';
   stock: number;
   minStock: number;
+}
+
+// Super Admin Types
+export type SubscriptionStatus = 'Active' | 'Inactive' | 'Expired' | 'Suspended';
+
+export interface Franchise {
+  id: string;
+  name: string;
+  totalSales: number;
+  totalOutlets: number;
+  totalStorage: number;
+  lastActive: Date;
+}
+export interface Subscription {
+  id: string;
+  franchiseName: string;
+  outletName: string;
+  adminEmail: string;
+  startDate: Date;
+  endDate: Date;
+  status: SubscriptionStatus;
+  storageUsedMB: number;
 }

@@ -1,4 +1,4 @@
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus } from '@/lib/types';
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus } from '@/lib/types';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'Admin', avatar: '/avatars/01.png' },
@@ -6,6 +6,7 @@ export const users: User[] = [
   { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'Cashier', avatar: '/avatars/03.png' },
   { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'Waiter', avatar: '/avatars/04.png' },
   { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'Kitchen', avatar: '/avatars/05.png' },
+  { id: 'user-6', name: 'Sonia Super', email: 'super@zappyy.com', role: 'Super Admin', avatar: '/avatars/06.png' },
 ];
 
 export const menuCategories: MenuCategory[] = [
@@ -198,4 +199,79 @@ export const salesData = [
   { date: 'Fri', sales: Math.floor(Math.random() * 5000) + 1000 },
   { date: 'Sat', sales: Math.floor(Math.random() * 5000) + 1000 },
   { date: 'Sun', sales: Math.floor(Math.random() * 5000) + 1000 },
+];
+
+// MOCKED SUPER ADMIN DATA
+const subscriptionStatuses: SubscriptionStatus[] = ['Active', 'Inactive', 'Expired', 'Suspended'];
+
+const franchisesMock: { id: string; name: string }[] = [
+    { id: 'franchise-1', name: 'The Coffee House' },
+    { id: 'franchise-2', name: 'Brew & Bake' },
+    { id: 'franchise-3', name: 'Daily Grind' },
+    { id: 'franchise-4', name: 'Mocha Magic' },
+    { id: 'franchise-5', name: 'Perk Up' },
+];
+
+export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) => {
+    const franchise = franchisesMock[i % franchisesMock.length];
+    const outletNumber = Math.floor(i / franchisesMock.length) + 1;
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + Math.floor(Math.random() * 12) - 3);
+
+    let status: SubscriptionStatus = 'Active';
+    if (endDate < new Date()) {
+        status = 'Expired';
+    } else {
+        status = subscriptionStatuses[Math.floor(Math.random() * 2)]; // Active or Inactive
+    }
+    
+    return {
+        id: `sub-${i + 1}`,
+        franchiseName: franchise.name,
+        outletName: `${franchise.name} - Outlet ${outletNumber}`,
+        adminEmail: `admin${i+1}@${franchise.name.toLowerCase().replace(/\s/g, '')}.com`,
+        startDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
+        endDate,
+        status,
+        storageUsedMB: Math.floor(Math.random() * 5000),
+    };
+});
+
+
+export const superAdminStats = {
+    totalSubscriptions: subscriptions.length,
+    activeOutlets: subscriptions.filter(s => s.status === 'Active').length,
+    totalStorageUsedGB: (subscriptions.reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024).toFixed(2),
+    totalSales: 12500000,
+    totalOrders: 45000,
+};
+
+export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => ({
+    id: f.id,
+    name: f.name,
+    totalSales: Math.floor(Math.random() * 500000) + 100000,
+    totalOutlets: subscriptions.filter(s => s.franchiseName === f.name).length,
+    totalStorage: (subscriptions.filter(s => s.franchiseName === f.name).reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024).toFixed(2),
+    lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+})).sort((a, b) => b.totalSales - a.totalSales);
+
+
+export const dailyActiveOutlets = [
+  { day: 'Mon', count: Math.floor(Math.random() * 10) + 5 },
+  { day: 'Tue', count: Math.floor(Math.random() * 10) + 5 },
+  { day: 'Wed', count: Math.floor(Math.random() * 10) + 5 },
+  { day: 'Thu', count: Math.floor(Math.random() * 10) + 5 },
+  { day: 'Fri', count: Math.floor(Math.random() * 10) + 5 },
+  { day: 'Sat', count: Math.floor(Math.random() * 10) + 5 },
+  { day: 'Sun', count: Math.floor(Math.random() * 10) + 5 },
+];
+
+export const subscriptionStatusDistribution = subscriptionStatuses.map(status => ({
+    status,
+    count: subscriptions.filter(s => s.status === status).length,
+}));
+
+export const monthlyNewSubscriptions = [
+    { month: 'Jan', count: 5 }, { month: 'Feb', count: 8 }, { month: 'Mar', count: 12 },
+    { month: 'Apr', count: 7 }, { month: 'May', count: 10 }, { month: 'Jun', count: 15 },
 ];

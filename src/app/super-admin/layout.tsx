@@ -1,6 +1,6 @@
 'use client';
 
-import { ZappyyIcon } from '@/components/icons';
+import { ShieldCheck } from 'lucide-react';
 import { UserNav } from '@/components/layout/UserNav';
 import {
   SidebarProvider,
@@ -18,15 +18,8 @@ import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
 import {
   LayoutDashboard,
-  Box,
-  Users,
-  UtensilsCrossed,
-  Book,
-  ClipboardList,
-  BarChart2,
-  Table,
-  CookingPot,
-  ShoppingBag,
+  BarChart3,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,46 +29,38 @@ type NavItem = {
   href: string;
   label: string;
   icon: React.ElementType;
-  roles: Role[];
 };
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin', 'Manager'] },
-  { href: '/orders', label: 'POS', icon: ShoppingBag, roles: ['Admin', 'Manager', 'Cashier', 'Waiter'] },
-  { href: '/tables', label: 'Tables', icon: Table, roles: ['Admin', 'Manager', 'Cashier', 'Waiter'] },
-  { href: '/kitchen', label: 'Kitchen Display', icon: CookingPot, roles: ['Admin', 'Manager', 'Kitchen'] },
-  { href: '/menu', label: 'Menu', icon: Book, roles: ['Admin', 'Manager'] },
-  { href: '/inventory', label: 'Inventory', icon: Box, roles: ['Admin', 'Manager'] },
-  { href: '/reports', label: 'Reports', icon: BarChart2, roles: ['Admin', 'Manager'] },
-  { href: '/staff', label: 'Staff', icon: Users, roles: ['Admin'] },
+  { href: '/super-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/super-admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
+  { href: '/super-admin/reports', label: 'Reports', icon: BarChart3 },
 ];
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default function SuperAdminLayout({ children }: { children: ReactNode }) {
   const { currentUser } = useAppContext();
   const pathname = usePathname();
 
-  if (!currentUser || currentUser.role === 'Super Admin') {
+  if (!currentUser || currentUser.role !== 'Super Admin') {
     return (
-       <div className="flex h-screen items-center justify-center">
-        <p>Loading or redirecting...</p>
+      <div className="flex h-screen items-center justify-center">
+        <p>Access Denied. Redirecting...</p>
       </div>
     );
   }
-
-  const availableNavItems = navItems.filter(item => item.roles.includes(currentUser.role));
 
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <ZappyyIcon className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-bold">ZappyyPOS</h1>
+            <ShieldCheck className="w-8 h-8 text-primary" />
+            <h1 className="text-xl font-bold">Admin Center</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {availableNavItems.map(item => (
+            {navItems.map(item => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href}>
                   <SidebarMenuButton isActive={pathname.startsWith(item.href)}>
@@ -100,7 +85,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                  <h2 className="text-2xl font-semibold capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h2>
              </div>
              <div>
-                {/* Right side header content can go here */}
+                <UserNav />
              </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:px-6">

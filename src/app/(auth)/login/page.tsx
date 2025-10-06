@@ -14,12 +14,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
-import { KeyRound, Mail } from 'lucide-react';
+import { KeyRound, Mail, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAppContext();
+  const [role, setRole] = useState<Role>('Admin');
 
-  const handleDemoLogin = (role: Role) => {
+  const handleDemoLogin = (selectedRole: Role) => {
+    login(selectedRole);
+  };
+  
+  const handleMainLogin = () => {
+    // This is a simplified login. In a real app, you'd verify credentials.
+    // For this demo, we'll just log in with the last selected role.
     login(role);
   };
 
@@ -48,7 +56,7 @@ export default function LoginPage() {
               <Input id="password" type="password" placeholder="••••••••" className="pl-10"/>
             </div>
           </div>
-          <Button className="w-full" onClick={() => handleDemoLogin('Admin')}>
+          <Button className="w-full" onClick={handleMainLogin}>
             Login
           </Button>
         </CardContent>
@@ -59,6 +67,12 @@ export default function LoginPage() {
             <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Manager')}>Manager</Button>
             <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Cashier')}>Cashier</Button>
             <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Waiter')}>Waiter</Button>
+          </div>
+           <div className="w-full border-t pt-4 mt-2">
+             <Button variant="outline" className="w-full" onClick={() => handleDemoLogin('Super Admin')}>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Super Admin Login
+            </Button>
           </div>
         </CardFooter>
       </Card>
