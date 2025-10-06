@@ -108,6 +108,10 @@ export default function SubscriptionsPage() {
                     <Label htmlFor="outlet-name" className="text-right">Outlet</Label>
                     <Input id="outlet-name" className="col-span-3" />
                   </div>
+                   <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="admin-name" className="text-right">Admin Name</Label>
+                    <Input id="admin-name" className="col-span-3" />
+                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="admin-email" className="text-right">Admin Email</Label>
                     <Input id="admin-email" type="email" className="col-span-3" />
