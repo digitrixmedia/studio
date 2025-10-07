@@ -1,40 +1,27 @@
+
 'use client';
 
-import { useState } from 'react';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
+    Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
+    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import Image from 'next/image';
-import { menuCategories, menuItems, tables } from '@/lib/data';
-import type { OrderItem, MenuItem, OrderType } from '@/lib/types';
-import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle, User, Phone, Utensils, Package, Truck } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { menuCategories, menuItems, tables } from '@/lib/data';
+import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
+import { CheckCircle, IndianRupee, MinusCircle, Package, Phone, PlusCircle, Printer, Send, Truck, User, Utensils, X } from 'lucide-react';
+import Image from 'next/image';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function OrdersPage() {
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -162,13 +149,13 @@ export default function OrdersPage() {
       <div className="lg:col-span-2">
         <Card className="h-full flex flex-col">
           <CardHeader>
-            <CardTitle>Point of Sale</CardTitle>
+            <CardTitle className='hidden sm:block'>Point of Sale</CardTitle>
              <Tabs
               defaultValue={activeCategory}
               onValueChange={setActiveCategory}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
                 {menuCategories.map(category => (
                   <TabsTrigger key={category.id} value={category.id}>
                     {category.name}
@@ -198,7 +185,7 @@ export default function OrdersPage() {
                                 )}
                             </div>
                             <div className="p-2">
-                              <h3 className="font-semibold truncate">{item.name}</h3>
+                              <h3 className="font-semibold truncate text-sm sm:text-base">{item.name}</h3>
                               <p className="text-sm flex items-center">
                                 <IndianRupee className="h-3.5 w-3.5 mr-1" />
                                 {item.price.toFixed(2)}
@@ -215,44 +202,46 @@ export default function OrdersPage() {
 
       {/* Order Summary Section */}
       <div className="lg:col-span-1">
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle>Current Order</CardTitle>
             <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full pt-2">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="Dine-In"><Utensils className="mr-2"/>Dine-In</TabsTrigger>
-                <TabsTrigger value="Takeaway"><Package className="mr-2"/>Takeaway</TabsTrigger>
-                <TabsTrigger value="Delivery"><Truck className="mr-2"/>Delivery</TabsTrigger>
+                <TabsTrigger value="Dine-In"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
+                <TabsTrigger value="Takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
+                <TabsTrigger value="Delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
               </TabsList>
-              <CardDescription className="space-y-2 pt-4">
-                 {orderType === 'Dine-In' && (
-                    <Select value={selectedTable} onValueChange={setSelectedTable}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select Table" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {tables.map(table => (
-                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
-                                    {table.name} ({table.status})
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                 )}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Customer Name" className="pl-10" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+              <CardDescription asChild className="space-y-2 pt-4">
+                 <div>
+                    {orderType === 'Dine-In' && (
+                        <Select value={selectedTable} onValueChange={setSelectedTable}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select Table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {tables.map(table => (
+                                    <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
+                                        {table.name} ({table.status})
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                        <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Customer Name" className="pl-10" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                        </div>
+                        <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                        </div>
                     </div>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-                    </div>
-                  </div>
+                 </div>
               </CardDescription>
             </Tabs>
           </CardHeader>
-          <CardContent className="h-[calc(100%-14rem)] overflow-y-auto">
+          <CardContent className="flex-1 overflow-y-auto">
             {cart.length === 0 ? (
               <p className="text-muted-foreground">No items in order.</p>
             ) : (
@@ -260,14 +249,14 @@ export default function OrdersPage() {
                 {cart.map(item => (
                   <div key={item.id} className="flex items-start">
                     <div className="flex-1">
-                      <p className="font-semibold">{item.name}</p>
+                      <p className="font-semibold text-sm">{item.name}</p>
                       <p className="text-sm text-muted-foreground flex items-center">
                         <IndianRupee className="h-3.5 w-3.5 mr-1" />
                         {item.price.toFixed(2)}
                       </p>
                       {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500'>Notes: {item.notes}</p>}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -276,7 +265,7 @@ export default function OrdersPage() {
                       >
                         <MinusCircle className="h-4 w-4" />
                       </Button>
-                      <span>{item.quantity}</span>
+                      <span className='text-sm'>{item.quantity}</span>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -286,14 +275,14 @@ export default function OrdersPage() {
                         <PlusCircle className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="w-20 text-right font-semibold flex items-center justify-end">
-                      <IndianRupee className="h-4 w-4 mr-1" />
+                    <p className="w-20 text-right font-semibold flex items-center justify-end text-sm">
+                      <IndianRupee className="h-3.5 w-3.5 mr-1" />
                       {item.totalPrice.toFixed(2)}
                     </p>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 ml-2 text-destructive"
+                      className="h-6 w-6 ml-1 sm:ml-2 text-destructive"
                       onClick={() => removeFromCart(item.id)}
                     >
                       <X className="h-4 w-4" />
@@ -304,7 +293,7 @@ export default function OrdersPage() {
             )}
           </CardContent>
           {cart.length > 0 && (
-            <div className="p-6 border-t">
+            <CardFooter className='flex-col items-stretch gap-4 !p-4 border-t'>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
@@ -319,13 +308,13 @@ export default function OrdersPage() {
                   <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1" />{total.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button variant="outline" onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> Send to Kitchen</Button>
                 <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!isOrderDetailsComplete()}>
                     <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
                 </Button>
               </div>
-            </div>
+            </CardFooter>
           )}
         </Card>
       </div>
@@ -368,7 +357,7 @@ export default function OrdersPage() {
         
         {/* Payment Dialog */}
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-            <DialogContent>
+            <DialogContent className="max-w-sm">
                 <DialogHeader>
                     <DialogTitle>Payment</DialogTitle>
                 </DialogHeader>
@@ -413,7 +402,7 @@ export default function OrdersPage() {
                         Change Due: <span className='flex items-center justify-center'><IndianRupee className="inline-block h-5 w-5 mr-1"/>{changeDue.toFixed(2)}</span>
                     </div>
                 )}
-                 <DialogFooter>
+                 <DialogFooter className='sm:flex-col sm:space-x-0 gap-2'>
                     <Button
                       variant="outline"
                       onClick={() => {

@@ -1,40 +1,27 @@
+
 'use client';
 
+import { ArrowLeft, BarChart2, Book, Box, Building, CookingPot, LayoutDashboard, ShoppingBag, Table, User } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { ZappyyIcon } from '@/components/icons';
 import { UserNav } from '@/components/layout/UserNav';
+import { Button } from '@/components/ui/button';
 import {
-  SidebarProvider,
   Sidebar,
-  SidebarHeader,
   SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
   SidebarFooter,
-  SidebarTrigger,
+  SidebarHeader,
   SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
-import {
-  LayoutDashboard,
-  Box,
-  Users,
-  UtensilsCrossed,
-  Book,
-  ClipboardList,
-  BarChart2,
-  Table,
-  CookingPot,
-  ShoppingBag,
-  Building,
-  ArrowLeft,
-  User,
-} from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
 
 type NavItem = {
   href: string;
@@ -91,6 +78,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       }
       return true;
   });
+  
+  const pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ');
 
   return (
     <SidebarProvider>
@@ -135,10 +124,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2">
              <SidebarTrigger className="sm:hidden" />
              <div className='flex-1'>
-                 <h2 className="text-2xl font-semibold capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h2>
+                 <h2 className="text-lg sm:text-2xl font-semibold capitalize">{pageTitle}</h2>
              </div>
-             <div>
-                {/* Right side header content can go here */}
+             <div className='hidden sm:block'>
+                <UserNav />
              </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:px-6">

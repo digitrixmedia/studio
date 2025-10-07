@@ -1,5 +1,9 @@
+
 'use client';
 
+import { ArrowLeft, LogOut, Settings, User as UserIcon } from 'lucide-react';
+import Link from 'next/link';
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,10 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut, User as UserIcon, Settings } from 'lucide-react';
-import { useState } from 'react';
 import { PrintLayoutDialog } from '../settings/PrintLayoutDialog';
-import Link from 'next/link';
 
 export function UserNav() {
   const { currentUser, logout, selectedOutlet, clearSelectedOutlet } = useAppContext();

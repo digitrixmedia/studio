@@ -1,29 +1,24 @@
+
 'use client';
 
-import { ShieldCheck } from 'lucide-react';
-import { UserNav } from '@/components/layout/UserNav';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarTrigger,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { useAppContext } from '@/contexts/AppContext';
-import type { Role } from '@/lib/types';
-import {
-  LayoutDashboard,
-  BarChart3,
-  CreditCard,
-} from 'lucide-react';
+import { BarChart3, CreditCard, LayoutDashboard, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { UserNav } from '@/components/layout/UserNav';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { useAppContext } from '@/contexts/AppContext';
 
 type NavItem = {
   href: string;
@@ -48,6 +43,8 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
       </div>
     );
   }
+
+  const pageTitle = pathname.split('/').pop()?.replace('-', ' ');
 
   return (
     <SidebarProvider>
@@ -80,9 +77,9 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 py-2">
              <SidebarTrigger className="sm:hidden" />
              <div className='flex-1'>
-                 <h2 className="text-2xl font-semibold capitalize">{pathname.split('/').pop()?.replace('-', ' ')}</h2>
+                 <h2 className="text-lg sm:text-2xl font-semibold capitalize">{pageTitle}</h2>
              </div>
-             <div>
+             <div className='hidden sm:block'>
                 <UserNav />
              </div>
         </header>

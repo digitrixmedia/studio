@@ -1,5 +1,8 @@
+
 'use client';
 
+import { KeyRound, Mail, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import { ZappyyIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,26 +17,25 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
-import { KeyRound, Mail, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
 
 export default function LoginPage() {
   const { login } = useAppContext();
   const [role, setRole] = useState<Role>('Admin');
 
   const handleDemoLogin = (selectedRole: Role) => {
+    setRole(selectedRole);
     login(selectedRole);
   };
   
   const handleMainLogin = () => {
     // This is a simplified login. In a real app, you'd verify credentials.
-    // For this demo, we'll just log in with the last selected role.
-    login(role);
+    // For this demo, we'll just log in with the last selected role or a default.
+    login(role || 'Manager');
   };
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+      <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ZappyyIcon className="h-8 w-8" />
