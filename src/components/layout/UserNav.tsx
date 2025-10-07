@@ -15,6 +15,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { LogOut, User as UserIcon, Settings, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { PrintLayoutDialog } from '../settings/PrintLayoutDialog';
+import Link from 'next/link';
 
 export function UserNav() {
   const { currentUser, logout, selectedOutlet, clearSelectedOutlet } = useAppContext();
@@ -60,10 +61,12 @@ export function UserNav() {
               <span>Back to Franchise</span>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem>
-            <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
+          <Link href="/profile">
+            <DropdownMenuItem>
+              <UserIcon className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </DropdownMenuItem>
+          </Link>
           <DropdownMenuItem onSelect={() => setIsSettingsOpen(true)}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Settings</span>

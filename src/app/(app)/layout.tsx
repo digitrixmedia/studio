@@ -29,6 +29,7 @@ import {
   ShoppingBag,
   Building,
   ArrowLeft,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -50,6 +51,7 @@ const navItems: NavItem[] = [
   { href: '/menu', label: 'Menu', icon: Book, roles: ['Manager', 'Admin'] },
   { href: '/inventory', label: 'Inventory', icon: Box, roles: ['Manager', 'Admin'] },
   { href: '/reports', label: 'Reports', icon: BarChart2, roles: ['Manager', 'Admin'] },
+  { href: '/profile', label: 'Profile', icon: User, roles: ['Manager', 'Cashier', 'Waiter', 'Admin', 'Kitchen'] },
   // Franchise Admin specific routes
   { href: '/franchise/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
   { href: '/franchise/reports', label: 'Reports', icon: BarChart2, roles: ['Admin'] },
