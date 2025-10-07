@@ -24,6 +24,7 @@ import type { FranchiseOutlet, Role } from '@/lib/types';
 import { users } from '@/lib/data';
 import { useState } from 'react';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
