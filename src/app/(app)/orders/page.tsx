@@ -222,7 +222,6 @@ export default function OrdersPage() {
                         </SelectContent>
                     </Select>
                  )}
-                 {(orderType === 'Takeaway' || orderType === 'Delivery') && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -233,7 +232,6 @@ export default function OrdersPage() {
                       <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
                     </div>
                   </div>
-                )}
               </CardDescription>
             </Tabs>
           </CardHeader>
