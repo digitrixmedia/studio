@@ -1,3 +1,4 @@
+
 export type Role = 'Admin' | 'Manager' | 'Cashier' | 'Waiter' | 'Kitchen' | 'Super Admin';
 
 export interface User {
@@ -17,6 +18,7 @@ export interface MenuItemVariation {
   id: string;
   name: string; // e.g., 'Regular', 'Large'
   priceModifier: number; // e.g., 0 for regular, 20 for large
+  ingredients: { ingredientId: string; quantity: number }[];
 }
 
 export interface MenuItemAddon {
@@ -105,6 +107,7 @@ export interface Subscription {
   franchiseName: string;
   outletName: string;
   adminEmail: string;
+  adminName?: string;
   startDate: Date;
   endDate: Date;
   status: SubscriptionStatus;

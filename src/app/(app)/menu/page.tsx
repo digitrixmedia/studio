@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -74,17 +75,55 @@ export default function MenuPage() {
     setVariations(newVariations);
   };
   
-  const handleVariationChange = (index: number, field: keyof MenuItemVariation, value: string | number) => {
+  const handleVariationChange = (index: number, field: keyof Omit<MenuItemVariation, 'id'>, value: string | number) => {
     const newVariations = [...variations];
-    const variation = { ...newVariations[index] };
-    if (field === 'priceModifier') {
+    const variation: Partial<MenuItemVariation> = { ...newVariations[index] };
+     if (field === 'priceModifier') {
       variation[field] = Number(value);
-    } else {
+    } else if (field === 'name') {
       variation[field] = value as string;
     }
     newVariations[index] = variation;
     setVariations(newVariations);
   };
+
+  const handleVariationIngredientChange = (vIndex: number, iIndex: number, field: 'ingredientId' | 'quantity', value: string | number) => {
+    const newVariations = [...variations];
+    const variation = { ...newVariations[vIndex] };
+    const newIngredients = [...(variation.ingredients || [])];
+    if (field === 'quantity') {
+      newIngredients[iIndex] = { ...newIngredients[iIndex], quantity: Number(value) };
+    } else {
+      newIngredients[iIndex] = { ...newIngredients[iIndex], ingredientId: String(value) };
+    }
+    variation.ingredients = newIngredients;
+    newVariations[vIndex] = variation;
+    setVariations(newVariations);
+  }
+
+  const addIngredientToVariation = (vIndex: number) => {
+    const newVariations = [...variations];
+    const variation = { ...newVariations[vIndex] };
+    const newIngredients = [...(variation.ingredients || []), { ingredientId: '', quantity: 0 }];
+    variation.ingredients = newIngredients;
+    newVariations[vIndex] = variation;
+    setVariations(newVariations);
+  }
+
+  const removeIngredientFromVariation = (vIndex: number, iIndex: number) => {
+    const newVariations = [...variations];
+    const variation = { ...newVariations[vIndex] };
+    const newIngredients = [...(variation.ingredients || [])];
+    newIngredients.splice(iIndex, 1);
+    variation.ingredients = newIngredients;
+    newVariations[vIndex] = variation;
+    setVariations(newVariations);
+  }
+
+  const getIngredientUnit = (id: string) => {
+    return ingredients.find(i => i.id === id)?.unit || '';
+  };
+
 
   return (
     <Card>
@@ -175,28 +214,63 @@ export default function MenuPage() {
                    <div className="col-span-4 border-t pt-4">
                       <h4 className="text-md font-semibold mb-2">Item Variations</h4>
                       <div className="space-y-4">
-                          {variations.map((variation, index) => (
-                             <Card key={index} className="p-4 bg-muted/50">
+                          {variations.map((variation, vIndex) => (
+                             <Card key={vIndex} className="p-4 bg-muted/50">
                                 <div className="flex items-end gap-4 mb-4">
                                   <div className="flex-1 space-y-2">
                                     <Label>Variation Name</Label>
-                                    <Input placeholder="e.g., Large" value={variation.name} onChange={e => handleVariationChange(index, 'name', e.target.value)} />
+                                    <Input placeholder="e.g., Large" value={variation.name} onChange={e => handleVariationChange(vIndex, 'name', e.target.value)} />
                                   </div>
                                    <div className="flex-1 space-y-2">
                                     <Label>Price Modifier (₹)</Label>
-                                    <Input type="number" placeholder="e.g., 20" value={variation.priceModifier} onChange={e => handleVariationChange(index, 'priceModifier', e.target.value)} />
+                                    <Input type="number" placeholder="e.g., 20" value={variation.priceModifier} onChange={e => handleVariationChange(vIndex, 'priceModifier', e.target.value)} />
                                   </div>
                                   <div>
-                                    <Button variant="destructive" size="icon" onClick={() => handleRemoveVariation(index)}>
+                                    <Button variant="destructive" size="icon" onClick={() => handleRemoveVariation(vIndex)}>
                                         <Trash2 className="h-4 w-4" />
                                         <span className="sr-only">Remove</span>
                                     </Button>
                                   </div>
                                 </div>
                                 <h5 className="text-sm font-medium mb-2">Recipe for {variation.name || 'this variation'}</h5>
-                                {/* Placeholder for recipe mapping per variation */}
                                 <div className="p-2 border rounded-md text-center text-muted-foreground text-sm bg-background">
-                                  Ingredient mapping for this variation will be here.
+                                   <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Ingredient</TableHead>
+                                        <TableHead className='w-[120px]'>Quantity</TableHead>
+                                        <TableHead className="w-[50px] text-right"></TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {(variation.ingredients || []).map((ing, iIndex) => (
+                                        <TableRow key={iIndex}>
+                                          <TableCell>
+                                            <Select value={ing.ingredientId} onValueChange={value => handleVariationIngredientChange(vIndex, iIndex, 'ingredientId', value)}>
+                                              <SelectTrigger><SelectValue placeholder="Select ingredient" /></SelectTrigger>
+                                              <SelectContent>
+                                                {ingredients.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+                                              </SelectContent>
+                                            </Select>
+                                          </TableCell>
+                                          <TableCell>
+                                            <div className="flex items-center gap-2">
+                                              <Input type="number" value={ing.quantity} onChange={e => handleVariationIngredientChange(vIndex, iIndex, 'quantity', e.target.value)} className="w-20"/>
+                                              <span>{getIngredientUnit(ing.ingredientId)}</span>
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => removeIngredientFromVariation(vIndex, iIndex)}>
+                                              <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
+                                  <Button size="sm" variant="outline" className="mt-2" onClick={() => addIngredientToVariation(vIndex)}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
+                                  </Button>
                                 </div>
                              </Card>
                           ))}
