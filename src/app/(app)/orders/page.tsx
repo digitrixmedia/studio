@@ -34,6 +34,7 @@ import type { OrderItem, MenuItem, OrderType } from '@/lib/types';
 import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle, User, Phone, Utensils, Package, Truck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
 export default function OrdersPage() {
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -45,6 +46,7 @@ export default function OrdersPage() {
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
+  const { toast } = useToast();
 
   const addToCart = (item: MenuItem) => {
     // Check for variations or addons to open customization dialog
@@ -127,6 +129,13 @@ export default function OrdersPage() {
     setAmountPaid('');
     setIsPaymentDialogOpen(false);
   }
+  
+  const handleSendToKitchen = () => {
+    toast({
+      title: "Order Sent!",
+      description: "The order has been sent to the kitchen for preparation.",
+    });
+  };
 
   const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
   const tax = subTotal * 0.05; // 5% GST
@@ -303,7 +312,7 @@ export default function OrdersPage() {
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Send to Kitchen</Button>
+                <Button variant="outline" onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> Send to Kitchen</Button>
                 <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!isOrderDetailsComplete()}>
                     <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
                 </Button>
