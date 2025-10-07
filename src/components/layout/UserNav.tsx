@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut, User as UserIcon, Settings, ArrowLeft } from 'lucide-react';
+import { LogOut, User as UserIcon, Settings } from 'lucide-react';
 import { useState } from 'react';
 import { PrintLayoutDialog } from '../settings/PrintLayoutDialog';
 import Link from 'next/link';
@@ -57,7 +57,7 @@ export function UserNav() {
         <DropdownMenuGroup>
           {isFranchiseAdmin && selectedOutlet && (
             <DropdownMenuItem onClick={clearSelectedOutlet}>
-              <ArrowLeft />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               <span>Back to Franchise</span>
             </DropdownMenuItem>
           )}
