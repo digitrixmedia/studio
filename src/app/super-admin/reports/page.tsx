@@ -1,3 +1,4 @@
+
 'use client'
 
 import {
@@ -98,7 +99,7 @@ export default function SuperAdminReportsPage() {
                             <TableCell className='font-medium'>{f.name}</TableCell>
                             <TableCell>{f.totalOutlets}</TableCell>
                             <TableCell>₹{f.totalSales.toLocaleString('en-IN')}</TableCell>
-                            <TableCell>{f.totalStorage} GB</TableCell>
+                            <TableCell>{f.totalStorage.toFixed(2)} GB</TableCell>
                             <TableCell>{f.lastActive.toLocaleDateString()}</TableCell>
                         </TableRow>
                     ))}
