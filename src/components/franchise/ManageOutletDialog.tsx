@@ -20,11 +20,12 @@ import {
 } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import type { FranchiseOutlet, Role } from '@/lib/types';
+import type { FranchiseOutlet, Role, User } from '@/lib/types';
 import { users } from '@/lib/data';
 import { useState } from 'react';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
 interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
@@ -35,9 +36,47 @@ interface ManageOutletDialogProps {
 const staffRoles: Exclude<Role, 'Admin' | 'Super Admin'>[] = ['Manager', 'Cashier', 'Waiter', 'Kitchen'];
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
+  const { toast } = useToast();
   // In a real app, you'd fetch this from your backend based on outlet.id
-  const outletStaff = users.filter(u => u.role !== 'Admin' && u.role !== 'Super Admin').slice(0, 3);
+  const initialStaff = users.filter(u => u.role !== 'Admin' && u.role !== 'Super Admin').slice(0, 3);
   
+  const [staff, setStaff] = useState<User[]>(initialStaff);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffEmail, setNewStaffEmail] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<Role | ''>('');
+
+
+  const handleCreateAccount = () => {
+    if (!newStaffName || !newStaffEmail || !newStaffRole) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill out all fields to create a staff account.",
+      });
+      return;
+    }
+
+    const newStaffMember: User = {
+      id: `user-${Date.now()}`,
+      name: newStaffName,
+      email: newStaffEmail,
+      role: newStaffRole as Role,
+      avatar: `https://i.pravatar.cc/150?u=${newStaffEmail}`
+    };
+
+    setStaff([...staff, newStaffMember]);
+
+    toast({
+      title: "Account Created",
+      description: `${newStaffName} has been added as a ${newStaffRole}.`,
+    });
+
+    // Reset form
+    setNewStaffName('');
+    setNewStaffEmail('');
+    setNewStaffRole('');
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
@@ -86,15 +125,26 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                <div className="grid grid-cols-3 gap-4 mb-6 p-4 border rounded-lg">
                     <div className="space-y-2">
                         <Label htmlFor="staff-name">Full Name</Label>
-                        <Input id="staff-name" placeholder="e.g., Jane Doe" />
+                        <Input 
+                          id="staff-name" 
+                          placeholder="e.g., Jane Doe" 
+                          value={newStaffName}
+                          onChange={(e) => setNewStaffName(e.target.value)}
+                        />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="staff-email">Email</Label>
-                        <Input id="staff-email" type="email" placeholder="e.g., jane.d@example.com"/>
+                        <Input 
+                          id="staff-email" 
+                          type="email" 
+                          placeholder="e.g., jane.d@example.com"
+                          value={newStaffEmail}
+                          onChange={(e) => setNewStaffEmail(e.target.value)}
+                        />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="staff-role">Role</Label>
-                        <Select>
+                        <Select value={newStaffRole} onValueChange={(value) => setNewStaffRole(value as Role)}>
                             <SelectTrigger id="staff-role">
                                 <SelectValue placeholder="Select a role" />
                             </SelectTrigger>
@@ -106,7 +156,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                         </Select>
                     </div>
                      <div className="col-span-3 flex justify-end">
-                        <Button>
+                        <Button onClick={handleCreateAccount}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Create Account
                         </Button>
                      </div>
@@ -123,11 +173,11 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {outletStaff.map(staff => (
-                            <TableRow key={staff.id}>
-                                <TableCell>{staff.name}</TableCell>
-                                <TableCell>{staff.email}</TableCell>
-                                <TableCell><Badge variant="secondary">{staff.role}</Badge></TableCell>
+                        {staff.map(s => (
+                            <TableRow key={s.id}>
+                                <TableCell>{s.name}</TableCell>
+                                <TableCell>{s.email}</TableCell>
+                                <TableCell><Badge variant="secondary">{s.role}</Badge></TableCell>
                                 <TableCell className='text-right'>
                                     <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
                                     <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
