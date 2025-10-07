@@ -27,8 +27,8 @@ export const menuItems: MenuItem[] = [
     imageHint: 'cappuccino coffee',
     isAvailable: true,
     variations: [
-      { id: 'var-1-1', name: 'Regular', priceModifier: 0 },
-      { id: 'var-1-2', name: 'Large', priceModifier: 40 },
+      { id: 'var-1-1', name: 'Regular', priceModifier: 0, ingredients: [] },
+      { id: 'var-1-2', name: 'Large', priceModifier: 40, ingredients: [] },
     ],
     addons: [
       { id: 'addon-1', name: 'Extra Shot', price: 50 },
@@ -245,6 +245,8 @@ export const superAdminStats = {
     totalStorageUsedGB: (subscriptions.reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024).toFixed(2),
     totalSales: 12500000,
     totalOrders: 45000,
+    totalReads: 56000000,
+    totalWrites: 12000000,
 };
 
 export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => ({
@@ -321,7 +323,8 @@ export const franchiseData = {
     ],
     outlets: franchiseOutlets.map(o => ({
         ...o,
-        ...salesPerOutletData.find(s => s.name === o.name),
+        todaySales: salesPerOutletData.find(s => s.name === o.name)?.today,
+        totalSales: salesPerOutletData.find(s => s.name === o.name)?.total,
         ordersToday: Math.floor((salesPerOutletData.find(s => s.name === o.name)?.today || 0) / (Math.random() * 400 + 300)),
     }))
 }
