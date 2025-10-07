@@ -24,6 +24,7 @@ interface PrintLayoutDialogProps {
 const initialLayoutSettings = {
     cafeName: 'ZappyyPOS',
     address: '123 Coffee Lane, Bengaluru',
+    customDetails: 'GSTIN: 29ABCDE1234F1Z5',
     phone: '9876543210',
     footerMessage: 'Thank you for your visit!',
 };
@@ -64,6 +65,12 @@ export function PrintLayoutDialog({ isOpen, onOpenChange }: PrintLayoutDialogPro
             </Label>
             <Input id="address" value={settings.address} onChange={handleInputChange} className="col-span-3" />
           </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="customDetails" className="text-right">
+              Custom Details
+            </Label>
+            <Input id="customDetails" value={settings.customDetails} onChange={handleInputChange} className="col-span-3" placeholder="e.g., GSTIN, Wi-Fi Password"/>
+          </div>
            <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="phone" className="text-right">
               Phone
@@ -84,4 +91,3 @@ export function PrintLayoutDialog({ isOpen, onOpenChange }: PrintLayoutDialogPro
     </Dialog>
   );
 }
-

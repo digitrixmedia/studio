@@ -421,6 +421,7 @@ export default function OrdersPage() {
                         const printSettings = {
                             cafeName: 'ZappyyPOS',
                             address: '123 Coffee Lane, Bengaluru',
+                            customDetails: 'GSTIN: 29ABCDE1234F1Z5',
                             phone: '9876543210',
                             footerMessage: 'Thank you for your visit!',
                         };
@@ -447,6 +448,7 @@ export default function OrdersPage() {
                               <div class="header">
                                 <h2>${printSettings.cafeName}</h2>
                                 <p>${printSettings.address}</p>
+                                ${printSettings.customDetails ? `<p>${printSettings.customDetails}</p>` : ''}
                                 <p>Ph: ${printSettings.phone}</p>
                                 <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
                                 <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
