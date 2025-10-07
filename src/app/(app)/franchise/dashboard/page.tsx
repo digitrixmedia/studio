@@ -158,9 +158,9 @@ export default function FranchiseDashboardPage() {
                         <TableRow key={outlet.id}>
                             <TableCell className='font-medium'>{outlet.name}</TableCell>
                             <TableCell><Badge variant={outlet.status === 'Active' ? 'default' : 'destructive'}>{outlet.status}</Badge></TableCell>
-                            <TableCell>₹{outlet.todaySales.toLocaleString('en-IN')}</TableCell>
-                            <TableCell>₹{outlet.totalSales.toLocaleString('en-IN')}</TableCell>
-                            <TableCell>{outlet.ordersToday}</TableCell>
+                            <TableCell>₹{(outlet.todaySales || 0).toLocaleString('en-IN')}</TableCell>
+                            <TableCell>₹{(outlet.totalSales || 0).toLocaleString('en-IN')}</TableCell>
+                            <TableCell>{outlet.ordersToday || 0}</TableCell>
                             <TableCell>{outlet.managerName}</TableCell>
                             <TableCell className='text-right'>
                                 <Button variant="outline" size="sm" className='mr-2'>Manage</Button>
