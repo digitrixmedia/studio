@@ -206,7 +206,7 @@ export default function FranchiseDashboardPage() {
             <CardContent>
                 <p className='text-xl font-bold'>₹{summary.avgOrderValue.toFixed(2)}</p>
                 <p className='text-muted-foreground'>Across all outlets</p>
-            </Content>
+            </CardContent>
         </Card>
          <Card>
             <CardHeader>
