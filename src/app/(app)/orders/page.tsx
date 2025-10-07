@@ -30,14 +30,15 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { menuCategories, menuItems, tables } from '@/lib/data';
-import type { OrderItem, MenuItem } from '@/lib/types';
-import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle, User, Phone } from 'lucide-react';
+import type { OrderItem, MenuItem, OrderType } from '@/lib/types';
+import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle, User, Phone, Utensils, Package, Truck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 
 export default function OrdersPage() {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
+  const [orderType, setOrderType] = useState<OrderType>('Dine-In');
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -132,7 +133,11 @@ export default function OrdersPage() {
   const total = subTotal + tax;
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
-  const isTakeawayOrDelivery = selectedTable === 'takeaway' || selectedTable === 'delivery';
+  const isOrderDetailsComplete = () => {
+    if (orderType === 'Dine-In') return !!selectedTable;
+    if (orderType === 'Takeaway' || orderType === 'Delivery') return !!customerName && !!customerPhone;
+    return false;
+  };
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
@@ -196,22 +201,28 @@ export default function OrdersPage() {
         <Card className="h-full">
           <CardHeader>
             <CardTitle>Current Order</CardTitle>
-            <CardDescription className="space-y-2 pt-2">
-                <Select value={selectedTable} onValueChange={setSelectedTable}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select Table or Order Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="takeaway">Takeaway</SelectItem>
-                        <SelectItem value="delivery">Delivery</SelectItem>
-                        {tables.map(table => (
-                            <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
-                                {table.name} ({table.status})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                 {isTakeawayOrDelivery && (
+            <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full pt-2">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="Dine-In"><Utensils className="mr-2"/>Dine-In</TabsTrigger>
+                <TabsTrigger value="Takeaway"><Package className="mr-2"/>Takeaway</TabsTrigger>
+                <TabsTrigger value="Delivery"><Truck className="mr-2"/>Delivery</TabsTrigger>
+              </TabsList>
+              <CardDescription className="space-y-2 pt-4">
+                 {orderType === 'Dine-In' && (
+                    <Select value={selectedTable} onValueChange={setSelectedTable}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Table" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {tables.map(table => (
+                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
+                                    {table.name} ({table.status})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                 )}
+                 {(orderType === 'Takeaway' || orderType === 'Delivery') && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -223,9 +234,10 @@ export default function OrdersPage() {
                     </div>
                   </div>
                 )}
-            </CardDescription>
+              </CardDescription>
+            </Tabs>
           </CardHeader>
-          <CardContent className="h-[calc(100%-12rem)] overflow-y-auto">
+          <CardContent className="h-[calc(100%-14rem)] overflow-y-auto">
             {cart.length === 0 ? (
               <p className="text-muted-foreground">No items in order.</p>
             ) : (
@@ -294,7 +306,7 @@ export default function OrdersPage() {
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Send to Kitchen</Button>
-                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!selectedTable}>
+                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!isOrderDetailsComplete()}>
                     <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
                 </Button>
               </div>
@@ -348,7 +360,9 @@ export default function OrdersPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Bill Summary</CardTitle>
-                        <CardDescription>{tables.find(t => t.id === selectedTable)?.name || selectedTable}</CardDescription>
+                        <CardDescription>
+                          {orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name : `${orderType} - ${customerName}`}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                        <div className="space-y-2 text-sm">
