@@ -10,8 +10,12 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from 'lucide-react';
 import { franchiseData } from '@/lib/data';
+import { useState } from 'react';
+import { ManageOutletDialog } from '@/components/franchise/ManageOutletDialog';
+import type { FranchiseOutlet } from '@/lib/types';
+
 
 const salesChartConfig = {
   total: { label: 'Total Sales', color: 'hsl(var(--primary))' },
@@ -23,10 +27,11 @@ const trendChartConfig = {
 }
 
 export default function FranchiseDashboardPage() {
-
     const { summary, salesPerOutlet, salesTrend, outlets } = franchiseData;
+    const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
 
   return (
+    <>
     <div className="flex flex-col gap-8">
         <h1 className='text-3xl font-bold'>Franchise Dashboard</h1>
       {/* Stat Cards */}
@@ -163,7 +168,7 @@ export default function FranchiseDashboardPage() {
                             <TableCell>{outlet.ordersToday || 0}</TableCell>
                             <TableCell>{outlet.managerName}</TableCell>
                             <TableCell className='text-right'>
-                                <Button variant="outline" size="sm" className='mr-2'>Manage</Button>
+                                <Button variant="outline" size="sm" className='mr-2' onClick={() => setSelectedOutlet(outlet)}>Manage</Button>
                                 <Button size="sm">Open POS</Button>
                             </TableCell>
                         </TableRow>
@@ -213,5 +218,13 @@ export default function FranchiseDashboardPage() {
       </div>
 
     </div>
+    {selectedOutlet && (
+        <ManageOutletDialog
+            outlet={selectedOutlet}
+            isOpen={!!selectedOutlet}
+            onClose={() => setSelectedOutlet(null)}
+        />
+    )}
+    </>
   );
 }

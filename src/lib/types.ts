@@ -113,3 +113,15 @@ export interface Subscription {
   status: SubscriptionStatus;
   storageUsedMB: number;
 }
+
+
+// Franchise Admin Types
+export interface FranchiseOutlet {
+  id: string;
+  name: string;
+  status: 'Active' | 'Inactive';
+  managerName: string;
+  todaySales?: number;
+  totalSales?: number;
+  ordersToday?: number;
+}
