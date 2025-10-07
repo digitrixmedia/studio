@@ -417,6 +417,14 @@ export default function OrdersPage() {
                     <Button
                       variant="outline"
                       onClick={() => {
+                        // In a real app, you'd fetch these settings. For now, we use defaults.
+                        const printSettings = {
+                            cafeName: 'ZappyyPOS',
+                            address: '123 Coffee Lane, Bengaluru',
+                            phone: '9876543210',
+                            footerMessage: 'Thank you for your visit!',
+                        };
+                      
                         const printContent = `
                           <html>
                             <head>
@@ -425,22 +433,26 @@ export default function OrdersPage() {
                                 body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
                                 h2, p { margin: 0; padding: 0; }
                                 .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
+                                .header h2 { font-size: 20px; font-weight: bold; }
+                                .header p { font-size: 13px; }
                                 .summary { margin-bottom: 12px; }
                                 .item { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
-                                .item .name { flex: 1; text-align: left; }
-                                .item .price { width: 60px; text-align: right; }
-                                .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; }
+                                .item .name { flex: 1; text-align: left; margin-right: 8px; }
+                                .item .price { width: 80px; text-align: right; }
+                                .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 14px; }
                                 .center { text-align: center; margin-top: 16px; font-size: 13px; }
                               </style>
                             </head>
                             <body>
                               <div class="header">
-                                <h2>ZappyyPOS</h2>
-                                <p>${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
-                                <p>${new Date().toLocaleString()}</p>
+                                <h2>${printSettings.cafeName}</h2>
+                                <p>${printSettings.address}</p>
+                                <p>Ph: ${printSettings.phone}</p>
+                                <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
+                                <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
                               </div>
                               <div class="summary">
-                                ${cart.map(item => `<div class="item"><span class="name">${item.quantity} x ${item.name}</span><span class="price">₹${item.totalPrice.toFixed(2)}</span></div>`).join('')}
+                                ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price">₹${item.totalPrice.toFixed(2)}</span></div>`).join('')}
                               </div>
                               <div class="total">
                                 <div class="item"><span class="name">Subtotal</span><span class="price">₹${subTotal.toFixed(2)}</span></div>
@@ -448,7 +460,7 @@ export default function OrdersPage() {
                                 <div class="item"><span class="name"><b>Total</b></span><span class="price"><b>₹${total.toFixed(2)}</b></span></div>
                               </div>
                               <div class="center">
-                                <p>Thank you for your visit!</p>
+                                <p>${printSettings.footerMessage}</p>
                               </div>
                             </body>
                           </html>
