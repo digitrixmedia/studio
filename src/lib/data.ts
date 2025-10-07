@@ -229,6 +229,7 @@ export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) =
         id: `sub-${i + 1}`,
         franchiseName: franchise.name,
         outletName: `${franchise.name} - Outlet ${outletNumber}`,
+        adminName: `Manager ${i+1}`,
         adminEmail: `admin${i+1}@${franchise.name.toLowerCase().replace(/\s/g, '')}.com`,
         startDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
         endDate,
@@ -251,7 +252,7 @@ export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => ({
     name: f.name,
     totalSales: Math.floor(Math.random() * 500000) + 100000,
     totalOutlets: subscriptions.filter(s => s.franchiseName === f.name).length,
-    totalStorage: (subscriptions.filter(s => s.franchiseName === f.name).reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024).toFixed(2),
+    totalStorage: (subscriptions.filter(s => s.franchiseName === f.name).reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024),
     lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
 })).sort((a, b) => b.totalSales - a.totalSales);
 
@@ -275,3 +276,52 @@ export const monthlyNewSubscriptions = [
     { month: 'Jan', count: 5 }, { month: 'Feb', count: 8 }, { month: 'Mar', count: 12 },
     { month: 'Apr', count: 7 }, { month: 'May', count: 10 }, { month: 'Jun', count: 15 },
 ];
+
+// MOCKED FRANCHISE ADMIN DATA
+
+const franchiseOutlets = [
+    { id: 'outlet-1', name: 'Koramangala', status: 'Active', managerName: 'Manoj Kumar' },
+    { id: 'outlet-2', name: 'Indiranagar', status: 'Active', managerName: 'Priya Sharma' },
+    { id: 'outlet-3', name: 'HSR Layout', status: 'Inactive', managerName: 'Amit Singh' },
+    { id: 'outlet-4', name: 'Whitefield', status: 'Active', managerName: 'Sunita Reddy' },
+];
+
+const salesPerOutletData = franchiseOutlets.map(o => ({
+    name: o.name,
+    total: Math.floor(Math.random() * 200000) + 50000,
+    today: Math.floor(Math.random() * 15000) + 2000,
+}));
+
+const totalSales = salesPerOutletData.reduce((acc, o) => acc + o.total, 0);
+const todaySales = salesPerOutletData.reduce((acc, o) => acc + o.today, 0);
+const totalOrders = Math.floor(totalSales / (Math.random() * 500 + 300));
+const topPerformer = [...salesPerOutletData].sort((a,b) => b.today - a.today)[0];
+const lowPerformer = [...salesPerOutletData].sort((a,b) => a.today - b.today)[0];
+
+export const franchiseData = {
+    summary: {
+        totalSales,
+        todaySales,
+        totalOrders,
+        activeOutlets: franchiseOutlets.filter(o => o.status === 'Active').length,
+        inactiveOutlets: franchiseOutlets.filter(o => o.status !== 'Active').length,
+        topPerformer: { name: topPerformer.name, sales: topPerformer.today },
+        lowPerformer: { name: lowPerformer.name, sales: lowPerformer.today },
+        avgOrderValue: totalSales / totalOrders,
+    },
+    salesPerOutlet: salesPerOutletData,
+    salesTrend: [
+        { day: 'Mon', sales: Math.floor(Math.random() * 20000) + 5000 },
+        { day: 'Tue', sales: Math.floor(Math.random() * 20000) + 5000 },
+        { day: 'Wed', sales: Math.floor(Math.random() * 20000) + 5000 },
+        { day: 'Thu', sales: Math.floor(Math.random() * 20000) + 5000 },
+        { day: 'Fri', sales: Math.floor(Math.random() * 20000) + 5000 },
+        { day: 'Sat', sales: Math.floor(Math.random() * 20000) + 5000 },
+        { day: 'Sun', sales: Math.floor(Math.random() * 20000) + 5000 },
+    ],
+    outlets: franchiseOutlets.map(o => ({
+        ...o,
+        ...salesPerOutletData.find(s => s.name === o.name),
+        ordersToday: Math.floor((salesPerOutletData.find(s => s.name === o.name)?.today || 0) / (Math.random() * 400 + 300)),
+    }))
+}
