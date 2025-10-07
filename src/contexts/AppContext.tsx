@@ -30,30 +30,35 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
              router.push('/login');
         }
     }
-  }, []);
+  }, [router, pathname]);
 
   useEffect(() => {
     if (currentUser) {
       const isSuperAdmin = currentUser.role === 'Super Admin';
       const isFranchiseAdmin = currentUser.role === 'Admin';
+      const isGenericUser = !isSuperAdmin && !isFranchiseAdmin;
 
+      const isLoginPage = pathname.startsWith('/login');
       const isSuperAdminPath = pathname.startsWith('/super-admin');
       const isFranchisePath = pathname.startsWith('/franchise');
-      
-      const isGenericAppPath = !isSuperAdminPath && !isFranchisePath && pathname !== '/login';
+      const isGenericAppPath = !isSuperAdminPath && !isFranchisePath && !isLoginPage;
 
-      if (isSuperAdmin && !isSuperAdminPath) {
-        router.push('/super-admin/dashboard');
-      } else if (isFranchiseAdmin && !isFranchisePath) {
-        router.push('/franchise/dashboard');
-      }
-       else if (!isSuperAdmin && !isFranchiseAdmin && isGenericAppPath && pathname === '/franchise/dashboard' || pathname === '/super-admin/dashboard') {
-         router.push('/dashboard');
-      }
-       else if (pathname === '/login') {
-         if (isSuperAdmin) router.push('/super-admin/dashboard');
-         else if (isFranchiseAdmin) router.push('/franchise/dashboard');
-         else router.push('/dashboard');
+      if (isLoginPage) {
+        if (isSuperAdmin) {
+          router.push('/super-admin/dashboard');
+        } else if (isFranchiseAdmin) {
+          router.push('/franchise/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        if (isSuperAdmin && !isSuperAdminPath) {
+          router.push('/super-admin/dashboard');
+        } else if (isFranchiseAdmin && !isFranchisePath) {
+          router.push('/franchise/dashboard');
+        } else if (isGenericUser && !isGenericAppPath) {
+          router.push('/dashboard');
+        }
       }
     } else if (!pathname.startsWith('/login')) {
       router.push('/login');
