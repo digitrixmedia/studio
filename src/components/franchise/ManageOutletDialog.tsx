@@ -7,6 +7,17 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,8 +33,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import type { FranchiseOutlet, Role, User } from '@/lib/types';
 import { users } from '@/lib/data';
-import { useState } from 'react';
-import { Edit, PlusCircle, Trash2 } from 'lucide-react';
+import { useState }from 'react';
+import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,46 +46,83 @@ interface ManageOutletDialogProps {
 
 const staffRoles: Exclude<Role, 'Admin' | 'Super Admin'>[] = ['Manager', 'Cashier', 'Waiter', 'Kitchen'];
 
+const initialNewStaffState = {
+  name: '',
+  email: '',
+  role: '' as Role | '',
+};
+
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  // In a real app, you'd fetch this from your backend based on outlet.id
   const initialStaff = users.filter(u => u.role !== 'Admin' && u.role !== 'Super Admin').slice(0, 3);
   
   const [staff, setStaff] = useState<User[]>(initialStaff);
-  const [newStaffName, setNewStaffName] = useState('');
-  const [newStaffEmail, setNewStaffEmail] = useState('');
-  const [newStaffRole, setNewStaffRole] = useState<Role | ''>('');
+  const [newStaff, setNewStaff] = useState(initialNewStaffState);
+  const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 
 
-  const handleCreateAccount = () => {
-    if (!newStaffName || !newStaffEmail || !newStaffRole) {
+  const handleInputChange = (field: keyof typeof initialNewStaffState, value: string) => {
+    setNewStaff(prev => ({ ...prev, [field]: value }));
+  }
+
+  const handleCreateOrUpdateAccount = () => {
+    if (!newStaff.name || !newStaff.email || !newStaff.role) {
       toast({
         variant: "destructive",
         title: "Missing Information",
-        description: "Please fill out all fields to create a staff account.",
+        description: "Please fill out all fields to create or update a staff account.",
       });
       return;
     }
 
-    const newStaffMember: User = {
-      id: `user-${Date.now()}`,
-      name: newStaffName,
-      email: newStaffEmail,
-      role: newStaffRole as Role,
-      avatar: `https://i.pravatar.cc/150?u=${newStaffEmail}`
-    };
-
-    setStaff([...staff, newStaffMember]);
-
-    toast({
-      title: "Account Created",
-      description: `${newStaffName} has been added as a ${newStaffRole}.`,
-    });
+    if (editingStaffId) {
+      // Update existing staff
+      setStaff(staff.map(s => s.id === editingStaffId ? { ...s, ...newStaff } : s));
+      toast({
+        title: "Account Updated",
+        description: `${newStaff.name}'s information has been updated.`,
+      });
+    } else {
+      // Create new staff
+      const newStaffMember: User = {
+        id: `user-${Date.now()}`,
+        name: newStaff.name,
+        email: newStaff.email,
+        role: newStaff.role as Role,
+        avatar: `https://i.pravatar.cc/150?u=${newStaff.email}`
+      };
+      setStaff([...staff, newStaffMember]);
+      toast({
+        title: "Account Created",
+        description: `${newStaff.name} has been added as a ${newStaff.role}.`,
+      });
+    }
 
     // Reset form
-    setNewStaffName('');
-    setNewStaffEmail('');
-    setNewStaffRole('');
+    setNewStaff(initialNewStaffState);
+    setEditingStaffId(null);
+  };
+  
+  const handleEditStaff = (staffMember: User) => {
+    setEditingStaffId(staffMember.id);
+    setNewStaff({
+      name: staffMember.name,
+      email: staffMember.email,
+      role: staffMember.role,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingStaffId(null);
+    setNewStaff(initialNewStaffState);
+  };
+
+  const handleDeleteStaff = (staffId: string) => {
+    setStaff(staff.filter(s => s.id !== staffId));
+    toast({
+      title: "Account Deleted",
+      description: "The staff member has been removed.",
+    });
   };
 
   return (
@@ -121,15 +169,15 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
           </TabsContent>
           <TabsContent value="staff">
              <div className="py-4">
-               <h4 className="font-semibold mb-2">Create New Staff Account</h4>
+               <h4 className="font-semibold mb-2">{editingStaffId ? 'Edit Staff Account' : 'Create New Staff Account'}</h4>
                <div className="grid grid-cols-3 gap-4 mb-6 p-4 border rounded-lg">
                     <div className="space-y-2">
                         <Label htmlFor="staff-name">Full Name</Label>
                         <Input 
                           id="staff-name" 
                           placeholder="e.g., Jane Doe" 
-                          value={newStaffName}
-                          onChange={(e) => setNewStaffName(e.target.value)}
+                          value={newStaff.name}
+                          onChange={(e) => handleInputChange('name', e.target.value)}
                         />
                     </div>
                     <div className="space-y-2">
@@ -138,13 +186,13 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                           id="staff-email" 
                           type="email" 
                           placeholder="e.g., jane.d@example.com"
-                          value={newStaffEmail}
-                          onChange={(e) => setNewStaffEmail(e.target.value)}
+                          value={newStaff.email}
+                          onChange={(e) => handleInputChange('email', e.target.value)}
                         />
                     </div>
                      <div className="space-y-2">
                         <Label htmlFor="staff-role">Role</Label>
-                        <Select value={newStaffRole} onValueChange={(value) => setNewStaffRole(value as Role)}>
+                        <Select value={newStaff.role} onValueChange={(value) => handleInputChange('role', value as Role)}>
                             <SelectTrigger id="staff-role">
                                 <SelectValue placeholder="Select a role" />
                             </SelectTrigger>
@@ -155,9 +203,14 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                             </SelectContent>
                         </Select>
                     </div>
-                     <div className="col-span-3 flex justify-end">
-                        <Button onClick={handleCreateAccount}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Create Account
+                     <div className="col-span-3 flex justify-end gap-2">
+                        {editingStaffId && (
+                            <Button variant="outline" onClick={cancelEdit}>
+                                <XCircle className="mr-2 h-4 w-4" /> Cancel
+                            </Button>
+                        )}
+                        <Button onClick={handleCreateOrUpdateAccount}>
+                            {editingStaffId ? 'Update Account' : <><PlusCircle className="mr-2 h-4 w-4" /> Create Account</>}
                         </Button>
                      </div>
                </div>
@@ -179,8 +232,26 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                                 <TableCell>{s.email}</TableCell>
                                 <TableCell><Badge variant="secondary">{s.role}</Badge></TableCell>
                                 <TableCell className='text-right'>
-                                    <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
-                                    <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleEditStaff(s)}><Edit className="h-4 w-4" /></Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This will permanently delete the account for {s.name}. This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDeleteStaff(s.id)} className="bg-destructive hover:bg-destructive/90">
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
                                 </TableCell>
                             </TableRow>
                         ))}
