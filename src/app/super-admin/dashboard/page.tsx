@@ -17,6 +17,7 @@ const subscriptionChartConfig = {
   active: { label: 'Active', color: 'hsl(var(--chart-1))' },
   expired: { label: 'Expired', color: 'hsl(var(--chart-2))' },
   suspended: { label: 'Suspended', color: 'hsl(var(--chart-3))' },
+  inactive: { label: 'Inactive', color: 'hsl(var(--chart-4))' },
 };
 const activityChartConfig = {
     outlets: { label: 'Active Outlets', color: 'hsl(var(--primary))' },
@@ -122,8 +123,8 @@ export default function SuperAdminDashboardPage() {
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent nameKey="count" hideLabel />} />
                 <Pie data={subscriptionStatusDistribution} dataKey="count" nameKey="status" innerRadius={50}>
-                   {subscriptionStatusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={Object.values(subscriptionChartConfig)[index % Object.keys(subscriptionChartConfig).length].color} />
+                   {subscriptionStatusDistribution.map((entry) => (
+                    <Cell key={entry.status} fill={subscriptionChartConfig[entry.status.toLowerCase() as keyof typeof subscriptionChartConfig]?.color} />
                   ))}
                 </Pie>
               </PieChart>
