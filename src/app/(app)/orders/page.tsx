@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { menuCategories, menuItems, tables } from '@/lib/data';
 import type { OrderItem, MenuItem } from '@/lib/types';
-import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle } from 'lucide-react';
+import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle, User, Phone } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
 
@@ -39,6 +39,8 @@ export default function OrdersPage() {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
   const [selectedTable, setSelectedTable] = useState<string>('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
@@ -119,6 +121,8 @@ export default function OrdersPage() {
   const resetOrder = () => {
     setCart([]);
     setSelectedTable('');
+    setCustomerName('');
+    setCustomerPhone('');
     setAmountPaid('');
     setIsPaymentDialogOpen(false);
   }
@@ -127,6 +131,8 @@ export default function OrdersPage() {
   const tax = subTotal * 0.05; // 5% GST
   const total = subTotal + tax;
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
+  
+  const isTakeawayOrDelivery = selectedTable === 'takeaway' || selectedTable === 'delivery';
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
@@ -190,7 +196,7 @@ export default function OrdersPage() {
         <Card className="h-full">
           <CardHeader>
             <CardTitle>Current Order</CardTitle>
-            <CardDescription>
+            <CardDescription className="space-y-2 pt-2">
                 <Select value={selectedTable} onValueChange={setSelectedTable}>
                     <SelectTrigger>
                         <SelectValue placeholder="Select Table or Order Type" />
@@ -205,6 +211,18 @@ export default function OrdersPage() {
                         ))}
                     </SelectContent>
                 </Select>
+                 {isTakeawayOrDelivery && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Customer Name" className="pl-10" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                    </div>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                    </div>
+                  </div>
+                )}
             </CardDescription>
           </CardHeader>
           <CardContent className="h-[calc(100%-12rem)] overflow-y-auto">
