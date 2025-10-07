@@ -414,7 +414,65 @@ export default function OrdersPage() {
                     </div>
                 )}
                  <DialogFooter>
-                    <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2" /> Print Bill</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const printContent = `
+                          <html>
+                            <head>
+                              <title>Customer Bill</title>
+                              <style>
+                                body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
+                                h2, p { margin: 0; padding: 0; }
+                                .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
+                                .summary { margin-bottom: 12px; }
+                                .item { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
+                                .item .name { flex: 1; text-align: left; }
+                                .item .price { width: 60px; text-align: right; }
+                                .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; }
+                                .center { text-align: center; margin-top: 16px; font-size: 13px; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header">
+                                <h2>ZappyyPOS</h2>
+                                <p>${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
+                                <p>${new Date().toLocaleString()}</p>
+                              </div>
+                              <div class="summary">
+                                ${cart.map(item => `<div class="item"><span class="name">${item.quantity} x ${item.name}</span><span class="price">₹${item.totalPrice.toFixed(2)}</span></div>`).join('')}
+                              </div>
+                              <div class="total">
+                                <div class="item"><span class="name">Subtotal</span><span class="price">₹${subTotal.toFixed(2)}</span></div>
+                                <div class="item"><span class="name">GST (5%)</span><span class="price">₹${tax.toFixed(2)}</span></div>
+                                <div class="item"><span class="name"><b>Total</b></span><span class="price"><b>₹${total.toFixed(2)}</b></span></div>
+                              </div>
+                              <div class="center">
+                                <p>Thank you for your visit!</p>
+                              </div>
+                            </body>
+                          </html>
+                        `;
+
+                        const printWindow = window.open('', '', 'width=400,height=600');
+                        if (printWindow) {
+                          printWindow.document.open();
+                          printWindow.document.write(printContent);
+                          printWindow.document.close();
+                          printWindow.focus();
+                          printWindow.print();
+                          printWindow.close();
+                        } else {
+                          toast({
+                              variant: "destructive",
+                              title: "Popup Blocked",
+                              description: "Please allow popups for this site to print the bill.",
+                          });
+                        }
+                      }}
+                    >
+                      <Printer className="mr-2" /> Print Bill
+                    </Button>
                     <Button onClick={resetOrder} className="bg-green-600 hover:bg-green-700 text-white">
                         <CheckCircle className="mr-2"/> Confirm Payment
                     </Button>
