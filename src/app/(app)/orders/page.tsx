@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -29,13 +31,17 @@ import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { menuCategories, menuItems, tables } from '@/lib/data';
 import type { OrderItem, MenuItem } from '@/lib/types';
-import { PlusCircle, MinusCircle, X, Send, IndianRupee } from 'lucide-react';
+import { PlusCircle, MinusCircle, X, Send, IndianRupee, Printer, CheckCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Label } from '@/components/ui/label';
 
 export default function OrdersPage() {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
+  const [selectedTable, setSelectedTable] = useState<string>('');
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [amountPaid, setAmountPaid] = useState<number | string>('');
 
   const addToCart = (item: MenuItem) => {
     // Check for variations or addons to open customization dialog
@@ -109,10 +115,18 @@ export default function OrdersPage() {
   const removeFromCart = (itemId: string) => {
     setCart(cart.filter(item => item.id !== itemId));
   };
+  
+  const resetOrder = () => {
+    setCart([]);
+    setSelectedTable('');
+    setAmountPaid('');
+    setIsPaymentDialogOpen(false);
+  }
 
   const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
   const tax = subTotal * 0.05; // 5% GST
   const total = subTotal + tax;
+  const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
@@ -177,11 +191,13 @@ export default function OrdersPage() {
           <CardHeader>
             <CardTitle>Current Order</CardTitle>
             <CardDescription>
-                <Select>
+                <Select value={selectedTable} onValueChange={setSelectedTable}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select Table" />
+                        <SelectValue placeholder="Select Table or Order Type" />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="takeaway">Takeaway</SelectItem>
+                        <SelectItem value="delivery">Delivery</SelectItem>
                         {tables.map(table => (
                             <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
                                 {table.name} ({table.status})
@@ -260,7 +276,9 @@ export default function OrdersPage() {
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <Button variant="outline"><Send className="mr-2 h-4 w-4" /> Send to Kitchen</Button>
-                <Button className="bg-green-600 hover:bg-green-700 text-white"><IndianRupee className="mr-2 h-4 w-4" /> Generate Bill</Button>
+                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!selectedTable}>
+                    <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
+                </Button>
               </div>
             </div>
           )}
@@ -300,6 +318,60 @@ export default function OrdersPage() {
                         <Button type="submit" className="w-full">Add to Order</Button>
                     </form>
                 )}
+            </DialogContent>
+        </Dialog>
+        
+        {/* Payment Dialog */}
+        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Payment</DialogTitle>
+                </DialogHeader>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Bill Summary</CardTitle>
+                        <CardDescription>{tables.find(t => t.id === selectedTable)?.name || selectedTable}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <div className="space-y-2 text-sm">
+                           {cart.map(item => (
+                               <div key={item.id} className="flex justify-between">
+                                   <span>{item.quantity} x {item.name}</span>
+                                   <span>₹{item.totalPrice.toFixed(2)}</span>
+                               </div>
+                           ))}
+                           <div className="flex justify-between font-bold pt-2 border-t">
+                               <span>Total Amount</span>
+                               <span>₹{total.toFixed(2)}</span>
+                           </div>
+                       </div>
+                    </CardContent>
+                </Card>
+                <div className="grid grid-cols-2 gap-4">
+                    <Button variant="outline">UPI / Card</Button>
+                    <Button>Cash</Button>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="amount-paid">Amount Paid</Label>
+                    <Input 
+                        id="amount-paid" 
+                        type="number" 
+                        placeholder="Enter amount customer paid" 
+                        value={amountPaid} 
+                        onChange={(e) => setAmountPaid(e.target.value)}
+                    />
+                </div>
+                {changeDue > 0 && (
+                    <div className="text-center font-bold text-xl p-4 bg-muted rounded-md">
+                        Change Due: ₹{changeDue.toFixed(2)}
+                    </div>
+                )}
+                 <DialogFooter>
+                    <Button variant="outline"><Printer className="mr-2" /> Print Bill</Button>
+                    <Button onClick={resetOrder} className="bg-green-600 hover:bg-green-700 text-white">
+                        <CheckCircle className="mr-2"/> Confirm Payment
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
 
