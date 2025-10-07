@@ -184,26 +184,26 @@ export default function MenuPage() {
                       <h4 className="text-md font-semibold mb-2">Item Variations</h4>
                       <div className="space-y-4">
                           {variations.map((variation, index) => (
-                             <Card key={index} className="p-4">
-                                <div className="grid grid-cols-3 gap-4 mb-4">
-                                  <div className="space-y-2">
+                             <Card key={index} className="p-4 bg-muted/50">
+                                <div className="flex items-end gap-4 mb-4">
+                                  <div className="flex-1 space-y-2">
                                     <Label>Variation Name</Label>
                                     <Input placeholder="e.g., Large" value={variation.name} onChange={e => handleVariationChange(index, 'name', e.target.value)} />
                                   </div>
-                                   <div className="space-y-2">
+                                   <div className="flex-1 space-y-2">
                                     <Label>Price Modifier (₹)</Label>
                                     <Input type="number" placeholder="e.g., 20" value={variation.priceModifier} onChange={e => handleVariationChange(index, 'priceModifier', e.target.value)} />
                                   </div>
                                   <div>
-                                    <Label>&nbsp;</Label>
-                                    <Button variant="destructive" className="w-full" onClick={() => handleRemoveVariation(index)}>
-                                        <Trash2 className="mr-2 h-4 w-4" /> Remove
+                                    <Button variant="destructive" size="icon" onClick={() => handleRemoveVariation(index)}>
+                                        <Trash2 className="h-4 w-4" />
+                                        <span className="sr-only">Remove</span>
                                     </Button>
                                   </div>
                                 </div>
                                 <h5 className="text-sm font-medium mb-2">Recipe for {variation.name || 'this variation'}</h5>
                                 {/* Placeholder for recipe mapping per variation */}
-                                <div className="p-2 border rounded-md text-center text-muted-foreground text-sm">
+                                <div className="p-2 border rounded-md text-center text-muted-foreground text-sm bg-background">
                                   Ingredient mapping for this variation will be here.
                                 </div>
                              </Card>
