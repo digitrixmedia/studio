@@ -368,7 +368,7 @@ export default function OrdersPage() {
                     <CardHeader>
                         <CardTitle>Bill Summary</CardTitle>
                         <CardDescription>
-                          {orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name : `${orderType} - ${customerName}`}
+                          {orderType === 'Dine-In' && selectedTable ? tables.find(t => t.id === selectedTable)?.name : `${orderType} - ${customerName}`}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -406,7 +406,7 @@ export default function OrdersPage() {
                     </div>
                 )}
                  <DialogFooter>
-                    <Button variant="outline"><Printer className="mr-2" /> Print Bill</Button>
+                    <Button variant="outline" onClick={() => window.print()}><Printer className="mr-2" /> Print Bill</Button>
                     <Button onClick={resetOrder} className="bg-green-600 hover:bg-green-700 text-white">
                         <CheckCircle className="mr-2"/> Confirm Payment
                     </Button>
