@@ -50,6 +50,7 @@ const initialNewStaffState = {
   name: '',
   email: '',
   role: '' as Role | '',
+  password: '',
 };
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
@@ -77,12 +78,20 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
 
     if (editingStaffId) {
       // Update existing staff
-      setStaff(staff.map(s => s.id === editingStaffId ? { ...s, ...newStaff } : s));
+      setStaff(staff.map(s => s.id === editingStaffId ? { ...s, name: newStaff.name, email: newStaff.email, role: newStaff.role as Role } : s));
       toast({
         title: "Account Updated",
         description: `${newStaff.name}'s information has been updated.`,
       });
     } else {
+       if (!newStaff.password) {
+        toast({
+          variant: "destructive",
+          title: "Missing Information",
+          description: "Please set a password for the new account.",
+        });
+        return;
+      }
       // Create new staff
       const newStaffMember: User = {
         id: `user-${Date.now()}`,
@@ -109,6 +118,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
       name: staffMember.name,
       email: staffMember.email,
       role: staffMember.role,
+      password: '', // Don't show password on edit
     });
   };
 
@@ -170,38 +180,50 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
           <TabsContent value="staff">
              <div className="py-4">
                <h4 className="font-semibold mb-2">{editingStaffId ? 'Edit Staff Account' : 'Create New Staff Account'}</h4>
-               <div className="grid grid-cols-3 gap-4 mb-6 p-4 border rounded-lg">
-                    <div className="space-y-2">
-                        <Label htmlFor="staff-name">Full Name</Label>
-                        <Input 
-                          id="staff-name" 
-                          placeholder="e.g., Jane Doe" 
-                          value={newStaff.name}
-                          onChange={(e) => handleInputChange('name', e.target.value)}
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="staff-email">Email</Label>
-                        <Input 
-                          id="staff-email" 
-                          type="email" 
-                          placeholder="e.g., jane.d@example.com"
-                          value={newStaff.email}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="staff-role">Role</Label>
-                        <Select value={newStaff.role} onValueChange={(value) => handleInputChange('role', value as Role)}>
-                            <SelectTrigger id="staff-role">
-                                <SelectValue placeholder="Select a role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {staffRoles.map(role => (
-                                    <SelectItem key={role} value={role}>{role}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+               <div className="p-4 border rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-name">Full Name</Label>
+                            <Input 
+                            id="staff-name" 
+                            placeholder="e.g., Jane Doe" 
+                            value={newStaff.name}
+                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-email">Email</Label>
+                            <Input 
+                            id="staff-email" 
+                            type="email" 
+                            placeholder="e.g., jane.d@example.com"
+                            value={newStaff.email}
+                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="staff-password">Password</Label>
+                            <Input
+                            id="staff-password"
+                            type="password"
+                            placeholder={editingStaffId ? 'Set new password' : '••••••••'}
+                            value={newStaff.password}
+                            onChange={(e) => handleInputChange('password', e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="staff-role">Role</Label>
+                            <Select value={newStaff.role} onValueChange={(value) => handleInputChange('role', value as Role)}>
+                                <SelectTrigger id="staff-role">
+                                    <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {staffRoles.map(role => (
+                                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                      <div className="col-span-3 flex justify-end gap-2">
                         {editingStaffId && (
@@ -215,7 +237,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                      </div>
                </div>
 
-                <h4 className="font-semibold mb-2">Existing Staff</h4>
+                <h4 className="font-semibold mb-2 mt-6">Existing Staff</h4>
                 <Table>
                     <TableHeader>
                         <TableRow>
