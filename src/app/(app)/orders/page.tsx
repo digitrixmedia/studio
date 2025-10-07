@@ -131,6 +131,14 @@ export default function OrdersPage() {
   }
   
   const handleSendToKitchen = () => {
+    if (cart.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Empty Order",
+        description: "Cannot send an empty order to the kitchen.",
+      });
+      return;
+    }
     toast({
       title: "Order Sent!",
       description: "The order has been sent to the kitchen for preparation.",
