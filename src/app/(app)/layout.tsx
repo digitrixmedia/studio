@@ -68,17 +68,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
   
   const isFranchiseAdmin = currentUser.role === 'Admin';
+  // When an outlet is selected, the Admin effectively acts as a Manager for that outlet
   const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'Manager' : currentUser.role;
 
   const availableNavItems = navItems.filter(item => {
+    // If admin has selected an outlet, show Manager roles
     if (isFranchiseAdmin && selectedOutlet) {
       return item.roles.includes('Manager');
     }
+    // Otherwise, show roles based on the current user's role
     return item.roles.includes(currentUser.role)
   }).filter(item => {
-      // hide franchise menu items when outlet is selected
+      // Hide franchise menu items when an outlet is selected
       if (isFranchiseAdmin && selectedOutlet) {
           return !item.href.startsWith('/franchise');
+      }
+      // Hide regular app menu items when admin is on franchise view
+      if (isFranchiseAdmin && !selectedOutlet) {
+          return item.href.startsWith('/franchise');
       }
       return true;
   });

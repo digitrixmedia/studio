@@ -23,7 +23,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const storedUserRole = localStorage.getItem('userRole');
+    const storedUserRole = localStorage.getItem('userRole') as Role | null;
     const storedOutlet = localStorage.getItem('selectedOutlet');
     
     if (storedUserRole) {
@@ -34,7 +34,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
     
     if (storedOutlet) {
-      setSelectedOutlet(JSON.parse(storedOutlet));
+      try {
+        setSelectedOutlet(JSON.parse(storedOutlet));
+      } catch (e) {
+        localStorage.removeItem('selectedOutlet');
+      }
     }
     
     if (!storedUserRole && !pathname.startsWith('/login')) {
@@ -44,21 +48,24 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (currentUser) {
-      // If an admin has selected an outlet, we don't want to redirect them.
-      if (currentUser.role === 'Admin' && selectedOutlet) {
-        if (!pathname.startsWith('/orders')) {
-             router.push('/orders');
+      const isSuperAdmin = currentUser.role === 'Super Admin';
+      const isFranchiseAdmin = currentUser.role === 'Admin';
+      
+      // If a franchise admin has selected an outlet, their context switches.
+      if (isFranchiseAdmin && selectedOutlet) {
+        // They should be in the app view, not franchise/super-admin views.
+        if (pathname.startsWith('/franchise') || pathname.startsWith('/super-admin')) {
+             router.push('/dashboard');
         }
         return;
       }
 
-      const isSuperAdmin = currentUser.role === 'Super Admin';
-      const isFranchiseAdmin = currentUser.role === 'Admin';
       const isGenericUser = !isSuperAdmin && !isFranchiseAdmin;
 
       const isLoginPage = pathname.startsWith('/login');
       const isSuperAdminPath = pathname.startsWith('/super-admin');
       const isFranchisePath = pathname.startsWith('/franchise');
+      // Any page that isn't for a specific admin role or login
       const isGenericAppPath = !isSuperAdminPath && !isFranchisePath && !isLoginPage;
 
       if (isLoginPage) {
@@ -70,9 +77,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           router.push('/dashboard');
         }
       } else {
+        // Redirect if user is in the wrong section of the app
         if (isSuperAdmin && !isSuperAdminPath) {
           router.push('/super-admin/dashboard');
-        } else if (isFranchiseAdmin && !isFranchisePath) {
+        } else if (isFranchiseAdmin && !isFranchisePath && !selectedOutlet) {
           router.push('/franchise/dashboard');
         } else if (isGenericUser && !isGenericAppPath) {
           router.push('/dashboard');
