@@ -19,19 +19,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetFooter,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogTrigger,
   DialogClose,
@@ -104,19 +96,19 @@ export default function MenuPage() {
               Create, edit, and manage your cafe's menu items.
             </CardDescription>
           </div>
-          <Sheet>
-            <SheetTrigger asChild>
+          <Dialog>
+            <DialogTrigger asChild>
               <Button>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
               </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[400px] sm:w-[640px] max-h-screen overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Add New Menu Item</SheetTitle>
-                <SheetDescription>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Add New Menu Item</DialogTitle>
+                <DialogDescription>
                   Fill in the details for the new menu item.
-                </SheetDescription>
-              </SheetHeader>
+                </DialogDescription>
+              </DialogHeader>
               <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">Name</Label>
@@ -213,11 +205,13 @@ export default function MenuPage() {
                    </div>
                 )}
               </div>
-              <SheetFooter>
-                <Button type="submit"><Save className="mr-2 h-4 w-4" /> Save Item</Button>
-              </SheetFooter>
-            </SheetContent>
-          </Sheet>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="submit"><Save className="mr-2 h-4 w-4" /> Save Item</Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </CardHeader>
       <CardContent>
