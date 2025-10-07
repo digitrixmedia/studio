@@ -376,12 +376,12 @@ export default function OrdersPage() {
                            {cart.map(item => (
                                <div key={item.id} className="flex justify-between">
                                    <span>{item.quantity} x {item.name}</span>
-                                   <span>₹{item.totalPrice.toFixed(2)}</span>
+                                   <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{item.totalPrice.toFixed(2)}</span>
                                </div>
                            ))}
                            <div className="flex justify-between font-bold pt-2 border-t">
                                <span>Total Amount</span>
-                               <span>₹{total.toFixed(2)}</span>
+                               <span className='flex items-center'><IndianRupee className="inline-block h-4 w-4 mr-1"/>{total.toFixed(2)}</span>
                            </div>
                        </div>
                     </CardContent>
@@ -402,7 +402,7 @@ export default function OrdersPage() {
                 </div>
                 {changeDue > 0 && (
                     <div className="text-center font-bold text-xl p-4 bg-muted rounded-md">
-                        Change Due: ₹{changeDue.toFixed(2)}
+                        Change Due: <span className='flex items-center justify-center'><IndianRupee className="inline-block h-5 w-5 mr-1"/>{changeDue.toFixed(2)}</span>
                     </div>
                 )}
                  <DialogFooter>
