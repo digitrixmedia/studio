@@ -74,6 +74,32 @@ export default function FranchiseReportsPage() {
       return { name: category.name, sales };
   }).filter(c => c.sales > 0);
 
+  const handleExport = () => {
+    const headers = ['Outlet', 'Total Sales', 'Total Orders', 'Avg. Order Value'];
+    const rows = filteredOutlets.map(outlet => {
+      const outletOrders = (outlet.totalSales || 0) / 450;
+      const outletAOV = outletOrders > 0 ? (outlet.totalSales || 0) / outletOrders : 0;
+      return [
+        outlet.name,
+        outlet.totalSales || '0',
+        Math.round(outletOrders),
+        outletAOV.toFixed(2)
+      ].join(',');
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(',') + "\n" 
+      + rows.join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "outlet_breakdown_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -131,7 +157,7 @@ export default function FranchiseReportsPage() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
             </Button>
