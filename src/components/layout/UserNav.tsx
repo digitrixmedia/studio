@@ -12,16 +12,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut, User as UserIcon, Settings } from 'lucide-react';
+import { LogOut, User as UserIcon, Settings, ArrowLeft } from 'lucide-react';
 
 export function UserNav() {
-  const { currentUser, logout } = useAppContext();
+  const { currentUser, logout, selectedOutlet, clearSelectedOutlet } = useAppContext();
 
   if (!currentUser) {
     return null;
   }
+  
+  const isFranchiseAdmin = currentUser.role === 'Admin';
+  const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'Manager' : currentUser.role;
 
-  const { name, email, avatar, role } = currentUser;
+  const { name, email, avatar } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
 
   return (
@@ -39,11 +42,20 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{name}</p>
             <p className="text-xs leading-none text-muted-foreground">{email}</p>
-            <p className="text-xs leading-none text-muted-foreground font-bold pt-1">{role}</p>
+            <p className="text-xs leading-none text-muted-foreground font-bold pt-1">{effectiveRole}</p>
+             {isFranchiseAdmin && selectedOutlet && (
+               <p className="text-xs leading-none text-blue-500 font-bold pt-1">Viewing: {selectedOutlet.name}</p>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          {isFranchiseAdmin && selectedOutlet && (
+            <DropdownMenuItem onClick={clearSelectedOutlet}>
+              <ArrowLeft />
+              <span>Back to Franchise</span>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem>
             <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>

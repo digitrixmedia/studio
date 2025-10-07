@@ -28,10 +28,12 @@ import {
   CookingPot,
   ShoppingBag,
   Building,
+  ArrowLeft,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 type NavItem = {
   href: string;
@@ -41,20 +43,20 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Manager'] },
-  { href: '/orders', label: 'POS', icon: ShoppingBag, roles: ['Manager', 'Cashier', 'Waiter'] },
-  { href: '/tables', label: 'Tables', icon: Table, roles: ['Manager', 'Cashier', 'Waiter'] },
-  { href: '/kitchen', label: 'Kitchen Display', icon: CookingPot, roles: ['Manager', 'Kitchen'] },
-  { href: '/menu', label: 'Menu', icon: Book, roles: ['Manager'] },
-  { href: '/inventory', label: 'Inventory', icon: Box, roles: ['Manager'] },
-  { href: '/reports', label: 'Reports', icon: BarChart2, roles: ['Manager'] },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Manager', 'Admin'] },
+  { href: '/orders', label: 'POS', icon: ShoppingBag, roles: ['Manager', 'Cashier', 'Waiter', 'Admin'] },
+  { href: '/tables', label: 'Tables', icon: Table, roles: ['Manager', 'Cashier', 'Waiter', 'Admin'] },
+  { href: '/kitchen', label: 'Kitchen Display', icon: CookingPot, roles: ['Manager', 'Kitchen', 'Admin'] },
+  { href: '/menu', label: 'Menu', icon: Book, roles: ['Manager', 'Admin'] },
+  { href: '/inventory', label: 'Inventory', icon: Box, roles: ['Manager', 'Admin'] },
+  { href: '/reports', label: 'Reports', icon: BarChart2, roles: ['Manager', 'Admin'] },
   // Franchise Admin specific routes
   { href: '/franchise/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
   { href: '/franchise/reports', label: 'Reports', icon: BarChart2, roles: ['Admin'] },
 ];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { currentUser } = useAppContext();
+  const { currentUser, selectedOutlet, clearSelectedOutlet } = useAppContext();
   const pathname = usePathname();
 
   if (!currentUser || currentUser.role === 'Super Admin') {
@@ -66,20 +68,32 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }
   
   const isFranchiseAdmin = currentUser.role === 'Admin';
+  const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'Manager' : currentUser.role;
 
-  const availableNavItems = navItems.filter(item => item.roles.includes(currentUser.role));
+  const availableNavItems = navItems.filter(item => {
+    if (isFranchiseAdmin && selectedOutlet) {
+      return item.roles.includes('Manager');
+    }
+    return item.roles.includes(currentUser.role)
+  }).filter(item => {
+      // hide franchise menu items when outlet is selected
+      if (isFranchiseAdmin && selectedOutlet) {
+          return !item.href.startsWith('/franchise');
+      }
+      return true;
+  });
 
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-             {isFranchiseAdmin ? (
+             {isFranchiseAdmin && !selectedOutlet ? (
                 <Building className="w-8 h-8 text-primary" />
              ) : (
                 <ZappyyIcon className="w-8 h-8 text-primary" />
              )}
-            <h1 className="text-xl font-bold">{isFranchiseAdmin ? 'Franchise' : 'ZappyyPOS'}</h1>
+            <h1 className="text-xl font-bold">{isFranchiseAdmin && !selectedOutlet ? 'Franchise' : (selectedOutlet?.name || 'ZappyyPOS')}</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -97,6 +111,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
+           {isFranchiseAdmin && selectedOutlet && (
+            <div className='p-2'>
+              <Button variant="outline" className="w-full" onClick={clearSelectedOutlet}>
+                <ArrowLeft />
+                Back to Franchise
+              </Button>
+            </div>
+           )}
             <UserNav />
         </SidebarFooter>
       </Sidebar>

@@ -1,39 +1,57 @@
 'use client';
 
-import type { Role, User } from '@/lib/types';
+import type { FranchiseOutlet, Role, User } from '@/lib/types';
 import { users } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AppContextType {
   currentUser: User | null;
+  selectedOutlet: FranchiseOutlet | null;
   login: (role: Role) => void;
   logout: () => void;
+  selectOutlet: (outlet: FranchiseOutlet) => void;
+  clearSelectedOutlet: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const storedUserRole = localStorage.getItem('userRole');
+    const storedOutlet = localStorage.getItem('selectedOutlet');
+    
     if (storedUserRole) {
       const user = users.find(u => u.role === storedUserRole);
       if (user) {
         setCurrentUser(user);
       }
-    } else {
-        if (!pathname.startsWith('/login')) {
-             router.push('/login');
-        }
+    }
+    
+    if (storedOutlet) {
+      setSelectedOutlet(JSON.parse(storedOutlet));
+    }
+    
+    if (!storedUserRole && !pathname.startsWith('/login')) {
+         router.push('/login');
     }
   }, [router, pathname]);
 
   useEffect(() => {
     if (currentUser) {
+      // If an admin has selected an outlet, we don't want to redirect them.
+      if (currentUser.role === 'Admin' && selectedOutlet) {
+        if (!pathname.startsWith('/orders')) {
+             router.push('/orders');
+        }
+        return;
+      }
+
       const isSuperAdmin = currentUser.role === 'Super Admin';
       const isFranchiseAdmin = currentUser.role === 'Admin';
       const isGenericUser = !isSuperAdmin && !isFranchiseAdmin;
@@ -63,7 +81,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     } else if (!pathname.startsWith('/login')) {
       router.push('/login');
     }
-  }, [currentUser, pathname, router]);
+  }, [currentUser, selectedOutlet, pathname, router]);
 
   const login = (role: Role) => {
     const user = users.find(u => u.role === role);
@@ -83,11 +101,27 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setCurrentUser(null);
+    setSelectedOutlet(null);
     localStorage.removeItem('userRole');
+    localStorage.removeItem('selectedOutlet');
     router.push('/login');
   };
+  
+  const selectOutlet = (outlet: FranchiseOutlet) => {
+    if (currentUser?.role === 'Admin') {
+      setSelectedOutlet(outlet);
+      localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
+      router.push('/orders');
+    }
+  };
 
-  const value = { currentUser, login, logout };
+  const clearSelectedOutlet = () => {
+    setSelectedOutlet(null);
+    localStorage.removeItem('selectedOutlet');
+    router.push('/franchise/dashboard');
+  };
+
+  const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

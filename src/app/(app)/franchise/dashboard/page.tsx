@@ -15,6 +15,7 @@ import { franchiseData } from '@/lib/data';
 import { useState } from 'react';
 import { ManageOutletDialog } from '@/components/franchise/ManageOutletDialog';
 import type { FranchiseOutlet } from '@/lib/types';
+import { useAppContext } from '@/contexts/AppContext';
 
 
 const salesChartConfig = {
@@ -29,6 +30,7 @@ const trendChartConfig = {
 export default function FranchiseDashboardPage() {
     const { summary, salesPerOutlet, salesTrend, outlets } = franchiseData;
     const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
+    const { selectOutlet } = useAppContext();
 
   return (
     <>
@@ -169,7 +171,7 @@ export default function FranchiseDashboardPage() {
                             <TableCell>{outlet.managerName}</TableCell>
                             <TableCell className='text-right'>
                                 <Button variant="outline" size="sm" className='mr-2' onClick={() => setSelectedOutlet(outlet)}>Manage</Button>
-                                <Button size="sm">Open POS</Button>
+                                <Button size="sm" onClick={() => selectOutlet(outlet)}>Open POS</Button>
                             </TableCell>
                         </TableRow>
                     ))}
@@ -204,7 +206,7 @@ export default function FranchiseDashboardPage() {
             <CardContent>
                 <p className='text-xl font-bold'>₹{summary.avgOrderValue.toFixed(2)}</p>
                 <p className='text-muted-foreground'>Across all outlets</p>
-            </CardContent>
+            </Content>
         </Card>
          <Card>
             <CardHeader>
