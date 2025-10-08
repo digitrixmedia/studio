@@ -331,7 +331,7 @@ export default function OrdersPage() {
                     <form onSubmit={handleCustomizationSubmit} className="space-y-4">
                         {customizationItem.variations && customizationItem.variations.length > 0 && (
                             <div>
-                                <label className="font-medium">Size</label>
+                                <label className="font-medium">Select</label>
                                 <Select name="variation" defaultValue={customizationItem.variations[0].id}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a size" />
