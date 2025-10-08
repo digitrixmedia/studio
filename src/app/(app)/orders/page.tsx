@@ -16,14 +16,16 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { menuCategories, menuItems, tables } from '@/lib/data';
+import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
 import { CheckCircle, IndianRupee, MinusCircle, Package, Phone, PlusCircle, Printer, Send, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useAppContext } from '@/contexts/AppContext';
 
 export default function OrdersPage() {
+  const { menuItems, menuCategories } = useAppContext();
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
   const [orderType, setOrderType] = useState<OrderType>('Dine-In');
@@ -37,7 +39,7 @@ export default function OrdersPage() {
 
   const addToCart = (item: MenuItem) => {
     // Check for variations or addons to open customization dialog
-    if (item.variations || item.addons) {
+    if (item.variations && item.variations.length > 0) {
       setCustomizationItem(item);
     } else {
       const existingItem = cart.find(cartItem => cartItem.id === item.id);
@@ -327,7 +329,7 @@ export default function OrdersPage() {
                 </DialogHeader>
                 {customizationItem && (
                     <form onSubmit={handleCustomizationSubmit} className="space-y-4">
-                        {customizationItem.variations && (
+                        {customizationItem.variations && customizationItem.variations.length > 0 && (
                             <div>
                                 <label className="font-medium">Size</label>
                                 <Select name="variation" defaultValue={customizationItem.variations[0].id}>

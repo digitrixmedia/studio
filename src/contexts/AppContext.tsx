@@ -1,13 +1,18 @@
+
 'use client';
 
-import type { FranchiseOutlet, Role, User } from '@/lib/types';
-import { users } from '@/lib/data';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory } from '@/lib/types';
+import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 interface AppContextType {
   currentUser: User | null;
   selectedOutlet: FranchiseOutlet | null;
+  menuItems: MenuItem[];
+  menuCategories: MenuCategory[];
+  setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>;
+  setMenuCategories: React.Dispatch<React.SetStateAction<MenuCategory[]>>;
   login: (role: Role) => void;
   logout: () => void;
   selectOutlet: (outlet: FranchiseOutlet) => void;
@@ -19,6 +24,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -129,7 +136,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     router.push('/franchise/dashboard');
   };
 
-  const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet };
+  const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet, menuItems, menuCategories, setMenuItems, setMenuCategories };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

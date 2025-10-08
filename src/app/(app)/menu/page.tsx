@@ -39,12 +39,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { menuItems as initialMenuItems, menuCategories as initialMenuCategories, ingredients } from '@/lib/data';
+import { ingredients } from '@/lib/data';
 import { PlusCircle, Edit, IndianRupee, Trash2, Save } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import type { MenuCategory, MenuItem, MenuItemVariation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 
 const initialFormState: Omit<MenuItem, 'id' | 'imageUrl' | 'imageHint' | 'isAvailable' | 'ingredients'> = {
   name: '',
@@ -57,8 +58,7 @@ const initialFormState: Omit<MenuItem, 'id' | 'imageUrl' | 'imageHint' | 'isAvai
 
 
 export default function MenuPage() {
-  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const { menuItems, setMenuItems, menuCategories, setMenuCategories } = useAppContext();
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
