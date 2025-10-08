@@ -39,21 +39,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { menuItems, menuCategories as initialMenuCategories, ingredients } from '@/lib/data';
+import { menuItems as initialMenuItems, menuCategories as initialMenuCategories, ingredients } from '@/lib/data';
 import { PlusCircle, Edit, IndianRupee, Trash2, Save } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
-import type { MenuCategory, MenuItemVariation } from '@/lib/types';
+import type { MenuCategory, MenuItem, MenuItemVariation } from '@/lib/types';
 
-
-// This would typically be a client component to handle state, but for display purposes, we can keep it simple.
-// For a real app, state for sheet open/close and editing item would be managed with useState.
 
 export default function MenuPage() {
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [hasCustomization, setHasCustomization] = useState(false);
   const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+  
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
 
   const handleAddCategory = () => {
     if (newCategoryName.trim() !== '') {
@@ -64,6 +66,20 @@ export default function MenuPage() {
       setMenuCategories([...menuCategories, newCategory]);
       setNewCategoryName('');
     }
+  };
+  
+  const openEditForm = (item: MenuItem) => {
+    setEditingItem(item);
+    setHasCustomization(!!item.variations && item.variations.length > 0);
+    setVariations(item.variations || [{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+    setIsFormOpen(true);
+  };
+  
+  const openNewForm = () => {
+    setEditingItem(null);
+    setHasCustomization(false);
+    setVariations([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+    setIsFormOpen(true);
   };
 
   const handleAddVariation = () => {
@@ -123,6 +139,12 @@ export default function MenuPage() {
   const getIngredientUnit = (id: string) => {
     return ingredients.find(i => i.id === id)?.unit || '';
   };
+  
+  const handleSaveItem = () => {
+    // This is where you would handle form submission to a backend.
+    // For now, it just updates the local state.
+    setIsFormOpen(false);
+  }
 
 
   return (
@@ -135,35 +157,35 @@ export default function MenuPage() {
               Create, edit, and manage your cafe's menu items.
             </CardDescription>
           </div>
-          <Dialog>
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={openNewForm}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Add New Menu Item</DialogTitle>
+                <DialogTitle>{editingItem ? 'Edit' : 'Add New'} Menu Item</DialogTitle>
                 <DialogDescription>
-                  Fill in the details for the new menu item.
+                  Fill in the details for the menu item.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">Name</Label>
-                  <Input id="name" defaultValue="Cafe Latte" className="col-span-3" />
+                  <Input id="name" defaultValue={editingItem?.name || "Cafe Latte"} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="price" className="text-right">Price</Label>
                    <div className="col-span-3 relative">
                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                     <Input id="price" type="number" defaultValue="160" className="pl-10" />
+                     <Input id="price" type="number" defaultValue={editingItem?.price || 160} className="pl-10" />
                    </div>
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="category" className="text-right">Category</Label>
                    <div className="col-span-3 flex items-center gap-2">
-                    <Select>
+                    <Select defaultValue={editingItem?.category}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
@@ -200,7 +222,7 @@ export default function MenuPage() {
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="description" className="text-right">Description</Label>
-                  <Textarea id="description" className="col-span-3" placeholder="Item description..."/>
+                  <Textarea id="description" className="col-span-3" placeholder="Item description..." defaultValue={editingItem?.description}/>
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -281,8 +303,9 @@ export default function MenuPage() {
               </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="submit"><Save className="mr-2 h-4 w-4" /> Save Item</Button>
+                   <Button type="button" variant="outline">Cancel</Button>
                 </DialogClose>
+                <Button type="submit" onClick={handleSaveItem}><Save className="mr-2 h-4 w-4" /> {editingItem ? 'Save Changes' : 'Save Item'}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -329,7 +352,7 @@ export default function MenuPage() {
                   <Switch checked={item.isAvailable} />
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" onClick={() => openEditForm(item)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                 </TableCell>
