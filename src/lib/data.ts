@@ -1,4 +1,5 @@
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus } from '@/lib/types';
+
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod } from '@/lib/types';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'Admin', avatar: '/avatars/01.png' },
@@ -147,36 +148,41 @@ export const ingredients: Ingredient[] = [
   { id: 'ing-6', name: 'Cheesecake Slice', unit: 'pcs', stock: 5, minStock: 4 },
 ];
 
-const orderStatuses: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Completed'];
+const orderStatuses: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
+const paymentMethods: PaymentMethod[] = ['Cash', 'UPI', 'Card'];
+
 const generateOrders = (count: number): Order[] => {
   const orders: Order[] = [];
   for (let i = 1; i <= count; i++) {
-    const orderItems = [
-        { ...menuItems[Math.floor(Math.random() * menuItems.length)] },
-        { ...menuItems[Math.floor(Math.random() * menuItems.length)] },
-    ].map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: Math.floor(Math.random() * 2) + 1,
-        price: item.price,
-        totalPrice: item.price * (Math.floor(Math.random() * 2) + 1)
-    }));
+    const itemCount = Math.floor(Math.random() * 3) + 1;
+    const orderItems = Array.from({ length: itemCount }, () => {
+        const item = menuItems[Math.floor(Math.random() * menuItems.length)];
+        const quantity = Math.floor(Math.random() * 2) + 1;
+        return {
+            id: item.id,
+            name: item.name,
+            quantity: quantity,
+            price: item.price,
+            totalPrice: item.price * quantity,
+        };
+    });
 
     const subTotal = orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
-    const tax = subTotal * 0.18;
+    const tax = subTotal * 0.05;
     const total = subTotal + tax;
     const status = orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
 
     orders.push({
       id: `order-${i}`,
       orderNumber: `${1000 + i}`,
-      type: Math.random() > 0.5 ? 'Dine-In' : 'Takeaway',
+      type: Math.random() > 0.5 ? 'Dine-In' : (Math.random() > 0.5 ? 'Takeaway' : 'Delivery'),
       items: orderItems,
       subTotal,
       tax,
       discount: 0,
       total,
       status: status,
+      paymentMethod: status === 'Completed' ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)] : undefined,
       createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
       createdBy: users[Math.floor(Math.random() * 4) + 1].id,
     });
@@ -184,7 +190,7 @@ const generateOrders = (count: number): Order[] => {
   return orders;
 };
 
-export const orders: Order[] = generateOrders(25);
+export const orders: Order[] = generateOrders(50);
 
 // Assign some specific orders to tables
 orders[0] = { ...orders[0], id: 'order-1', tableId: 'table-2', type: 'Dine-In', status: 'Preparing' };
@@ -200,6 +206,11 @@ export const salesData = [
   { date: 'Sat', sales: Math.floor(Math.random() * 5000) + 1000 },
   { date: 'Sun', sales: Math.floor(Math.random() * 5000) + 1000 },
 ];
+
+export const hourlySalesData = Array.from({length: 12}, (_, i) => ({
+    hour: `${i + 9} AM`,
+    sales: Math.floor(Math.random() * 1500) + 200
+}));
 
 // MOCKED SUPER ADMIN DATA
 const subscriptionStatuses: SubscriptionStatus[] = ['Active', 'Inactive', 'Expired', 'Suspended'];
@@ -328,3 +339,5 @@ export const franchiseData = {
         ordersToday: Math.floor((salesPerOutletData.find(s => s.name === o.name)?.today || 0) / (Math.random() * 400 + 300)),
     }))
 }
+
+    
