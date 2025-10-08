@@ -384,21 +384,28 @@ export default function OrdersPage() {
                   {heldOrders.length === 0 ? (
                     <p className="text-muted-foreground text-center">No orders on hold.</p>
                   ) : (
-                    heldOrders.map((order, index) => (
+                    heldOrders.map((order, index) => {
+                       const itemSummary = order.cart.slice(0, 2).map(item => `${item.quantity}x ${item.name}`).join(', ');
+                       const remainingItems = order.cart.length - 2;
+
+                      return (
                       <Card key={order.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                           <div>
+                        <div className="flex justify-between items-start gap-4">
+                           <div className='flex-1'>
                                 <p className="font-semibold">
                                     {order.orderType === 'Dine-In' ? tables.find(t=> t.id === order.selectedTable)?.name : order.customerName || `Held Order ${index + 1}`}
                                 </p>
                                 <p className="text-sm text-muted-foreground">{order.cart.length} items</p>
+                                <p className="text-xs text-muted-foreground truncate mt-1">
+                                  {itemSummary}{remainingItems > 0 ? `, ...and ${remainingItems} more` : ''}
+                                </p>
                            </div>
                            <Button size="sm" onClick={() => handleResumeOrder(order.id)}>
                              <PlayCircle className="mr-2 h-4 w-4" /> Resume
                            </Button>
                         </div>
                       </Card>
-                    ))
+                    )})
                   )}
                 </div>
               </ScrollArea>
