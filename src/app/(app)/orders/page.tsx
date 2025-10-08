@@ -5,7 +5,7 @@ import {
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
 } from '@/components/ui/card';
 import {
-    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
+    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,11 +18,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
-import { CheckCircle, IndianRupee, MinusCircle, Package, Phone, PlusCircle, Printer, Send, Truck, User, Utensils, X } from 'lucide-react';
+import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Send, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
+
+type HeldOrder = {
+  id: string;
+  cart: OrderItem[];
+  orderType: OrderType;
+  selectedTable: string;
+  customerName: string;
+  customerPhone: string;
+}
 
 export default function OrdersPage() {
   const { menuItems, menuCategories } = useAppContext();
@@ -36,6 +45,8 @@ export default function OrdersPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
   const { toast } = useToast();
+  const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
+  const [activeTab, setActiveTab] = useState('current');
 
   const addToCart = (item: MenuItem) => {
     // Check for variations or addons to open customization dialog
@@ -134,6 +145,44 @@ export default function OrdersPage() {
     });
   };
 
+  const handleHoldOrder = () => {
+    if (cart.length === 0) {
+      toast({ variant: "destructive", title: "Cannot hold an empty order" });
+      return;
+    }
+    const heldOrder: HeldOrder = {
+      id: `hold-${Date.now()}`,
+      cart,
+      orderType,
+      selectedTable,
+      customerName,
+      customerPhone,
+    };
+    setHeldOrders([...heldOrders, heldOrder]);
+    resetOrder();
+    toast({ title: "Order Held", description: "The current order has been saved." });
+  };
+  
+  const handleResumeOrder = (orderId: string) => {
+    const orderToResume = heldOrders.find(o => o.id === orderId);
+    if (orderToResume) {
+      // If there's a current cart, hold it first
+      if (cart.length > 0) {
+        handleHoldOrder();
+      }
+      setCart(orderToResume.cart);
+      setOrderType(orderToResume.orderType);
+      setSelectedTable(orderToResume.selectedTable);
+      setCustomerName(orderToResume.customerName);
+      setCustomerPhone(orderToResume.customerPhone);
+      
+      setHeldOrders(heldOrders.filter(o => o.id !== orderId));
+      setActiveTab('current');
+      toast({ title: "Order Resumed" });
+    }
+  };
+
+
   const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
   const tax = subTotal * 0.05; // 5% GST
   const total = subTotal + tax;
@@ -205,119 +254,156 @@ export default function OrdersPage() {
       {/* Order Summary Section */}
       <div className="lg:col-span-1">
         <Card className="h-full flex flex-col">
-          <CardHeader>
-            <CardTitle>Current Order</CardTitle>
-            <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full pt-2">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="Dine-In"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
-                <TabsTrigger value="Takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
-                <TabsTrigger value="Delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
-              </TabsList>
-              <CardDescription asChild className="space-y-2 pt-4">
-                 <div>
-                    {orderType === 'Dine-In' && (
-                        <Select value={selectedTable} onValueChange={setSelectedTable}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Table" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {tables.map(table => (
-                                    <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
-                                        {table.name} ({table.status})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
+            <CardHeader>
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="current">Current Order</TabsTrigger>
+                    <TabsTrigger value="held">Held Orders ({heldOrders.length})</TabsTrigger>
+                </TabsList>
+            </CardHeader>
+            <TabsContent value="current" className="flex-1 flex flex-col">
+                <div className='flex flex-col h-full'>
+                    <div className='px-6 pb-6'>
+                        <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="Dine-In"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
+                            <TabsTrigger value="Takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
+                            <TabsTrigger value="Delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
+                        </TabsList>
+                        <CardDescription asChild className="space-y-2 pt-4">
+                            <div>
+                                {orderType === 'Dine-In' && (
+                                    <Select value={selectedTable} onValueChange={setSelectedTable}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Table" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {tables.map(table => (
+                                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
+                                                    {table.name} ({table.status})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                    <div className="relative">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="Customer Name" className="pl-10" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                    </div>
+                                    <div className="relative">
+                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </CardDescription>
+                        </Tabs>
+                    </div>
+                    <CardContent className="flex-1 overflow-y-auto pt-0">
+                        {cart.length === 0 ? (
+                        <p className="text-muted-foreground">No items in order.</p>
+                        ) : (
+                        <div className="space-y-4">
+                            {cart.map(item => (
+                            <div key={item.id} className="flex items-start">
+                                <div className="flex-1">
+                                <p className="font-semibold text-sm">{item.name}</p>
+                                <p className="text-sm text-muted-foreground flex items-center">
+                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                    {item.price.toFixed(2)}
+                                </p>
+                                {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500'>Notes: {item.notes}</p>}
+                                </div>
+                                <div className="flex items-center gap-1 sm:gap-2">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                >
+                                    <MinusCircle className="h-4 w-4" />
+                                </Button>
+                                <span className='text-sm'>{item.quantity}</span>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                >
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
+                                </div>
+                                <p className="w-20 text-right font-semibold flex items-center justify-end text-sm">
+                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                {item.totalPrice.toFixed(2)}
+                                </p>
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 ml-1 sm:ml-2 text-destructive"
+                                onClick={() => removeFromCart(item.id)}
+                                >
+                                <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            ))}
+                        </div>
+                        )}
+                    </CardContent>
+                    {cart.length > 0 && (
+                        <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t'>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                <span>Subtotal</span>
+                                <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{subTotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                <span>GST (5%)</span>
+                                <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{tax.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-lg">
+                                <span>Total</span>
+                                <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1" />{total.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div className='flex items-center gap-2'>
+                                <Button variant="outline" className='flex-1' onClick={handleHoldOrder}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
+                                <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
+                            </div>
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!isOrderDetailsComplete()}>
+                                <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
+                            </Button>
+                        </CardFooter>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                        <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Customer Name" className="pl-10" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                </div>
+            </TabsContent>
+             <TabsContent value="held" className="flex-1 overflow-hidden">
+              <ScrollArea className="h-full">
+                <div className="p-6 pt-0 space-y-4">
+                  {heldOrders.length === 0 ? (
+                    <p className="text-muted-foreground text-center">No orders on hold.</p>
+                  ) : (
+                    heldOrders.map((order, index) => (
+                      <Card key={order.id} className="p-4">
+                        <div className="flex justify-between items-start">
+                           <div>
+                                <p className="font-semibold">
+                                    {order.orderType === 'Dine-In' ? tables.find(t=> t.id === order.selectedTable)?.name : order.customerName || `Held Order ${index + 1}`}
+                                </p>
+                                <p className="text-sm text-muted-foreground">{order.cart.length} items</p>
+                           </div>
+                           <Button size="sm" onClick={() => handleResumeOrder(order.id)}>
+                             <PlayCircle className="mr-2 h-4 w-4" /> Resume
+                           </Button>
                         </div>
-                        <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
-                        </div>
-                    </div>
-                 </div>
-              </CardDescription>
-            </Tabs>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto">
-            {cart.length === 0 ? (
-              <p className="text-muted-foreground">No items in order.</p>
-            ) : (
-              <div className="space-y-4">
-                {cart.map(item => (
-                  <div key={item.id} className="flex items-start">
-                    <div className="flex-1">
-                      <p className="font-semibold text-sm">{item.name}</p>
-                      <p className="text-sm text-muted-foreground flex items-center">
-                        <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                        {item.price.toFixed(2)}
-                      </p>
-                      {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500'>Notes: {item.notes}</p>}
-                    </div>
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      >
-                        <MinusCircle className="h-4 w-4" />
-                      </Button>
-                      <span className='text-sm'>{item.quantity}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      >
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <p className="w-20 text-right font-semibold flex items-center justify-end text-sm">
-                      <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                      {item.totalPrice.toFixed(2)}
-                    </p>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 ml-1 sm:ml-2 text-destructive"
-                      onClick={() => removeFromCart(item.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-          {cart.length > 0 && (
-            <CardFooter className='flex-col items-stretch gap-4 !p-4 border-t'>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{subTotal.toFixed(2)}</span>
+                      </Card>
+                    ))
+                  )}
                 </div>
-                <div className="flex justify-between">
-                  <span>GST (5%)</span>
-                  <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{tax.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
-                  <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1" />{total.toFixed(2)}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> Send to Kitchen</Button>
-                <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!isOrderDetailsComplete()}>
-                    <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
-                </Button>
-              </div>
-            </CardFooter>
-          )}
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         </Card>
       </div>
 
@@ -488,3 +574,6 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+
+    
