@@ -197,15 +197,16 @@ orders[0] = { ...orders[0], id: 'order-1', tableId: 'table-2', type: 'Dine-In', 
 orders[1] = { ...orders[1], id: 'order-2', tableId: 'table-4', type: 'Dine-In', status: 'Ready' };
 orders[2] = { ...orders[2], id: 'order-3', tableId: 'table-6', type: 'Dine-In', status: 'New' };
 
-export const salesData = [
-  { date: 'Mon', sales: Math.floor(Math.random() * 5000) + 1000 },
-  { date: 'Tue', sales: Math.floor(Math.random() * 5000) + 1000 },
-  { date: 'Wed', sales: Math.floor(Math.random() * 5000) + 1000 },
-  { date: 'Thu', sales: Math.floor(Math.random() * 5000) + 1000 },
-  { date: 'Fri', sales: Math.floor(Math.random() * 5000) + 1000 },
-  { date: 'Sat', sales: Math.floor(Math.random() * 5000) + 1000 },
-  { date: 'Sun', sales: Math.floor(Math.random() * 5000) + 1000 },
-];
+export const dailySalesData = [
+  { date: 'Mon', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+  { date: 'Tue', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+  { date: 'Wed', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+  { date: 'Thu', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+  { date: 'Fri', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+  { date: 'Sat', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+  { date: 'Sun', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
+].map(d => ({ ...d, aov: d.orders > 0 ? d.sales / d.orders : 0 }));
+
 
 export const hourlySalesData = Array.from({length: 12}, (_, i) => ({
     hour: `${i + 9} AM`,

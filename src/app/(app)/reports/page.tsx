@@ -15,7 +15,8 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from 'recharts';
-import { salesData, menuItems, orders, menuCategories, hourlySalesData } from '@/lib/data';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { dailySalesData, menuItems, orders, menuCategories, hourlySalesData } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag } from 'lucide-react';
@@ -202,8 +203,9 @@ export default function ReportsPage() {
       </div>
 
        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="daily-sales">Daily Sales</TabsTrigger>
           <TabsTrigger value="item-wise">Item Sales</TabsTrigger>
           <TabsTrigger value="category">Category Sales</TabsTrigger>
           <TabsTrigger value="hourly">Hourly Sales</TabsTrigger>
@@ -212,26 +214,25 @@ export default function ReportsPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="lg:col-span-4">
                     <CardHeader>
-                        <CardTitle>Daily Sales</CardTitle>
-                        <CardDescription>Sales data for the selected period.</CardDescription>
+                        <CardTitle>Sales by Order Type</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-                        <LineChart data={salesData}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                            <YAxis
-                            tickFormatter={(value) => `₹${value / 1000}k`}
-                            tickLine={false}
-                            axisLine={false}
-                            />
-                            <ChartTooltip 
-                            content={<ChartTooltipContent 
-                                formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
-                            />} 
-                            />
-                            <Line dataKey="sales" type="monotone" stroke="var(--color-sales)" strokeWidth={2} dot={true} />
-                        </LineChart>
+                            <BarChart data={orderTypeData}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="type" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
+                                <ChartTooltip 
+                                    content={<ChartTooltipContent 
+                                    formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                                    />}
+                                />
+                                <Bar dataKey="sales" fill="var(--color-sales)" radius={4}>
+                                    {orderTypeData.map((entry) => (
+                                        <Cell key={entry.type} fill={`var(--color-${entry.type})`} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
                         </ChartContainer>
                     </CardContent>
                 </Card>
@@ -253,32 +254,53 @@ export default function ReportsPage() {
                     </CardContent>
                 </Card>
             </div>
-            <div className="grid gap-4 mt-4">
-               <Card>
+        </TabsContent>
+        <TabsContent value="daily-sales" className='mt-6'>
+           <Card>
                 <CardHeader>
-                    <CardTitle>Sales by Order Type</CardTitle>
+                    <CardTitle>Daily Sales</CardTitle>
+                    <CardDescription>Sales data for the selected period.</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-6">
                     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
-                        <BarChart data={orderTypeData}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis dataKey="type" tickLine={false} axisLine={false} tickMargin={8} />
-                            <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
-                            <ChartTooltip 
-                                content={<ChartTooltipContent 
-                                formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
-                                />}
-                            />
-                            <Bar dataKey="sales" fill="var(--color-sales)" radius={4}>
-                                {orderTypeData.map((entry) => (
-                                    <Cell key={entry.type} fill={`var(--color-${entry.type})`} />
-                                ))}
-                            </Bar>
-                        </BarChart>
+                    <LineChart data={dailySalesData}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis
+                        tickFormatter={(value) => `₹${value / 1000}k`}
+                        tickLine={false}
+                        axisLine={false}
+                        />
+                        <ChartTooltip 
+                        content={<ChartTooltipContent 
+                            formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                        />} 
+                        />
+                        <Line dataKey="sales" type="monotone" stroke="var(--color-sales)" strokeWidth={2} dot={true} />
+                    </LineChart>
                     </ChartContainer>
+                     <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead className="text-right">Total Sales</TableHead>
+                                <TableHead className="text-right">Orders</TableHead>
+                                <TableHead className="text-right">Avg. Order Value</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {dailySalesData.map(day => (
+                                <TableRow key={day.date}>
+                                    <TableCell className='font-medium'>{day.date}</TableCell>
+                                    <TableCell className="text-right">₹{day.sales.toLocaleString('en-IN')}</TableCell>
+                                    <TableCell className="text-right">{day.orders}</TableCell>
+                                    <TableCell className="text-right">₹{day.aov.toFixed(2)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </CardContent>
-               </Card>
-            </div>
+            </Card>
         </TabsContent>
         <TabsContent value="item-wise" className='mt-6'>
             <Card>
