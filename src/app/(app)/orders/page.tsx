@@ -310,7 +310,7 @@ export default function OrdersPage() {
     handlePrintBill();
     resetOrder();
   };
-
+  
   const handlePrintAllAndSettle = () => {
     handlePrintBill();
     // A slight delay might help with browser popup handling
@@ -387,7 +387,7 @@ export default function OrdersPage() {
                     <TabsTrigger value="held">Held Orders ({heldOrders.length})</TabsTrigger>
                 </TabsList>
             </CardHeader>
-            <TabsContent value="current" className="flex-1 flex flex-col">
+            <TabsContent value="current" className="flex-1 flex flex-col m-0">
                 <div className='flex flex-col h-full'>
                     <div className='px-6 pb-6'>
                         <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full">
@@ -504,7 +504,7 @@ export default function OrdersPage() {
                     )}
                 </div>
             </TabsContent>
-             <TabsContent value="held" className="flex-1 overflow-hidden">
+             <TabsContent value="held" className="flex-1 overflow-hidden m-0">
               <ScrollArea className="h-full">
                 <div className="p-6 space-y-4">
                   {heldOrders.length === 0 ? (
