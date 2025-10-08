@@ -506,7 +506,7 @@ export default function OrdersPage() {
             </TabsContent>
              <TabsContent value="held" className="flex-1 overflow-hidden">
               <ScrollArea className="h-full">
-                <div className="p-6 pt-0 space-y-4">
+                <div className="p-6 space-y-4">
                   {heldOrders.length === 0 ? (
                     <p className="text-muted-foreground text-center">No orders on hold.</p>
                   ) : (
