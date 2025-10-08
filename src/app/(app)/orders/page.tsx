@@ -306,10 +306,18 @@ export default function OrdersPage() {
     printContent(kotHtml);
   };
 
-  const handlePrintAll = () => {
+  const handlePrintAndSettle = () => {
+    handlePrintBill();
+    resetOrder();
+  };
+
+  const handlePrintAllAndSettle = () => {
     handlePrintBill();
     // A slight delay might help with browser popup handling
-    setTimeout(handlePrintKOT, 500);
+    setTimeout(() => {
+        handlePrintKOT();
+        resetOrder();
+    }, 500);
   };
 
   return (
@@ -617,10 +625,10 @@ export default function OrdersPage() {
                 )}
                  <DialogFooter className='sm:flex-col sm:space-x-0 gap-2'>
                     <div className='grid grid-cols-2 gap-2'>
-                      <Button variant="outline" onClick={handlePrintBill}>
+                      <Button variant="outline" onClick={handlePrintAndSettle}>
                         <Printer className="mr-2" /> Print Bill
                       </Button>
-                       <Button variant="outline" onClick={handlePrintAll}>
+                       <Button variant="outline" onClick={handlePrintAllAndSettle}>
                         <Printer className="mr-2" /> Bill & KOT
                       </Button>
                     </div>
