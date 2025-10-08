@@ -42,20 +42,36 @@ import {
 import { menuItems as initialMenuItems, menuCategories as initialMenuCategories, ingredients } from '@/lib/data';
 import { PlusCircle, Edit, IndianRupee, Trash2, Save } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { MenuCategory, MenuItem, MenuItemVariation } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+
+const initialFormState: Omit<MenuItem, 'id' | 'imageUrl' | 'imageHint' | 'isAvailable' | 'ingredients'> = {
+  name: '',
+  price: 0,
+  category: '',
+  description: '',
+  variations: [],
+  addons: [],
+};
 
 
 export default function MenuPage() {
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [hasCustomization, setHasCustomization] = useState(false);
-  const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
-  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
+  const [formData, setFormData] = useState<Partial<MenuItem>>(initialFormState);
+  const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+  const [hasCustomization, setHasCustomization] = useState(false);
+  
+  const { toast } = useToast();
+
+  const handleInputChange = (field: keyof typeof initialFormState, value: string | number) => {
+    setFormData(prev => ({...prev, [field]: value}));
+  };
 
   const handleAddCategory = () => {
     if (newCategoryName.trim() !== '') {
@@ -70,15 +86,18 @@ export default function MenuPage() {
   
   const openEditForm = (item: MenuItem) => {
     setEditingItem(item);
+    setFormData(item);
+    const itemVariations = item.variations && item.variations.length > 0 ? item.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
+    setVariations(itemVariations);
     setHasCustomization(!!item.variations && item.variations.length > 0);
-    setVariations(item.variations || [{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
     setIsFormOpen(true);
   };
   
   const openNewForm = () => {
     setEditingItem(null);
-    setHasCustomization(false);
+    setFormData(initialFormState);
     setVariations([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+    setHasCustomization(false);
     setIsFormOpen(true);
   };
 
@@ -141,10 +160,57 @@ export default function MenuPage() {
   };
   
   const handleSaveItem = () => {
-    // This is where you would handle form submission to a backend.
-    // For now, it just updates the local state.
+    if (!formData.name || !formData.category || !formData.price) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill out the name, price, and category.",
+      });
+      return;
+    }
+
+    const finalVariations = variations.map((v, i) => ({
+      id: v.id || `${editingItem?.id || 'new'}-var-${i}`,
+      name: v.name || '',
+      priceModifier: v.priceModifier || 0,
+      ingredients: v.ingredients || []
+    }));
+
+    if (editingItem) {
+      // Update existing item
+      const updatedItem = { 
+        ...editingItem,
+        ...formData,
+        variations: hasCustomization ? finalVariations : [],
+      };
+      setMenuItems(menuItems.map(item => item.id === editingItem.id ? updatedItem : item));
+      toast({ title: "Item Updated", description: `${formData.name} has been updated.` });
+    } else {
+      // Create new item
+      const newItem: MenuItem = {
+        id: `item-${Date.now()}`,
+        isAvailable: true,
+        imageUrl: 'https://picsum.photos/seed/newitem/400/300',
+        imageHint: 'food plate',
+        ingredients: [],
+        ...formData,
+        price: Number(formData.price),
+        variations: hasCustomization ? finalVariations : [],
+      };
+      setMenuItems([newItem, ...menuItems]);
+      toast({ title: "Item Created", description: `${formData.name} has been added to the menu.` });
+    }
+    
     setIsFormOpen(false);
-  }
+  };
+
+  useEffect(() => {
+    if (isFormOpen && editingItem) {
+      const itemVariations = editingItem.variations && editingItem.variations.length > 0 ? editingItem.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
+      setVariations(itemVariations);
+      setHasCustomization(!!editingItem.variations && editingItem.variations.length > 0);
+    }
+  }, [isFormOpen, editingItem]);
 
 
   return (
@@ -173,19 +239,19 @@ export default function MenuPage() {
               <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="name" className="text-right">Name</Label>
-                  <Input id="name" defaultValue={editingItem?.name || "Cafe Latte"} className="col-span-3" />
+                  <Input id="name" value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="price" className="text-right">Price</Label>
                    <div className="col-span-3 relative">
                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                     <Input id="price" type="number" defaultValue={editingItem?.price || 160} className="pl-10" />
+                     <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
                    </div>
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="category" className="text-right">Category</Label>
                    <div className="col-span-3 flex items-center gap-2">
-                    <Select defaultValue={editingItem?.category}>
+                    <Select value={formData.category || ''} onValueChange={value => handleInputChange('category', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
@@ -222,7 +288,7 @@ export default function MenuPage() {
                 </div>
                  <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="description" className="text-right">Description</Label>
-                  <Textarea id="description" className="col-span-3" placeholder="Item description..." defaultValue={editingItem?.description}/>
+                  <Textarea id="description" className="col-span-3" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -241,11 +307,11 @@ export default function MenuPage() {
                                 <div className="flex items-end gap-4 mb-4">
                                   <div className="flex-1 space-y-2">
                                     <Label>Variation Name</Label>
-                                    <Input placeholder="e.g., Large" value={variation.name} onChange={e => handleVariationChange(vIndex, 'name', e.target.value)} />
+                                    <Input placeholder="e.g., Large" value={variation.name || ''} onChange={e => handleVariationChange(vIndex, 'name', e.target.value)} />
                                   </div>
                                    <div className="flex-1 space-y-2">
                                     <Label>Price Modifier (₹)</Label>
-                                    <Input type="number" placeholder="e.g., 20" value={variation.priceModifier} onChange={e => handleVariationChange(vIndex, 'priceModifier', e.target.value)} />
+                                    <Input type="number" placeholder="e.g., 20" value={variation.priceModifier || ''} onChange={e => handleVariationChange(vIndex, 'priceModifier', e.target.value)} />
                                   </div>
                                   <div>
                                     <Button variant="destructive" size="icon" onClick={() => handleRemoveVariation(vIndex)}>
@@ -305,7 +371,7 @@ export default function MenuPage() {
                 <DialogClose asChild>
                    <Button type="button" variant="outline">Cancel</Button>
                 </DialogClose>
-                <Button type="submit" onClick={handleSaveItem}><Save className="mr-2 h-4 w-4" /> {editingItem ? 'Save Changes' : 'Save Item'}</Button>
+                <Button type="button" onClick={handleSaveItem}><Save className="mr-2 h-4 w-4" /> {editingItem ? 'Save Changes' : 'Save Item'}</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -364,3 +430,5 @@ export default function MenuPage() {
     </Card>
   );
 }
+
+    
