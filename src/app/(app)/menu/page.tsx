@@ -160,7 +160,8 @@ export default function MenuPage() {
   };
   
   const handleSaveItem = () => {
-    if (!formData.name || !formData.category || !formData.price) {
+    const basePrice = hasCustomization ? 0 : formData.price;
+    if (!formData.name || !formData.category || (basePrice === undefined && !hasCustomization) ) {
       toast({
         variant: "destructive",
         title: "Missing Information",
@@ -181,6 +182,7 @@ export default function MenuPage() {
       const updatedItem = { 
         ...editingItem,
         ...formData,
+        price: basePrice,
         variations: hasCustomization ? finalVariations : [],
       };
       setMenuItems(menuItems.map(item => item.id === editingItem.id ? updatedItem : item));
@@ -194,7 +196,7 @@ export default function MenuPage() {
         imageHint: 'food plate',
         ingredients: [],
         ...formData,
-        price: Number(formData.price),
+        price: Number(basePrice),
         variations: hasCustomization ? finalVariations : [],
       };
       setMenuItems([newItem, ...menuItems]);
@@ -241,13 +243,17 @@ export default function MenuPage() {
                   <Label htmlFor="name" className="text-right">Name</Label>
                   <Input id="name" value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} className="col-span-3" />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="price" className="text-right">Price</Label>
-                   <div className="col-span-3 relative">
-                     <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                     <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
-                   </div>
-                </div>
+
+                {!hasCustomization && (
+                    <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="price" className="text-right">Price</Label>
+                    <div className="col-span-3 relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
+                    </div>
+                    </div>
+                )}
+
                  <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="category" className="text-right">Category</Label>
                    <div className="col-span-3 flex items-center gap-2">
@@ -430,5 +436,3 @@ export default function MenuPage() {
     </Card>
   );
 }
-
-    
