@@ -193,6 +193,124 @@ export default function OrdersPage() {
     if (orderType === 'Takeaway' || orderType === 'Delivery') return !!customerName && !!customerPhone;
     return false;
   };
+  
+  const printContent = (content: string) => {
+      const printWindow = window.open('', '', 'width=400,height=600');
+      if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(content);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Popup Blocked",
+          description: "Please allow popups for this site to print.",
+        });
+      }
+  };
+
+  const handlePrintBill = () => {
+    const printSettings = {
+        cafeName: 'ZappyyPOS',
+        address: '123 Coffee Lane, Bengaluru',
+        customDetails: 'GSTIN: 29ABCDE1234F1Z5',
+        phone: '9876543210',
+        footerMessage: 'Thank you for your visit!',
+    };
+  
+    const billHtml = `
+      <html>
+        <head>
+          <title>Customer Bill</title>
+          <style>
+            body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
+            h2, p { margin: 0; padding: 0; }
+            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
+            .header h2 { font-size: 20px; font-weight: bold; }
+            .header p { font-size: 13px; }
+            .summary { margin-bottom: 12px; }
+            .item { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
+            .item .name { flex: 1; text-align: left; margin-right: 8px; }
+            .item .price { width: 80px; text-align: right; }
+            .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 14px; }
+            .center { text-align: center; margin-top: 16px; font-size: 13px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>${printSettings.cafeName}</h2>
+            <p>${printSettings.address}</p>
+            ${printSettings.customDetails ? `<p>${printSettings.customDetails}</p>` : ''}
+            <p>Ph: ${printSettings.phone}</p>
+            <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
+            <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
+          </div>
+          <div class="summary">
+            ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price">₹${item.totalPrice.toFixed(2)}</span></div>`).join('')}
+          </div>
+          <div class="total">
+            <div class="item"><span class="name">Subtotal</span><span class="price">₹${subTotal.toFixed(2)}</span></div>
+            <div class="item"><span class="name">GST (5%)</span><span class="price">₹${tax.toFixed(2)}</span></div>
+            <div class="item"><span class="name"><b>Total</b></span><span class="price"><b>₹${total.toFixed(2)}</b></span></div>
+          </div>
+          <div class="center">
+            <p>${printSettings.footerMessage}</p>
+          </div>
+        </body>
+      </html>
+    `;
+    printContent(billHtml);
+  };
+  
+  const handlePrintKOT = () => {
+     const kotHtml = `
+      <html>
+        <head>
+          <title>KOT</title>
+          <style>
+            body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
+            h2, p { margin: 0; padding: 0; }
+            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+            .header h2 { font-size: 24px; font-weight: bold; }
+            .info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; }
+            .item { margin-bottom: 8px; font-size: 16px; }
+            .item .name { font-weight: bold; }
+            .item .notes { padding-left: 16px; font-size: 14px; font-style: italic; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h2>KOT</h2>
+          </div>
+          <div class="info">
+            <span>Order: #${Math.floor(Math.random() * 1000)}</span>
+            <span>${new Date().toLocaleTimeString()}</span>
+          </div>
+          <div class="info">
+             <span>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : orderType}</span>
+          </div>
+          <div class="items">
+            ${cart.map(item => `
+              <div class="item">
+                <div class="name">${item.quantity} x ${item.name}</div>
+                ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </body>
+      </html>
+    `;
+    printContent(kotHtml);
+  };
+
+  const handlePrintAll = () => {
+    handlePrintBill();
+    // A slight delay might help with browser popup handling
+    setTimeout(handlePrintKOT, 500);
+  };
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
@@ -427,7 +545,7 @@ export default function OrdersPage() {
                                 <label className="font-medium">Select</label>
                                 <Select name="variation" defaultValue={customizationItem.variations[0].id}>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select a size" />
+                                        <SelectValue placeholder="Select a variation" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {customizationItem.variations.map(v => (
@@ -452,7 +570,7 @@ export default function OrdersPage() {
         
         {/* Payment Dialog */}
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-            <DialogContent className="max-w-sm">
+            <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>Payment</DialogTitle>
                 </DialogHeader>
@@ -498,80 +616,15 @@ export default function OrdersPage() {
                     </div>
                 )}
                  <DialogFooter className='sm:flex-col sm:space-x-0 gap-2'>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        // In a real app, you'd fetch these settings. For now, we use defaults.
-                        const printSettings = {
-                            cafeName: 'ZappyyPOS',
-                            address: '123 Coffee Lane, Bengaluru',
-                            customDetails: 'GSTIN: 29ABCDE1234F1Z5',
-                            phone: '9876543210',
-                            footerMessage: 'Thank you for your visit!',
-                        };
-                      
-                        const printContent = `
-                          <html>
-                            <head>
-                              <title>Customer Bill</title>
-                              <style>
-                                body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
-                                h2, p { margin: 0; padding: 0; }
-                                .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
-                                .header h2 { font-size: 20px; font-weight: bold; }
-                                .header p { font-size: 13px; }
-                                .summary { margin-bottom: 12px; }
-                                .item { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
-                                .item .name { flex: 1; text-align: left; margin-right: 8px; }
-                                .item .price { width: 80px; text-align: right; }
-                                .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 14px; }
-                                .center { text-align: center; margin-top: 16px; font-size: 13px; }
-                              </style>
-                            </head>
-                            <body>
-                              <div class="header">
-                                <h2>${printSettings.cafeName}</h2>
-                                <p>${printSettings.address}</p>
-                                ${printSettings.customDetails ? `<p>${printSettings.customDetails}</p>` : ''}
-                                <p>Ph: ${printSettings.phone}</p>
-                                <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
-                                <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
-                              </div>
-                              <div class="summary">
-                                ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price">₹${item.totalPrice.toFixed(2)}</span></div>`).join('')}
-                              </div>
-                              <div class="total">
-                                <div class="item"><span class="name">Subtotal</span><span class="price">₹${subTotal.toFixed(2)}</span></div>
-                                <div class="item"><span class="name">GST (5%)</span><span class="price">₹${tax.toFixed(2)}</span></div>
-                                <div class="item"><span class="name"><b>Total</b></span><span class="price"><b>₹${total.toFixed(2)}</b></span></div>
-                              </div>
-                              <div class="center">
-                                <p>${printSettings.footerMessage}</p>
-                              </div>
-                            </body>
-                          </html>
-                        `;
-
-                        const printWindow = window.open('', '', 'width=400,height=600');
-                        if (printWindow) {
-                          printWindow.document.open();
-                          printWindow.document.write(printContent);
-                          printWindow.document.close();
-                          printWindow.focus();
-                          printWindow.print();
-                          printWindow.close();
-                        } else {
-                          toast({
-                              variant: "destructive",
-                              title: "Popup Blocked",
-                              description: "Please allow popups for this site to print the bill.",
-                          });
-                        }
-                      }}
-                    >
-                      <Printer className="mr-2" /> Print Bill
-                    </Button>
-                    <Button onClick={resetOrder} className="bg-green-600 hover:bg-green-700 text-white">
+                    <div className='grid grid-cols-2 gap-2'>
+                      <Button variant="outline" onClick={handlePrintBill}>
+                        <Printer className="mr-2" /> Print Bill
+                      </Button>
+                       <Button variant="outline" onClick={handlePrintAll}>
+                        <Printer className="mr-2" /> Bill & KOT
+                      </Button>
+                    </div>
+                    <Button onClick={resetOrder} className="w-full bg-green-600 hover:bg-green-700 text-white">
                         <CheckCircle className="mr-2"/> Confirm Payment
                     </Button>
                 </DialogFooter>
@@ -581,6 +634,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-
-    
