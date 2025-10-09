@@ -34,6 +34,14 @@ export default function DisplaySettingsPage() {
     const [kotLiveView, setKotLiveView] = useState('ASC');
     const [kptBreachedOnTop, setKptBreachedOnTop] = useState(true);
     const [displayPrepTimeAlerts, setDisplayPrepTimeAlerts] = useState(true);
+    const [displayItemImages, setDisplayItemImages] = useState(false);
+    const [displaySearch, setDisplaySearch] = useState(true);
+    const [displaySettleAmount, setDisplaySettleAmount] = useState(true);
+    const [showTip, setShowTip] = useState(true);
+    const [tipSelection, setTipSelection] = useState('None');
+    const [tipValue, setTipValue] = useState('');
+    const [showCwt, setShowCwt] = useState(true);
+
 
     // State for Default Values settings
     const [defaultOrderType, setDefaultOrderType] = useState('Dine-In');
@@ -71,6 +79,13 @@ export default function DisplaySettingsPage() {
             kotLiveView,
             kptBreachedOnTop,
             displayPrepTimeAlerts,
+            displayItemImages,
+            displaySearch,
+            displaySettleAmount,
+            showTip,
+            tipSelection,
+            tipValue,
+            showCwt,
             defaultOrderType,
             defaultCustomer,
             defaultPayment,
@@ -136,20 +151,73 @@ export default function DisplaySettingsPage() {
                                     onValueChange={setKotLiveView}
                                     options={['ASC', 'DESC']}
                                 />
+                                
+                                <Separator />
+                                
                                 <div className="space-y-4">
-                                    <div className="flex items-start space-x-2">
+                                     <h3 className="font-medium text-lg">General Display Options</h3>
+                                    <div className="flex items-center space-x-2">
                                         <Checkbox id="kpt-breached" checked={kptBreachedOnTop} onCheckedChange={(checked) => setKptBreachedOnTop(!!checked)} />
-                                        <div className="grid gap-1.5 leading-none">
-                                            <Label htmlFor="kpt-breached">KPT breached order should remain on top of the screen in live view</Label>
-                                        </div>
+                                        <Label htmlFor="kpt-breached">KPT breached order should remain on top of the screen in live view</Label>
                                     </div>
-                                    <div className="flex items-start space-x-2">
+                                    <div className="flex items-center space-x-2">
                                         <Checkbox id="prep-time-alerts" checked={displayPrepTimeAlerts} onCheckedChange={(checked) => setDisplayPrepTimeAlerts(!!checked)} />
-                                        <div className="grid gap-1.5 leading-none">
-                                            <Label htmlFor="prep-time-alerts">Display alerts for prep time exceeding or order handover on the live view card</Label>
+                                        <Label htmlFor="prep-time-alerts">Display alerts for prep time exceeding or order handover on the live view card</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="display-item-images" checked={displayItemImages} onCheckedChange={(checked) => setDisplayItemImages(!!checked)} />
+                                        <Label htmlFor="display-item-images">Display item images on the billing screen</Label>
+                                    </div>
+                                     <div className="flex items-center space-x-2">
+                                        <Checkbox id="display-search" checked={displaySearch} onCheckedChange={(checked) => setDisplaySearch(!!checked)} />
+                                        <Label htmlFor="display-search">Display Search Item option on billing screen (Only for Touch view)</Label>
+                                    </div>
+                                     <div className="flex items-center space-x-2">
+                                        <Checkbox id="display-settle-amount" checked={displaySettleAmount} onCheckedChange={(checked) => setDisplaySettleAmount(!!checked)} />
+                                        <Label htmlFor="display-settle-amount">Display settle amount Textbox</Label>
+                                    </div>
+                                     <div className="flex items-center space-x-2">
+                                        <Checkbox id="show-cwt" checked={showCwt} onCheckedChange={(checked) => setShowCwt(!!checked)} />
+                                        <Label htmlFor="show-cwt">Show CWT (Category Wise Taxes) Bifurcation On Billing Screen</Label>
+                                    </div>
+                                </div>
+                                
+                                <Separator />
+
+                                <div className="space-y-6">
+                                     <h3 className="font-medium text-lg">Tip Settings</h3>
+                                     <div className="flex items-center space-x-2">
+                                        <Checkbox id="show-tip" checked={showTip} onCheckedChange={(checked) => setShowTip(!!checked)} />
+                                        <Label htmlFor="show-tip">Show Tip</Label>
+                                    </div>
+                                    <RadioGroup value={tipSelection} onValueChange={setTipSelection} className={!showTip ? 'opacity-50' : ''}>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                            <Label className='md:text-right'>Set Tip selection as :</Label>
+                                            <div className='md:col-span-2 flex items-center gap-6 pt-2'>
+                                                 <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="None" id="tip-none" disabled={!showTip} />
+                                                    <Label htmlFor="tip-none">None</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="Percentage" id="tip-percentage" disabled={!showTip} />
+                                                    <Label htmlFor="tip-percentage">Percentage</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="Fixed" id="tip-fixed" disabled={!showTip} />
+                                                    <Label htmlFor="tip-fixed">Fixed</Label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </RadioGroup>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                        <Label htmlFor="tip-value" className={`md:text-right ${!showTip ? 'opacity-50' : ''}`}>Set Tip value</Label>
+                                        <div className="md:col-span-2">
+                                            <Input id="tip-value" value={tipValue} onChange={e => setTipValue(e.target.value)} placeholder="Comma separated numeric values only" disabled={!showTip || tipSelection === 'None'} />
+                                            <p className="text-xs text-muted-foreground mt-1">This configuration would be for customer selection of tip in Kiosk.</p>
                                         </div>
                                     </div>
                                 </div>
+
                             </CardContent>
                              <CardFooter>
                                 <Button onClick={handleSaveChanges}>Save Changes</Button>
