@@ -323,12 +323,12 @@ export default function OrdersPage() {
 
   const filteredMenuItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = item.category === activeCategory;
-
+    
     if (searchQuery) {
-      return matchesSearch;
+        return matchesSearch;
     }
-    return matchesCategory;
+
+    return item.category === activeCategory;
   });
 
   return (
@@ -515,7 +515,7 @@ export default function OrdersPage() {
                                 <Button variant="outline" className='flex-1' onClick={handleHoldOrder}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
                                 <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
-                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!isOrderDetailsComplete()}>
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)}>
                                 <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
                             </Button>
                         </CardFooter>
