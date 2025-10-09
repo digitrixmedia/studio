@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { users } from '@/lib/data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const navItems = [
     { name: 'Display Settings', id: 'display' },
@@ -40,6 +41,12 @@ export default function DisplaySettingsPage() {
     const [enableOrderWiseInfo, setEnableOrderWiseInfo] = useState(false);
     const [allowNegativeQuantity, setAllowNegativeQuantity] = useState(false);
 
+    // State for Table Settlement settings
+    const [lockActiveTable, setLockActiveTable] = useState<'save-print' | 'settle-save' | 'none'>('settle-save');
+    const [releaseTableOn, setReleaseTableOn] = useState<'print-bill' | 'settle-save'>('settle-save');
+    const [releaseRecentSectionOn, setReleaseRecentSectionOn] = useState<'print-bill' | 'settle-save'>('settle-save');
+    const [releaseForOnlineOrders, setReleaseForOnlineOrders] = useState(false);
+
 
     const handleSaveChanges = () => {
         // In a real app, this would save to a context or backend.
@@ -59,6 +66,10 @@ export default function DisplaySettingsPage() {
             defaultOpenDiscount,
             enableOrderWiseInfo,
             allowNegativeQuantity,
+            lockActiveTable,
+            releaseTableOn,
+            releaseRecentSectionOn,
+            releaseForOnlineOrders,
         });
     };
 
@@ -243,11 +254,68 @@ export default function DisplaySettingsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Table Settlement</CardTitle>
-                                <CardDescription>Configure options related to table billing and settlement.</CardDescription>
+                                <CardDescription>The following settings helps in configuring locking and releasing table in billing screen.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <p>Table settlement settings will go here.</p>
+                            <CardContent className="space-y-8">
+                                <RadioGroup value={lockActiveTable} onValueChange={(value) => setLockActiveTable(value as any)}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                        <Label className='md:text-right'>Lock Active Table :</Label>
+                                        <div className='md:col-span-2 flex items-center gap-6'>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="save-print" id="lock-save-print" />
+                                                <Label htmlFor="lock-save-print">Save & Print</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="settle-save" id="lock-settle-save" />
+                                                <Label htmlFor="lock-settle-save">Settle & Save</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="none" id="lock-none" />
+                                                <Label htmlFor="lock-none">None</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                 <RadioGroup value={releaseTableOn} onValueChange={(value) => setReleaseTableOn(value as any)}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                        <Label className='md:text-right'>Release Table On :</Label>
+                                        <div className='md:col-span-2 flex items-center gap-6'>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="print-bill" id="release-table-print-bill" />
+                                                <Label htmlFor="release-table-print-bill">Print Bill</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="settle-save" id="release-table-settle-save" />
+                                                <Label htmlFor="release-table-settle-save">Settle & Save</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                <RadioGroup value={releaseRecentSectionOn} onValueChange={(value) => setReleaseRecentSectionOn(value as any)}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                        <Label className='md:text-right'>Release Recent Section On :</Label>
+                                        <div className='md:col-span-2 flex items-center gap-6'>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="print-bill" id="release-recent-print-bill" />
+                                                <Label htmlFor="release-recent-print-bill">Print Bill</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="settle-save" id="release-recent-settle-save" />
+                                                <Label htmlFor="release-recent-settle-save">Settle & Save</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <div className="md:col-start-2 md:col-span-2 flex items-center space-x-2">
+                                        <Checkbox id="release-online" checked={releaseForOnlineOrders} onCheckedChange={checked => setReleaseForOnlineOrders(Boolean(checked))} />
+                                        <Label htmlFor="release-online">Release Recent Section On Order Delivered (For Online Orders)</Label>
+                                    </div>
+                                 </div>
                             </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
                         </Card>
                     )}
                 </>
