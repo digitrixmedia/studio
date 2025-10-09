@@ -32,6 +32,18 @@ export default function PrintSettingsPage() {
     const [showBarcodeOnKot, setShowBarcodeOnKot] = useState(false);
     const [printOnMove, setPrintOnMove] = useState(true);
     const [printKotOnStatus, setPrintKotOnStatus] = useState('None');
+    
+    // Bill Print States
+    const [cwtBifurcation, setCwtBifurcation] = useState('None');
+    const [itemPricePrintOption, setItemPricePrintOption] = useState('without');
+    const [showBackwardTax, setShowBackwardTax] = useState(true);
+    const [showDuplicateOnReprint, setShowDuplicateOnReprint] = useState(true);
+    const [showCustomerPaidAndReturn, setShowCustomerPaidAndReturn] = useState(false);
+    const [printKotAsToken, setPrintKotAsToken] = useState(false);
+    const [showAddonsInBill, setShowAddonsInBill] = useState(true);
+    const [showOrderBarcodeOnBill, setShowOrderBarcodeOnBill] = useState(false);
+    const [mergeDuplicateItems, setMergeDuplicateItems] = useState(true);
+    const [mergeEbillAndPrintBill, setMergeEbillAndPrintBill] = useState(false);
 
 
     const handleSaveChanges = () => {
@@ -52,6 +64,16 @@ export default function PrintSettingsPage() {
             showBarcodeOnKot,
             printOnMove,
             printKotOnStatus,
+            cwtBifurcation,
+            itemPricePrintOption,
+            showBackwardTax,
+            showDuplicateOnReprint,
+            showCustomerPaidAndReturn,
+            printKotAsToken,
+            showAddonsInBill,
+            showOrderBarcodeOnBill,
+            mergeDuplicateItems,
+            mergeEbillAndPrintBill,
         })
     };
 
@@ -175,12 +197,93 @@ export default function PrintSettingsPage() {
                      {activeTab === 'bill-print' && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Bill Print Settings</CardTitle>
-                                <CardDescription>Settings specifically for Bill printing.</CardDescription>
+                                <CardTitle>Bill Print</CardTitle>
+                                <CardDescription>The following section helps in configuring Bill print settings.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <p>Bill print settings will be available here.</p>
+                            <CardContent className="space-y-6">
+                                <RadioGroup value={cwtBifurcation} onValueChange={setCwtBifurcation}>
+                                    <div className="flex items-center gap-x-6 gap-y-2">
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="None" id="cwt-none" />
+                                            <Label htmlFor="cwt-none">None</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Print CWT" id="cwt-print" />
+                                            <Label htmlFor="cwt-print">Print Category wise Tax(CWT) bifurcation on bill</Label>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+
+                                <RadioGroup value={itemPricePrintOption} onValueChange={setItemPricePrintOption}>
+                                    <div className="space-y-2">
+                                        <Label className="font-semibold">Select item price print option in bill print :</Label>
+                                        <div className="flex flex-col gap-2 pl-2">
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="without" id="price-without-tax" />
+                                                <Label htmlFor="price-without-tax">Individual Item price will be shown (without backward tax) on printed bill</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="including" id="price-including-tax" />
+                                                <Label htmlFor="price-including-tax">Individual Item price will be shown (including backward tax) on printed bill</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-start space-x-3">
+                                        <Checkbox id="show-backward-tax" checked={showBackwardTax} onCheckedChange={(checked) => setShowBackwardTax(Boolean(checked))} />
+                                        <Label htmlFor="show-backward-tax">Show Backward tax on printed bill</Label>
+                                    </div>
+                                     <div className="flex items-start space-x-3">
+                                        <Checkbox id="show-duplicate-reprint" checked={showDuplicateOnReprint} onCheckedChange={(checked) => setShowDuplicateOnReprint(Boolean(checked))} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="show-duplicate-reprint">Show Duplicate on a bill in case of multiple prints</Label>
+                                            <p className="text-sm text-muted-foreground">When a bill is re-printed, it would show Duplicate at the top of the bill.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <Checkbox id="show-customer-paid" checked={showCustomerPaidAndReturn} onCheckedChange={(checked) => setShowCustomerPaidAndReturn(Boolean(checked))} />
+                                        <Label htmlFor="show-customer-paid">Show Customer paid and return to customer in bill print</Label>
+                                    </div>
+                                     <div className="flex items-start space-x-3">
+                                        <Checkbox id="print-kot-token" checked={printKotAsToken} onCheckedChange={(checked) => setPrintKotAsToken(Boolean(checked))} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="print-kot-token">Print KOT no on bill as Token no</Label>
+                                            <p className="text-sm text-muted-foreground">[Note: If this options selected then it shows KOT no. on those bills whose KOT's are available in desktop application.]</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-3">
+                                        <Checkbox id="show-addons" checked={showAddonsInBill} onCheckedChange={(checked) => setShowAddonsInBill(Boolean(checked))} />
+                                        <Label htmlFor="show-addons">Show addons in bill print.</Label>
+                                    </div>
+                                     <div className="flex items-start space-x-3">
+                                        <Checkbox id="show-order-barcode-bill" checked={showOrderBarcodeOnBill} onCheckedChange={(checked) => setShowOrderBarcodeOnBill(Boolean(checked))} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="show-order-barcode-bill">Show order barcode on bill print</Label>
+                                            <p className="text-sm text-muted-foreground">Scan barcode to mark order food ready. This feature can be managed printer-wise from the printer settings. Riders from Swiggy & Zomato can use the same barcode for order pickup.</p>
+                                        </div>
+                                    </div>
+                                      <div className="flex items-start space-x-3">
+                                        <Checkbox id="merge-duplicate" checked={mergeDuplicateItems} onCheckedChange={(checked) => setMergeDuplicateItems(Boolean(checked))} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="merge-duplicate">Merge Duplicate Item</Label>
+                                            <p className="text-sm text-muted-foreground">This setting enables merging same items on bill is printed.</p>
+                                        </div>
+                                    </div>
+                                     <div className="flex items-start space-x-3">
+                                        <Checkbox id="merge-ebill" checked={mergeEbillAndPrintBill} onCheckedChange={(checked) => setMergeEbillAndPrintBill(Boolean(checked))} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="merge-ebill">Merge ebill and print bill.</Label>
+                                            <p className="text-sm text-muted-foreground">This settings send e-bill when the bill is printed.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
                         </Card>
                     )}
                 </>
