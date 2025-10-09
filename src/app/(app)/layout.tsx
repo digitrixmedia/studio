@@ -1,7 +1,7 @@
 
 'use client';
 
-import { ArrowLeft, BarChart2, Book, Box, Building, CookingPot, LayoutDashboard, LayoutGrid, ShoppingBag, Table, User } from 'lucide-react';
+import { ArrowLeft, BarChart2, Book, Box, Building, ClipboardList, CookingPot, LayoutDashboard, LayoutGrid, ShoppingBag, Table, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -48,6 +48,7 @@ const navItems: NavItem[] = [
 
 const quickAccessItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/operations', label: 'Recent Orders', icon: ClipboardList },
     { href: '/reports', label: 'Reports', icon: BarChart2 },
     { href: '/menu', label: 'Menu', icon: Book },
     { href: '/inventory', label: 'Inventory', icon: Box },
