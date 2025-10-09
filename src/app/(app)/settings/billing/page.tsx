@@ -7,7 +7,7 @@ import { PrintLayoutDialog } from "@/components/settings/PrintLayoutDialog";
 import { useState } from "react";
 import { Edit } from "lucide-react";
 
-export default function BillingSettingsPage() {
+export default function PrintSettingsPage() {
     const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 
     return (

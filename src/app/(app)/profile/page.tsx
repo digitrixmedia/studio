@@ -42,7 +42,7 @@ const settings = [
         title: 'Print',
         description: 'Manage KOT and bill printing formats and preferences.',
         icon: Printer,
-        href: '/settings/billing'
+        href: '/settings/print'
     },
      {
         title: 'Customer',
