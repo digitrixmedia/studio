@@ -52,6 +52,9 @@ export default function ConnectedServicesSettingsPage() {
     const [printKotFromCaptainApp, setPrintKotFromCaptainApp] = useState(true);
     const [allowDiscountFromCaptainApp, setAllowDiscountFromCaptainApp] = useState(false);
     const [notifyCaptainUsersOn, setNotifyCaptainUsersOn] = useState('None');
+    
+    // State for e-Invoice Settings
+    const [enableEInvoice, setEnableEInvoice] = useState(false);
 
 
     const handleSaveChanges = () => {
@@ -78,6 +81,7 @@ export default function ConnectedServicesSettingsPage() {
             printKotFromCaptainApp,
             allowDiscountFromCaptainApp,
             notifyCaptainUsersOn,
+            enableEInvoice,
         });
     };
 
@@ -295,7 +299,38 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && (
+                {activeTab === 'e-invoice' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>e-Invoice settings</CardTitle>
+                            <CardDescription>The following settings pertains to configuring the e-Invoice settings.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="enable-e-invoice" checked={enableEInvoice} onCheckedChange={(checked) => setEnableEInvoice(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="enable-e-invoice" className="text-gray-400">Enable e-Invoice</Label>
+                                </div>
+                            </div>
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-800 space-y-2">
+                                <p className="font-semibold">Please consider below scenario if you want to generate e-Invoice:</p>
+                                <ol className="list-decimal list-inside space-y-1">
+                                    <li>Please enter & verify Outlet GST information.</li>
+                                    <li>Please enter proper Customer GST no. while printing the bill from POS.</li>
+                                    <li>Outlet must have CGST and SGST taxes in their TAX configuration.</li>
+                                    <li>Currently IGST tax is not supported.</li>
+                                    <li>If you want to cancel e-Invoice (if already generated) then you must cancel the Order.</li>
+                                    <li>Please disable configuration (if any) for apply tax on Delivery charge, Service charge and Packing charge.</li>
+                                    <li>Please enter proper HSN No. for every item.</li>
+                                    <li>You can not create/cancel e-Invoice older than two days.</li>
+                                    <li>Please recharge eInvoice credits from marketplace services. Without eInvoice credits service does not work.</li>
+                                </ol>
+                                <p className="text-xs pt-2">This setting is only available in cloud login.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
