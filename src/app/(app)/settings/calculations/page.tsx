@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 const navItems = [
     { name: 'Round-Off Options', id: 'round-off' },
@@ -30,6 +32,16 @@ export default function CalculationsSettingsPage() {
     const [decimalPoints, setDecimalPoints] = useState('2');
     // Service Charge state
     const [displayServiceCharge, setDisplayServiceCharge] = useState(false);
+    // Container Charge state
+    const [showContainerCharge, setShowContainerCharge] = useState(true);
+    const [containerChargeLabel, setContainerChargeLabel] = useState('Container Charge');
+    const [containerChargeType, setContainerChargeType] = useState('Item wise');
+    const [autoCalcDelivery, setAutoCalcDelivery] = useState(true);
+    const [autoCalcPickUp, setAutoCalcPickUp] = useState(true);
+    const [autoCalcDineIn, setAutoCalcDineIn] = useState(false);
+    const [taxOnContainerCharge, setTaxOnContainerCharge] = useState(false);
+    const [specificAmountCondition, setSpecificAmountCondition] = useState('None');
+    const [specificAmount, setSpecificAmount] = useState('0');
 
 
     const handleSaveChanges = () => {
@@ -42,6 +54,15 @@ export default function CalculationsSettingsPage() {
             roundOffIncrement,
             decimalPoints,
             displayServiceCharge,
+            showContainerCharge,
+            containerChargeLabel,
+            containerChargeType,
+            autoCalcDelivery,
+            autoCalcPickUp,
+            autoCalcDineIn,
+            taxOnContainerCharge,
+            specificAmountCondition,
+            specificAmount,
         });
     };
 
@@ -141,7 +162,103 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && (
+                    {activeTab === 'container-charge' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Container Charge</CardTitle>
+                                <CardDescription>The following settings describes the settings related to the container charge in the billing screen.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="show-container-charge" checked={showContainerCharge} onCheckedChange={checked => setShowContainerCharge(!!checked)} />
+                                    <Label htmlFor="show-container-charge">Show Container Charge On Billing Screen</Label>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                    <Label htmlFor="container-charge-label" className="md:text-right">Container Charge Label*:</Label>
+                                    <Input id="container-charge-label" value={containerChargeLabel} onChange={e => setContainerChargeLabel(e.target.value)} className="md:col-span-2 w-full md:w-1/2" />
+                                </div>
+                                
+                                <RadioGroup value={containerChargeType} onValueChange={setContainerChargeType}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                        <Label className="md:text-right pt-2">Container Charge :</Label>
+                                        <div className="md:col-span-2">
+                                            <div className="flex items-center gap-x-6 gap-y-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="Item wise" id="cc-item" />
+                                                    <Label htmlFor="cc-item">Item wise</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="Order wise" id="cc-order" />
+                                                    <Label htmlFor="cc-order">Order wise</Label>
+                                                </div>
+                                                 <div className="flex items-center space-x-2">
+                                                    <RadioGroupItem value="Fix per item" id="cc-fix" />
+                                                    <Label htmlFor="cc-fix">Fix per item</Label>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground mt-2">This setting defines whether the container charge is item wise and order wise.</p>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <Label className="md:text-right pt-2">Calculate Container Charge Automatically</Label>
+                                    <div className="md:col-span-2">
+                                         <div className="flex items-center gap-x-6 gap-y-2">
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="auto-delivery" checked={autoCalcDelivery} onCheckedChange={checked => setAutoCalcDelivery(!!checked)} />
+                                                <Label htmlFor="auto-delivery">Delivery</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <Checkbox id="auto-pickup" checked={autoCalcPickUp} onCheckedChange={checked => setAutoCalcPickUp(!!checked)} />
+                                                <Label htmlFor="auto-pickup">Pick Up</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <Checkbox id="auto-dinein" checked={autoCalcDineIn} onCheckedChange={checked => setAutoCalcDineIn(!!checked)} />
+                                                <Label htmlFor="auto-dinein">Dine In</Label>
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground mt-2">This setting enables container charge without pressing a button beside the label in billing screen.</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <div className="flex items-center space-x-2 md:col-start-2">
+                                        <Checkbox id="tax-on-container" checked={taxOnContainerCharge} onCheckedChange={checked => setTaxOnContainerCharge(!!checked)} />
+                                        <Label htmlFor="tax-on-container">Calculate tax on Container Charge.</Label>
+                                    </div>
+                                </div>
+                                <Separator />
+                                 <RadioGroup value={specificAmountCondition} onValueChange={setSpecificAmountCondition}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                        <Label className="md:text-right pt-2">Set a specific amount to calculate :</Label>
+                                        <div className="md:col-span-2 flex items-center gap-x-6 gap-y-2">
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Greater Than" id="ca-greater" />
+                                                <Label htmlFor="ca-greater">Greater Than</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Less Than" id="ca-less" />
+                                                <Label htmlFor="ca-less">Less Than</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="None" id="ca-none" />
+                                                <Label htmlFor="ca-none">None</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                    <Label htmlFor="specific-amount" className="md:text-right">Amount :</Label>
+                                    <Input id="specific-amount" value={specificAmount} onChange={e => setSpecificAmount(e.target.value)} className="md:col-span-2 w-full md:w-1/2" disabled={specificAmountCondition === 'None'} />
+                                </div>
+
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
@@ -161,3 +278,5 @@ export default function CalculationsSettingsPage() {
         </SettingsPageLayout>
     );
 }
+
+    
