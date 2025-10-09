@@ -14,17 +14,47 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { KeyRound, Mail, Save, User, ReceiptText, ArrowRight } from 'lucide-react';
+import { KeyRound, Mail, Save, User, ReceiptText, ArrowRight, Monitor, Calculator, Share2, Printer, Users as UsersIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
 const settings = [
     {
+        title: 'Display',
+        description: 'Manage themes, screen layouts, and item display settings.',
+        icon: Monitor,
+        href: '#'
+    },
+    {
+        title: 'Calculations',
+        description: 'Configure taxes, discounts, rounding, and other calculations.',
+        icon: Calculator,
+        href: '#'
+    },
+     {
+        title: 'Connected Services',
+        description: 'Integrate with third-party services like payment gateways.',
+        icon: Share2,
+        href: '#'
+    },
+    {
+        title: 'Print',
+        description: 'Manage KOT and bill printing formats and preferences.',
+        icon: Printer,
+        href: '/settings/billing'
+    },
+     {
+        title: 'Customer',
+        description: 'Configure customer data fields and loyalty program settings.',
+        icon: UsersIcon,
+        href: '#'
+    },
+    {
         title: 'Billing System',
         description: 'Configure auto accept, Duration, Cancel timings etc. of Online Orders.',
         icon: ReceiptText,
-        href: '/settings/billing'
+        href: '#'
     }
 ]
 
@@ -49,7 +79,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex justify-center items-start pt-8">
-      <Card className="w-full max-w-2xl">
+      <Card className="w-full max-w-4xl">
         <CardHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
@@ -114,7 +144,7 @@ export default function ProfilePage() {
           <CardDescription>Manage your cafe's settings and configurations.</CardDescription>
         </CardHeader>
         <CardContent>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {settings.map(setting => (
                     <Link href={setting.href} key={setting.title}>
                         <Card className="hover:border-primary transition-colors h-full flex flex-col">
