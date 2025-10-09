@@ -1,41 +1,67 @@
 
 'use client';
 
+import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PrintLayoutDialog } from "@/components/settings/PrintLayoutDialog";
+import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { Edit } from "lucide-react";
+
+const navItems = [
+    { name: 'Both', id: 'both' },
+    { name: 'KOT Print', id: 'kot-print' },
+    { name: 'Bill Print', id: 'bill-print' },
+];
 
 export default function PrintSettingsPage() {
-    const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+    const { toast } = useToast();
+
+    const handleSaveChanges = () => {
+        toast({
+            title: "Settings Saved",
+            description: "Your print settings have been updated.",
+        });
+    };
 
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Print Settings</CardTitle>
-                    <CardDescription>Manage how your bills and kitchen order tickets (KOTs) are printed.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Card>
-                        <CardHeader className="flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-lg">Receipt Layout</CardTitle>
-                                <CardDescription>Customize the look and feel of your customer receipts.</CardDescription>
-                            </div>
-                            <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Layout
-                            </Button>
-                        </CardHeader>
-                    </Card>
-                </CardContent>
-            </Card>
-            <PrintLayoutDialog
-                isOpen={isPrintDialogOpen}
-                onOpenChange={setIsPrintDialogOpen}
-            />
-        </>
+        <SettingsPageLayout navItems={navItems}>
+            {(activeTab) => (
+                <>
+                    {activeTab === 'both' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Both</CardTitle>
+                                <CardDescription>Settings for both KOT and Bill printing.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p>Settings for both will be available here.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                    {activeTab === 'kot-print' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>KOT Print Settings</CardTitle>
+                                <CardDescription>Settings specifically for KOT printing.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p>KOT print settings will be available here.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                     {activeTab === 'bill-print' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Bill Print Settings</CardTitle>
+                                <CardDescription>Settings specifically for Bill printing.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p>Bill print settings will be available here.</p>
+                            </CardContent>
+                        </Card>
+                    )}
+                </>
+            )}
+        </SettingsPageLayout>
     );
 }
