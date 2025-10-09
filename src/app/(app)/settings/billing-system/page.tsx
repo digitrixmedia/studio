@@ -33,6 +33,10 @@ export default function BillingSystemSettingsPage() {
     const [captainOrderSyncTime, setCaptainOrderSyncTime] = useState('5');
     const [minutesToEdit, setMinutesToEdit] = useState('2880');
 
+    // State for Payment Sync Settings
+    const [paymentRequestSyncTime, setPaymentRequestSyncTime] = useState('5');
+    const [checkPaymentRequestSyncTime, setCheckPaymentRequestSyncTime] = useState('5');
+
     const handleSaveChanges = () => {
         toast({
             title: "Settings Saved",
@@ -49,6 +53,8 @@ export default function BillingSystemSettingsPage() {
             pendingOrderSyncTime,
             captainOrderSyncTime,
             minutesToEdit,
+            paymentRequestSyncTime,
+            checkPaymentRequestSyncTime,
         });
     };
 
@@ -188,7 +194,34 @@ export default function BillingSystemSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'order-sync' && (
+                {activeTab === 'payment-sync' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Payment Sync Settings</CardTitle>
+                            <CardDescription>The following settings are related to Payment synchronization settings</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                <Label htmlFor="payment-request-sync-time" className="font-semibold">Payment request sync time*:</Label>
+                                <div className="md:col-span-2 flex items-center gap-2">
+                                    <Input id="payment-request-sync-time" value={paymentRequestSyncTime} onChange={e => setPaymentRequestSyncTime(e.target.value)} className="w-24" />
+                                    <span>Sec</span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                <Label htmlFor="check-payment-request-sync-time" className="font-semibold">Check payment request sync time*:</Label>
+                                <div className="md:col-span-2 flex items-center gap-2">
+                                    <Input id="check-payment-request-sync-time" value={checkPaymentRequestSyncTime} onChange={e => setCheckPaymentRequestSyncTime(e.target.value)} className="w-24" />
+                                    <span>Sec</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                         <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'order-sync' && activeTab !== 'payment-sync' && (
                      <Card>
                         <CardHeader>
                             <CardTitle>
