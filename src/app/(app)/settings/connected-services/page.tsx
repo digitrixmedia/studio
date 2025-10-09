@@ -61,6 +61,9 @@ export default function ConnectedServicesSettingsPage() {
     const [barcodePrefix, setBarcodePrefix] = useState('');
     const [barcodeWeightChars, setBarcodeWeightChars] = useState('5');
     const [barcodeWeightDenominator, setBarcodeWeightDenominator] = useState('1000');
+    
+    // State for Expense settings
+    const [restrictExpenseToCurrentDate, setRestrictExpenseToCurrentDate] = useState(false);
 
 
     const handleSaveChanges = () => {
@@ -91,6 +94,7 @@ export default function ConnectedServicesSettingsPage() {
             barcodePrefix,
             barcodeWeightChars,
             barcodeWeightDenominator,
+            restrictExpenseToCurrentDate,
         });
     };
 
@@ -374,7 +378,31 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && activeTab !== 'barcode' && (
+                {activeTab === 'expense' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Expense settings</CardTitle>
+                            <CardDescription>The following settings pertains to configuring the Expense settings.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="restrict-expense" checked={restrictExpenseToCurrentDate} onCheckedChange={(checked) => setRestrictExpenseToCurrentDate(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="restrict-expense" className="text-gray-400">Restrict users to add expense and withdrawal for current date only.</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        If the configuration is enabled then the users would only be able to add expense and withdrawal for current date.
+                                        <br />
+                                        This setting is only available in cloud login.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                         <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && activeTab !== 'barcode' && activeTab !== 'expense' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
