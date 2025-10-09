@@ -136,28 +136,31 @@ export default function AppLayout({ children }: { children: ReactNode }) {
              <div className='flex-1'>
                  <h2 className="text-lg sm:text-2xl font-semibold capitalize">{pageTitle}</h2>
              </div>
-             {effectiveRole === 'Manager' && (
-                <div className='hidden sm:flex flex-1 justify-center items-center gap-2'>
-                    <TooltipProvider>
-                    {quickAccessItems.map(item => (
-                         <Tooltip key={item.href}>
-                            <TooltipTrigger asChild>
-                                <Link href={item.href}>
-                                    <Button variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'} size="icon">
-                                        <item.icon className='h-5 w-5'/>
-                                    </Button>
-                                </Link>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{item.label}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
-                    </TooltipProvider>
+             
+             <div className='flex flex-1 justify-end items-center gap-2'>
+                {effectiveRole === 'Manager' && (
+                    <div className='hidden sm:flex items-center gap-2'>
+                        <TooltipProvider>
+                        {quickAccessItems.map(item => (
+                            <Tooltip key={item.href}>
+                                <TooltipTrigger asChild>
+                                    <Link href={item.href}>
+                                        <Button variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'} size="icon">
+                                            <item.icon className='h-5 w-5'/>
+                                        </Button>
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{item.label}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        ))}
+                        </TooltipProvider>
+                    </div>
+                )}
+                <div className='hidden sm:flex'>
+                    <UserNav />
                 </div>
-             )}
-             <div className='flex-1 hidden sm:flex justify-end'>
-                <UserNav />
              </div>
         </header>
         <main className="flex-1 overflow-auto p-4 sm:px-6">
