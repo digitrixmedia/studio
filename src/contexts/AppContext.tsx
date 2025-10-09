@@ -94,7 +94,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         } else if (isFranchiseAdmin && !isFranchisePath && !selectedOutlet) {
           router.push('/franchise/dashboard');
         } else if (isGenericUser && !isGenericAppPath) {
-          router.push('/dashboard');
+           // Only redirect generic users if they land on a page that is NOT a generic app path
+           router.push('/dashboard');
         }
       }
     } else if (!pathname.startsWith('/login')) {
