@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 
 const navItems = [
     { name: 'Inventory Settings', id: 'inventory' },
@@ -56,6 +57,11 @@ export default function ConnectedServicesSettingsPage() {
     // State for e-Invoice Settings
     const [enableEInvoice, setEnableEInvoice] = useState(false);
 
+    // State for Barcode settings
+    const [barcodePrefix, setBarcodePrefix] = useState('');
+    const [barcodeWeightChars, setBarcodeWeightChars] = useState('5');
+    const [barcodeWeightDenominator, setBarcodeWeightDenominator] = useState('1000');
+
 
     const handleSaveChanges = () => {
         toast({
@@ -82,6 +88,9 @@ export default function ConnectedServicesSettingsPage() {
             allowDiscountFromCaptainApp,
             notifyCaptainUsersOn,
             enableEInvoice,
+            barcodePrefix,
+            barcodeWeightChars,
+            barcodeWeightDenominator,
         });
     };
 
@@ -330,7 +339,42 @@ export default function ConnectedServicesSettingsPage() {
                         </CardContent>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && (
+                 {activeTab === 'barcode' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Barcode settings</CardTitle>
+                            <CardDescription>The following settings pertains to configuring the Barcode settings.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                <Label htmlFor="barcode-prefix" className="font-semibold pt-2 md:text-right">Prefix for Barcode :</Label>
+                                <div className="md:col-span-2">
+                                    <Input id="barcode-prefix" value={barcodePrefix} onChange={e => setBarcodePrefix(e.target.value)} disabled className="w-full md:w-1/2" />
+                                     <p className="text-xs text-muted-foreground mt-1">This field is required if want to activate this service settings in POS.</p>
+                                    <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                <Label htmlFor="barcode-weight-chars" className="font-semibold pt-2 md:text-right">No. of Characters to calculate Weight :</Label>
+                                <div className="md:col-span-2">
+                                    <Input id="barcode-weight-chars" value={barcodeWeightChars} onChange={e => setBarcodeWeightChars(e.target.value)} disabled className="w-full md:w-1/2" />
+                                    <p className="text-xs text-muted-foreground mt-1">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                <Label htmlFor="barcode-weight-denominator" className="font-semibold pt-2 md:text-right">Weight Denominator :</Label>
+                                <div className="md:col-span-2">
+                                    <Input id="barcode-weight-denominator" value={barcodeWeightDenominator} onChange={e => setBarcodeWeightDenominator(e.target.value)} disabled className="w-full md:w-1/2" />
+                                    <p className="text-xs text-muted-foreground mt-1">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && activeTab !== 'barcode' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
