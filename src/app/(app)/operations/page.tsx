@@ -64,6 +64,7 @@ import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 // Mock data for new sections
 const initialCustomers = Array.from(new Set(initialOrders.map(o => o.customerName).filter(Boolean))).map((name, i) => ({
@@ -105,6 +106,7 @@ export default function OperationsPage() {
     const [selectedOrderToAssign, setSelectedOrderToAssign] = useState<string>('');
     const [assigningReservation, setAssigningReservation] = useState<Reservation | null>(null);
     const [selectedTableForReservation, setSelectedTableForReservation] = useState<string>('');
+    const [reservationDate, setReservationDate] = useState<Date | undefined>(new Date());
 
 
     const filteredOrders = orders.filter(order => {
@@ -137,11 +139,13 @@ export default function OperationsPage() {
     
     const openNewReservationSheet = () => {
         setEditingReservation(null);
+        setReservationDate(new Date());
         setSheetContent('reservation');
     }
     
     const openEditReservationSheet = (reservation: Reservation) => {
         setEditingReservation(reservation);
+        setReservationDate(reservation.time);
         setSheetContent('reservation');
     }
     
@@ -158,14 +162,18 @@ export default function OperationsPage() {
     const handleSaveReservation = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-        const reservationData = Object.fromEntries(formData.entries()) as Omit<Reservation, 'id' | 'time'> & { time: string };
-        
+        const reservationData = Object.fromEntries(formData.entries()) as Omit<Reservation, 'id' | 'time'> & { time: string, date: string };
+        const timeParts = reservationData.time.split(':');
+        const newDate = reservationDate ? new Date(reservationDate) : new Date();
+        newDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]));
+
         if (editingReservation) {
             const updatedReservation = { 
                 ...editingReservation, 
-                ...reservationData,
+                name: reservationData.name,
+                phone: reservationData.phone,
                 guests: Number(reservationData.guests),
-                time: new Date(`${new Date().toDateString()} ${reservationData.time}`)
+                time: newDate
             };
             setReservations(reservations.map(r => r.id === editingReservation.id ? updatedReservation : r));
             toast({ title: "Reservation Updated" });
@@ -175,7 +183,7 @@ export default function OperationsPage() {
                 name: reservationData.name,
                 phone: reservationData.phone,
                 guests: Number(reservationData.guests),
-                time: new Date(`${new Date().toDateString()} ${reservationData.time}`),
+                time: newDate,
                 status: 'Confirmed'
              };
              setReservations([newReservation, ...reservations]);
@@ -778,6 +786,28 @@ export default function OperationsPage() {
                             <Label htmlFor="guests" className="text-right">Guests</Label>
                             <Input id="guests" name="guests" type="number" defaultValue={editingReservation?.guests} className="col-span-3" required />
                         </div>
+                         <div className="grid grid-cols-4 items-center gap-4">
+                            <Label className="text-right">Date</Label>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn("col-span-3 justify-start text-left font-normal", !reservationDate && "text-muted-foreground")}
+                                    >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {reservationDate ? format(reservationDate, "PPP") : <span>Pick a date</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                    mode="single"
+                                    selected={reservationDate}
+                                    onSelect={setReservationDate}
+                                    initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="time" className="text-right">Time</Label>
                             <Input id="time" name="time" type="time" defaultValue={editingReservation ? format(editingReservation.time, 'HH:mm') : ''} className="col-span-3" required />
@@ -819,3 +849,5 @@ export default function OperationsPage() {
     </>
   );
 }
+
+    
