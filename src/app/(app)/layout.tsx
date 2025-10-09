@@ -4,7 +4,7 @@
 import { ArrowLeft, BarChart2, Book, Box, Building, ClipboardList, CookingPot, LayoutDashboard, LayoutGrid, ShoppingBag, Table, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { ZappyyIcon } from '@/components/icons';
 import { UserNav } from '@/components/layout/UserNav';
 import { Button } from '@/components/ui/button';
@@ -20,9 +20,16 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+import DashboardPage from './dashboard/page';
+import OperationsPage from './operations/page';
+import ReportsPage from './reports/page';
+import MenuPage from './menu/page';
+import InventoryPage from './inventory/page';
 
 type NavItem = {
   href: string;
@@ -46,17 +53,25 @@ const navItems: NavItem[] = [
   { href: '/franchise/reports', label: 'Reports', icon: BarChart2, roles: ['Admin'] },
 ];
 
-const quickAccessItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/operations', label: 'Recent Orders', icon: ClipboardList },
-    { href: '/reports', label: 'Reports', icon: BarChart2 },
-    { href: '/menu', label: 'Menu', icon: Book },
-    { href: '/inventory', label: 'Inventory', icon: Box },
+type QuickAccessItem = {
+    id: 'dashboard' | 'operations' | 'reports' | 'menu' | 'inventory';
+    label: string;
+    icon: React.ElementType;
+    component: React.ComponentType;
+};
+
+const quickAccessItems: QuickAccessItem[] = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, component: DashboardPage },
+    { id: 'operations', label: 'Recent Orders', icon: ClipboardList, component: OperationsPage },
+    { id: 'reports', label: 'Reports', icon: BarChart2, component: ReportsPage },
+    { id: 'menu', label: 'Menu', icon: Book, component: MenuPage },
+    { id: 'inventory', label: 'Inventory', icon: Box, component: InventoryPage },
 ]
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { currentUser, selectedOutlet, clearSelectedOutlet } = useAppContext();
   const pathname = usePathname();
+  const [sidebarContent, setSidebarContent] = useState<QuickAccessItem | null>(null);
 
   if (!currentUser || currentUser.role === 'Super Admin') {
     return (
@@ -90,6 +105,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   });
   
   const pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ');
+  
+  const CurrentSidebarComponent = sidebarContent?.component;
 
   return (
     <SidebarProvider>
@@ -142,13 +159,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     <div className='hidden sm:flex items-center gap-2'>
                         <TooltipProvider>
                         {quickAccessItems.map(item => (
-                            <Tooltip key={item.href}>
+                            <Tooltip key={item.id}>
                                 <TooltipTrigger asChild>
-                                    <Link href={item.href}>
-                                        <Button variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'} size="icon">
-                                            <item.icon className='h-5 w-5'/>
-                                        </Button>
-                                    </Link>
+                                    <Button variant={sidebarContent?.id === item.id ? 'secondary' : 'ghost'} size="icon" onClick={() => setSidebarContent(item)}>
+                                        <item.icon className='h-5 w-5'/>
+                                    </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <p>{item.label}</p>
@@ -166,6 +181,23 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 overflow-auto p-4 sm:px-6">
           {children}
         </main>
+        <Sheet open={!!sidebarContent} onOpenChange={(open) => !open && setSidebarContent(null)}>
+            <SheetContent className="w-full sm:w-3/4 lg:w-1/2 xl:w-2/5 p-0">
+                {sidebarContent && (
+                    <>
+                        <SheetHeader className="p-6 border-b">
+                            <SheetTitle className="flex items-center gap-2 text-2xl">
+                                <sidebarContent.icon className="h-6 w-6"/>
+                                {sidebarContent.label}
+                            </SheetTitle>
+                        </SheetHeader>
+                        <div className="overflow-y-auto h-[calc(100vh-6rem)] p-6">
+                            {CurrentSidebarComponent && <CurrentSidebarComponent />}
+                        </div>
+                    </>
+                )}
+            </SheetContent>
+        </Sheet>
       </SidebarInset>
     </SidebarProvider>
   );
