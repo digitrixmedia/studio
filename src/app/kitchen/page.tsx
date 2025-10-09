@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { orders as initialOrders } from '@/lib/data';
 import type { Order } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Clock, Check, CookingPot } from 'lucide-react';
+import { Clock, Check, CookingPot, MessageSquarePlus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function KitchenPage() {
@@ -88,7 +88,7 @@ function OrderTicket({ order, onUpdateStatus }: { order: Order, onUpdateStatus: 
         {order.items.map(item => (
           <div key={item.id}>
             <span className="font-bold">{item.quantity}x</span> {item.name}
-             {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 pl-4'>- {item.notes}</p>}
+             {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 pl-4 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
           </div>
         ))}
       </CardContent>

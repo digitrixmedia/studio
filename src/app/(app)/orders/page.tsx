@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
-import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X } from 'lucide-react';
+import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ type HeldOrder = {
 }
 
 export default function OrdersPage() {
-  const { menuItems, menuCategories, currentOrder, setCurrentOrder } = useAppContext();
+  const { menuItems, menuCategories, currentOrder, setCurrentOrder, loadOrder } = useAppContext();
   const [cart, setCart] = [currentOrder, setCurrentOrder];
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
   const [orderType, setOrderType] = useState<OrderType>('Dine-In');
@@ -42,6 +42,8 @@ export default function OrdersPage() {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
+  const [noteEditingItem, setNoteEditingItem] = useState<OrderItem | null>(null);
+  const [currentNote, setCurrentNote] = useState('');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
   const { toast } = useToast();
@@ -50,8 +52,25 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const addToCart = (item: MenuItem) => {
-    // Open customization dialog for any item, to add notes
-    setCustomizationItem(item);
+    if (item.variations && item.variations.length > 0) {
+      setCustomizationItem(item);
+    } else {
+       const uniqueCartId = `${item.id}-base-${Date.now()}`;
+       const existingItem = cart.find(cartItem => cartItem.name === item.name && !cartItem.variation && !cartItem.notes);
+       
+       if (existingItem) {
+         updateQuantity(existingItem.id, existingItem.quantity + 1);
+       } else {
+         const newOrderItem: OrderItem = {
+          id: uniqueCartId,
+          name: item.name,
+          quantity: 1,
+          price: item.price,
+          totalPrice: item.price,
+        };
+        setCart([...cart, newOrderItem]);
+       }
+    }
   };
 
   const handleCustomizationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -60,20 +79,19 @@ export default function OrdersPage() {
 
     const formData = new FormData(e.currentTarget);
     const variationId = formData.get('variation') as string;
-    const notes = formData.get('notes') as string;
-
+    
     const selectedVariation = customizationItem.variations?.find(v => v.id === variationId);
     
     let basePrice = customizationItem.price;
     let finalName = customizationItem.name;
-    const uniqueCartId = `${customizationItem.id}-${selectedVariation?.id || 'base'}-${notes || 'no-notes'}`;
+    const uniqueCartId = `${customizationaItem.id}-${selectedVariation?.id || 'base'}-${Date.now()}`;
 
     if (selectedVariation) {
       basePrice += selectedVariation.priceModifier;
       finalName += ` (${selectedVariation.name})`;
     }
-
-    const existingItem = cart.find(cartItem => cartItem.id === uniqueCartId);
+    
+    const existingItem = cart.find(cartItem => cartItem.name === finalName && !cartItem.notes);
 
     if (existingItem) {
         updateQuantity(existingItem.id, existingItem.quantity + 1);
@@ -85,12 +103,24 @@ export default function OrdersPage() {
           price: basePrice,
           totalPrice: basePrice,
           variation: selectedVariation,
-          notes,
         };
         setCart([...cart, newOrderItem]);
     }
 
     setCustomizationItem(null);
+  };
+  
+  const openNoteEditor = (item: OrderItem) => {
+    setNoteEditingItem(item);
+    setCurrentNote(item.notes || '');
+  };
+
+  const handleSaveNote = () => {
+    if (!noteEditingItem) return;
+    setCart(cart.map(item => item.id === noteEditingItem.id ? {...item, notes: currentNote} : item));
+    setNoteEditingItem(null);
+    setCurrentNote('');
+    toast({ title: 'Note Saved' });
   };
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
@@ -156,7 +186,6 @@ export default function OrdersPage() {
   const handleResumeOrder = (orderId: string) => {
     const orderToResume = heldOrders.find(o => o.id === orderId);
     if (orderToResume) {
-      // If there's a current cart, hold it first
       if (cart.length > 0) {
         handleHoldOrder();
       }
@@ -221,6 +250,7 @@ export default function OrdersPage() {
             .item .price { width: 80px; text-align: right; }
             .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 14px; }
             .center { text-align: center; margin-top: 16px; font-size: 13px; }
+            .notes { font-size: 12px; font-style: italic; padding-left: 10px; }
           </style>
         </head>
         <body>
@@ -233,12 +263,12 @@ export default function OrdersPage() {
             <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
           </div>
           <div class="summary">
-            ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price">₹${item.totalPrice.toFixed(2)}</span></div>`).join('')}
+            ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${item.totalPrice.toFixed(2)}</span></span></div>${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}`).join('')}
           </div>
           <div class="total">
-            <div class="item"><span class="name">Subtotal</span><span class="price">₹${subTotal.toFixed(2)}</span></div>
-            <div class="item"><span class="name">GST (5%)</span><span class="price">₹${tax.toFixed(2)}</span></div>
-            <div class="item"><span class="name"><b>Total</b></span><span class="price"><b>₹${total.toFixed(2)}</b></span></div>
+            <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
+            <div class="item"><span class="name">GST (5%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>
+            <div class="item"><span class="name"><b>Total</b></span><span class="price"><b><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${total.toFixed(2)}</span></b></span></div>
           </div>
           <div class="center">
             <p>${printSettings.footerMessage}</p>
@@ -297,7 +327,6 @@ export default function OrdersPage() {
   
   const handlePrintAllAndSettle = () => {
     handlePrintBill();
-    // A slight delay might help with browser popup handling
     setTimeout(() => {
         handlePrintKOT();
         resetOrder();
@@ -431,17 +460,17 @@ export default function OrdersPage() {
                         {cart.length === 0 ? (
                         <p className="text-muted-foreground">No items in order.</p>
                         ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {cart.map(item => (
                             <div key={item.id} className="flex items-start">
-                                <div className="flex-1">
-                                <p className="font-semibold text-sm">{item.name}</p>
-                                <p className="text-sm text-muted-foreground flex items-center">
-                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                    {item.price.toFixed(2)}
-                                </p>
-                                {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500'>Notes: {item.notes}</p>}
-                                </div>
+                                <button className='flex-1 text-left' onClick={() => openNoteEditor(item)}>
+                                    <p className="font-semibold text-sm">{item.name}</p>
+                                    <p className="text-sm text-muted-foreground flex items-center">
+                                        <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                        {item.price.toFixed(2)}
+                                    </p>
+                                    {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
+                                </button>
                                 <div className="flex items-center gap-1 sm:gap-2">
                                 <Button
                                     variant="ghost"
@@ -575,16 +604,32 @@ export default function OrdersPage() {
                                 </Select>
                             </div>
                         )}
-                        <div>
-                             <Label className="font-medium">Special Notes</Label>
-                             <Textarea name="notes" placeholder="e.g. Extra hot, no sugar..."/>
-                        </div>
                         <DialogFooter>
                             <Button type="submit" className="w-full">Add to Order</Button>
                         </DialogFooter>
                     </form>
                 )}
             </DialogContent>
+        </Dialog>
+        
+        {/* Note Editing Dialog */}
+        <Dialog open={!!noteEditingItem} onOpenChange={() => setNoteEditingItem(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Note for {noteEditingItem?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <Textarea 
+                placeholder="e.g. Extra spicy, no onions..."
+                value={currentNote}
+                onChange={(e) => setCurrentNote(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNoteEditingItem(null)}>Cancel</Button>
+              <Button onClick={handleSaveNote}>Save Note</Button>
+            </DialogFooter>
+          </DialogContent>
         </Dialog>
         
         {/* Payment Dialog */}
