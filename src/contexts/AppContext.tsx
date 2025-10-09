@@ -40,7 +40,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const storedOutlet = localStorage.getItem('selectedOutlet');
     
     if (storedUserRole) {
-      login(storedUserRole);
+      login(storedUserRole, true); // Pass a flag to prevent immediate redirection
     }
     
     if (storedOutlet) {
@@ -55,62 +55,73 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
          router.push('/login');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, pathname]);
+  }, []); // Run only once on mount
 
   useEffect(() => {
-    if (currentUser) {
-      const isSuperAdmin = currentUser.role === 'Super Admin';
-      const isFranchiseAdmin = currentUser.role === 'Admin';
-      
-      // If a franchise admin has selected an outlet, their context switches.
-      if (isFranchiseAdmin && selectedOutlet) {
-        // They should be in the app view, not franchise/super-admin views.
-        if (pathname.startsWith('/franchise') || pathname.startsWith('/super-admin')) {
-             router.push('/dashboard');
-        }
-        return;
+    if (!currentUser) {
+      // If no user is logged in, and we are not on the login page, redirect to login
+      if (!pathname.startsWith('/login')) {
+        router.push('/login');
       }
+      return;
+    }
 
-      const isGenericUser = !isSuperAdmin && !isFranchiseAdmin;
+    const isLoginPage = pathname.startsWith('/login');
+    const isSuperAdminPath = pathname.startsWith('/super-admin');
+    const isFranchisePath = pathname.startsWith('/franchise');
+    const isAppPath = !isSuperAdminPath && !isFranchisePath && !isLoginPage;
 
-      const isLoginPage = pathname.startsWith('/login');
-      const isSuperAdminPath = pathname.startsWith('/super-admin');
-      const isFranchisePath = pathname.startsWith('/franchise');
-      // Any page that isn't for a specific admin role or login
-      const isGenericAppPath = !isSuperAdminPath && !isFranchisePath && !isLoginPage;
+    const userRole = currentUser.role;
 
-      if (isLoginPage) {
-        if (isSuperAdmin) {
+    // 1. If user is on the login page, redirect them to their correct dashboard
+    if (isLoginPage) {
+      if (userRole === 'Super Admin') router.push('/super-admin/dashboard');
+      else if (userRole === 'Admin') router.push('/franchise/dashboard');
+      else router.push('/dashboard');
+      return;
+    }
+
+    // 2. Handle role-based access to different app sections
+    switch (userRole) {
+      case 'Super Admin':
+        // If a Super Admin is NOT in the super admin section, redirect them.
+        if (!isSuperAdminPath) {
           router.push('/super-admin/dashboard');
-        } else if (isFranchiseAdmin) {
-          router.push('/franchise/dashboard');
-        } else {
+        }
+        break;
+      
+      case 'Admin':
+        // If Franchise Admin has selected an outlet, they should be in the main app.
+        if (selectedOutlet) {
+          if (!isAppPath) {
+            router.push('/dashboard');
+          }
+        } 
+        // If no outlet is selected, they should be in the franchise section.
+        else {
+          if (!isFranchisePath) {
+            router.push('/franchise/dashboard');
+          }
+        }
+        break;
+
+      default: // For Manager, Cashier, Waiter, Kitchen
+        // If a regular user is NOT in the main app section, redirect them.
+        if (!isAppPath) {
           router.push('/dashboard');
         }
-      } else {
-        // Redirect if user is in the wrong section of the app
-        if (isSuperAdmin && !isSuperAdminPath) {
-          router.push('/super-admin/dashboard');
-        } else if (isFranchiseAdmin && !isFranchisePath && !selectedOutlet) {
-          router.push('/franchise/dashboard');
-        } else if (isGenericUser && !isGenericAppPath) {
-           // Only redirect generic users if they land on a page that is NOT a generic app path
-           router.push('/dashboard');
-        }
-      }
-    } else if (!pathname.startsWith('/login')) {
-      router.push('/login');
+        break;
     }
   }, [currentUser, selectedOutlet, pathname, router]);
 
-  const login = (role: Role) => {
+  const login = (role: Role, isInitialLoad = false) => {
     const user = users.find(u => u.role === role);
     if (user) {
       // Super Admins can always log in
       if (user.role === 'Super Admin') {
         setCurrentUser(user);
         localStorage.setItem('userRole', role);
-        router.push('/super-admin/dashboard');
+        if (!isInitialLoad) router.push('/super-admin/dashboard');
         return;
       }
       
@@ -119,12 +130,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (userSubscription && userSubscription.status === 'Active') {
         setCurrentUser(user);
         localStorage.setItem('userRole', role);
-        if (role === 'Admin') {
-          router.push('/franchise/dashboard');
-        } else {
-          router.push('/dashboard');
+        if (!isInitialLoad) {
+           if (role === 'Admin') {
+            router.push('/franchise/dashboard');
+          } else {
+            router.push('/dashboard');
+          }
         }
-      } else {
+      } else if (!isInitialLoad) { // Only show toast on explicit login attempts
         toast({
             variant: "destructive",
             title: "Login Failed",
