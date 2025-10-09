@@ -1,7 +1,7 @@
 
 'use client';
 
-import { ArrowLeft, BarChart2, Book, Box, Building, CookingPot, LayoutDashboard, ShoppingBag, Table, User } from 'lucide-react';
+import { ArrowLeft, BarChart2, Book, Box, Building, CookingPot, LayoutDashboard, LayoutGrid, ShoppingBag, Table, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -33,6 +33,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Manager', 'Admin'] },
   { href: '/orders', label: 'POS', icon: ShoppingBag, roles: ['Manager', 'Cashier', 'Waiter', 'Admin'] },
+  { href: '/operations', label: 'Operations', icon: LayoutGrid, roles: ['Manager', 'Admin'] },
   { href: '/tables', label: 'Tables', icon: Table, roles: ['Manager', 'Cashier', 'Waiter', 'Admin'] },
   { href: '/kitchen', label: 'Kitchen Display', icon: CookingPot, roles: ['Manager', 'Kitchen', 'Admin'] },
   { href: '/menu', label: 'Menu', icon: Book, roles: ['Manager', 'Admin'] },
