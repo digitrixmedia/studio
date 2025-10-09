@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -57,6 +58,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   const { toast } = useToast();
   const initialStaff = users.filter(u => u.role !== 'Admin' && u.role !== 'Super Admin').slice(0, 3);
   
+  const [outletStatus, setOutletStatus] = useState(outlet.status);
   const [staff, setStaff] = useState<User[]>(initialStaff);
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
@@ -168,8 +170,12 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                   Status
                 </Label>
                 <div className='col-span-3 flex items-center gap-2'>
-                    <Switch id="status-switch" checked={outlet.status === 'Active'} />
-                    <Label htmlFor="status-switch">{outlet.status}</Label>
+                    <Switch
+                      id="status-switch"
+                      checked={outletStatus === 'Active'}
+                      onCheckedChange={(checked) => setOutletStatus(checked ? 'Active' : 'Inactive')}
+                    />
+                    <Label htmlFor="status-switch">{outletStatus}</Label>
                 </div>
               </div>
                <div className="flex justify-end mt-4">
@@ -287,3 +293,5 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
     </Dialog>
   );
 }
+
+    

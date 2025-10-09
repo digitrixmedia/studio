@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -106,6 +107,15 @@ export default function SubscriptionsPage() {
     }
   };
 
+  const toggleSubscriptionStatus = (subId: string, currentStatus: SubscriptionStatus) => {
+    const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
+    setSubscriptions(subscriptions.map(sub => sub.id === subId ? { ...sub, status: newStatus } : sub));
+    toast({
+      title: 'Subscription Updated',
+      description: `Subscription has been ${newStatus === 'Active' ? 'activated' : 'suspended'}.`,
+    });
+  }
+
   const groupedSubscriptions = subscriptions.reduce((acc, subscription) => {
     const { franchiseName } = subscription;
     if (!acc[franchiseName]) {
@@ -212,7 +222,11 @@ export default function SubscriptionsPage() {
                         </TableCell>
                         <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
                         <TableCell>
-                          <Switch checked={sub.status === 'Active'} />
+                          <Switch
+                            checked={sub.status === 'Active'}
+                            onCheckedChange={() => toggleSubscriptionStatus(sub.id, sub.status)}
+                            disabled={sub.status === 'Expired' || sub.status === 'Inactive'}
+                          />
                         </TableCell>
                         <TableCell className="flex gap-2">
                           <Button variant="ghost" size="icon">
@@ -250,3 +264,5 @@ export default function SubscriptionsPage() {
     </Card>
   );
 }
+
+    

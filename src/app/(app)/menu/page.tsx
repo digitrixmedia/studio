@@ -206,6 +206,15 @@ export default function MenuPage() {
     setIsFormOpen(false);
   };
 
+  const toggleItemAvailability = (itemId: string, isAvailable: boolean) => {
+    setMenuItems(menuItems.map(item => item.id === itemId ? { ...item, isAvailable } : item));
+    const itemName = menuItems.find(item => item.id === itemId)?.name;
+    toast({
+        title: `Item ${isAvailable ? 'Available' : 'Unavailable'}`,
+        description: `${itemName} has been marked as ${isAvailable ? 'available' : 'unavailable'}.`
+    });
+  };
+
   useEffect(() => {
     if (isFormOpen && editingItem) {
       const itemVariations = editingItem.variations && editingItem.variations.length > 0 ? editingItem.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
@@ -419,7 +428,7 @@ export default function MenuPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Switch checked={item.isAvailable} />
+                  <Switch checked={item.isAvailable} onCheckedChange={(checked) => toggleItemAvailability(item.id, checked)} />
                 </TableCell>
                 <TableCell>
                   <Button variant="ghost" size="icon" onClick={() => openEditForm(item)}>
@@ -434,3 +443,5 @@ export default function MenuPage() {
     </Card>
   );
 }
+
+    
