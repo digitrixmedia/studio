@@ -171,7 +171,10 @@ export default function FranchiseReportsPage() {
                 <IndianRupee className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">₹{summary.revenue.toLocaleString('en-IN')}</div>
+                <div className="text-2xl font-bold flex items-center">
+                    <IndianRupee className="h-6 w-6 mr-1" />
+                    {summary.revenue.toLocaleString('en-IN')}
+                </div>
                 <p className="text-xs text-muted-foreground">For the selected period</p>
             </CardContent>
         </Card>
@@ -191,7 +194,10 @@ export default function FranchiseReportsPage() {
                 <BarChart3 className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">₹{summary.avgOrderValue.toFixed(2)}</div>
+                <div className="text-2xl font-bold flex items-center">
+                    <IndianRupee className="h-6 w-6 mr-1" />
+                    {summary.avgOrderValue.toFixed(2)}
+                </div>
                 <p className="text-xs text-muted-foreground">For the selected period</p>
             </CardContent>
         </Card>
@@ -254,9 +260,15 @@ export default function FranchiseReportsPage() {
                             return (
                                 <TableRow key={outlet.id}>
                                     <TableCell className='font-medium'>{outlet.name}</TableCell>
-                                    <TableCell className='text-right'>₹{outlet.totalSales?.toLocaleString('en-IN') || '0'}</TableCell>
+                                    <TableCell className='text-right flex items-center justify-end'>
+                                        <IndianRupee className="h-4 w-4 mr-1" />
+                                        {outlet.totalSales?.toLocaleString('en-IN') || '0'}
+                                    </TableCell>
                                     <TableCell className='text-right'>{Math.round(outletOrders).toLocaleString('en-IN')}</TableCell>
-                                    <TableCell className='text-right'>₹{outletAOV.toFixed(2)}</TableCell>
+                                    <TableCell className='text-right flex items-center justify-end'>
+                                        <IndianRupee className="h-4 w-4 mr-1" />
+                                        {outletAOV.toFixed(2)}
+                                    </TableCell>
                                 </TableRow>
                             )
                         })}

@@ -140,7 +140,10 @@ export default function DashboardPage() {
                       <div className="font-medium">#{order.orderNumber}</div>
                       <div className="text-sm text-muted-foreground">{order.customerName || 'N/A'}</div>
                     </TableCell>
-                    <TableCell>₹{order.total.toFixed(2)}</TableCell>
+                    <TableCell className='flex items-center'>
+                        <IndianRupee className="h-4 w-4 mr-1" />
+                        {order.total.toFixed(2)}
+                    </TableCell>
                     <TableCell className="text-right"><Badge>{order.status}</Badge></TableCell>
                   </TableRow>
                 ))}

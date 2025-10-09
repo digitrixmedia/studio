@@ -125,7 +125,10 @@ export default function SuperAdminDashboardPage() {
                 {topFranchisesBySales.slice(0, 5).map(f => (
                   <TableRow key={f.id}>
                     <TableCell>{f.name}</TableCell>
-                    <TableCell className="text-right">₹{f.totalSales.toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right flex items-center justify-end">
+                        <IndianRupee className="h-4 w-4 mr-1" />
+                        {f.totalSales.toLocaleString('en-IN')}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

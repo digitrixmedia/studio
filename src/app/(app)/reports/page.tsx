@@ -176,7 +176,10 @@ export default function ReportsPage() {
                 <IndianRupee className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">₹{totalSales.toLocaleString('en-IN')}</div>
+                <div className="text-2xl font-bold flex items-center">
+                    <IndianRupee className="h-6 w-6 mr-1" />
+                    {totalSales.toLocaleString('en-IN')}
+                </div>
                 <p className="text-xs text-muted-foreground">For the selected period</p>
             </CardContent>
         </Card>
@@ -196,7 +199,10 @@ export default function ReportsPage() {
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">₹{averageOrderValue.toFixed(2)}</div>
+                <div className="text-2xl font-bold flex items-center">
+                    <IndianRupee className="h-6 w-6 mr-1" />
+                    {averageOrderValue.toFixed(2)}
+                </div>
                 <p className="text-xs text-muted-foreground">For the selected period</p>
             </CardContent>
         </Card>
@@ -292,9 +298,15 @@ export default function ReportsPage() {
                             {dailySalesData.map(day => (
                                 <TableRow key={day.date}>
                                     <TableCell className='font-medium'>{day.date}</TableCell>
-                                    <TableCell className="text-right">₹{day.sales.toLocaleString('en-IN')}</TableCell>
+                                    <TableCell className="text-right flex items-center justify-end">
+                                        <IndianRupee className="h-4 w-4 mr-1" />
+                                        {day.sales.toLocaleString('en-IN')}
+                                    </TableCell>
                                     <TableCell className="text-right">{day.orders}</TableCell>
-                                    <TableCell className="text-right">₹{day.aov.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right flex items-center justify-end">
+                                        <IndianRupee className="h-4 w-4 mr-1" />
+                                        {day.aov.toFixed(2)}
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

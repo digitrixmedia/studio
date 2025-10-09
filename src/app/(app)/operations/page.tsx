@@ -380,7 +380,10 @@ export default function OperationsPage() {
                             </TableCell>
                             <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
                             <TableCell><Badge>{order.status}</Badge></TableCell>
-                            <TableCell>₹{order.total.toFixed(2)}</TableCell>
+                            <TableCell className='flex items-center'>
+                                <IndianRupee className="h-4 w-4 mr-1" />
+                                {order.total.toFixed(2)}
+                            </TableCell>
                             <TableCell>{format(order.createdAt, 'PPp')}</TableCell>
                             <TableCell className='text-right'>
                                 <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
@@ -483,7 +486,10 @@ export default function OperationsPage() {
                                     <div><Mail className="inline mr-2 h-3 w-3"/>{customer.email}</div>
                                 </TableCell>
                                 <TableCell>{customer.totalOrders}</TableCell>
-                                <TableCell className='text-right'>₹{customer.totalSpent.toFixed(2)}</TableCell>
+                                <TableCell className='text-right flex items-center justify-end'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {customer.totalSpent.toFixed(2)}
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -500,7 +506,10 @@ export default function OperationsPage() {
                     <IndianRupee className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">₹{liveViewStats.totalSales.toLocaleString('en-IN')}</div>
+                    <div className="text-2xl font-bold flex items-center">
+                        <IndianRupee className="h-6 w-6 mr-1" />
+                        {liveViewStats.totalSales.toLocaleString('en-IN')}
+                    </div>
                 </CardContent>
             </Card>
              <Card>
@@ -781,14 +790,20 @@ export default function OperationsPage() {
                         {viewOrder?.items.map(item => (
                             <TableRow key={item.id}>
                                 <TableCell>{item.quantity} x {item.name}</TableCell>
-                                <TableCell className='text-right'>₹{item.totalPrice.toFixed(2)}</TableCell>
+                                <TableCell className='text-right flex items-center justify-end'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {item.totalPrice.toFixed(2)}
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
                 </Table>
                  <div className='mt-4 pt-4 border-t font-bold flex justify-between'>
                     <span>Total</span>
-                    <span>₹{viewOrder?.total.toFixed(2)}</span>
+                    <span className='flex items-center'>
+                        <IndianRupee className="h-5 w-5 mr-1" />
+                        {viewOrder?.total.toFixed(2)}
+                    </span>
                 </div>
             </div>
         </DialogContent>

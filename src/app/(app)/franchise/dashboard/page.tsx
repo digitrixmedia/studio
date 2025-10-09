@@ -165,8 +165,14 @@ export default function FranchiseDashboardPage() {
                         <TableRow key={outlet.id}>
                             <TableCell className='font-medium'>{outlet.name}</TableCell>
                             <TableCell><Badge variant={outlet.status === 'Active' ? 'default' : 'destructive'}>{outlet.status}</Badge></TableCell>
-                            <TableCell>₹{(outlet.todaySales || 0).toLocaleString('en-IN')}</TableCell>
-                            <TableCell>₹{(outlet.totalSales || 0).toLocaleString('en-IN')}</TableCell>
+                            <TableCell className='flex items-center'>
+                                <IndianRupee className="h-4 w-4 mr-1" />
+                                {(outlet.todaySales || 0).toLocaleString('en-IN')}
+                            </TableCell>
+                            <TableCell className='flex items-center'>
+                                <IndianRupee className="h-4 w-4 mr-1" />
+                                {(outlet.totalSales || 0).toLocaleString('en-IN')}
+                            </TableCell>
                             <TableCell>{outlet.ordersToday || 0}</TableCell>
                             <TableCell>{outlet.managerName}</TableCell>
                             <TableCell className='text-right'>
@@ -187,7 +193,10 @@ export default function FranchiseDashboardPage() {
             </CardHeader>
             <CardContent>
                 <p className='text-lg font-bold'>{summary.topPerformer.name}</p>
-                <p className='text-muted-foreground'>₹{summary.topPerformer.sales.toLocaleString('en-IN')} today</p>
+                <p className='text-muted-foreground flex items-center'>
+                    <IndianRupee className="h-4 w-4 mr-1" />
+                    {summary.topPerformer.sales.toLocaleString('en-IN')} today
+                </p>
             </CardContent>
         </Card>
         <Card>
@@ -196,7 +205,10 @@ export default function FranchiseDashboardPage() {
             </CardHeader>
             <CardContent>
                 <p className='text-lg font-bold'>{summary.lowPerformer.name}</p>
-                <p className='text-muted-foreground'>₹{summary.lowPerformer.sales.toLocaleString('en-IN')} today</p>
+                <p className='text-muted-foreground flex items-center'>
+                    <IndianRupee className="h-4 w-4 mr-1" />
+                    {summary.lowPerformer.sales.toLocaleString('en-IN')} today
+                </p>
             </CardContent>
         </Card>
         <Card>
@@ -204,7 +216,10 @@ export default function FranchiseDashboardPage() {
                 <CardTitle className='text-base'>Average Order Value</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className='text-xl font-bold'>₹{summary.avgOrderValue.toFixed(2)}</p>
+                <p className='text-xl font-bold flex items-center'>
+                    <IndianRupee className="h-5 w-5 mr-1" />
+                    {summary.avgOrderValue.toFixed(2)}
+                </p>
                 <p className='text-muted-foreground'>Across all outlets</p>
             </CardContent>
         </Card>

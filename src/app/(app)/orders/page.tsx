@@ -500,15 +500,24 @@ export default function OrdersPage() {
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{subTotal.toFixed(2)}</span>
+                                <span className='flex items-center'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {subTotal.toFixed(2)}
+                                </span>
                                 </div>
                                 <div className="flex justify-between">
                                 <span>GST (5%)</span>
-                                <span className='flex items-center'><IndianRupee className="h-4 w-4 mr-1" />{tax.toFixed(2)}</span>
+                                <span className='flex items-center'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {tax.toFixed(2)}
+                                </span>
                                 </div>
                                 <div className="flex justify-between font-bold text-lg">
                                 <span>Total</span>
-                                <span className='flex items-center'><IndianRupee className="h-5 w-5 mr-1" />{total.toFixed(2)}</span>
+                                <span className='flex items-center'>
+                                    <IndianRupee className="h-5 w-5 mr-1" />
+                                    {total.toFixed(2)}
+                                </span>
                                 </div>
                             </div>
                             <div className='flex items-center gap-2'>
@@ -612,12 +621,18 @@ export default function OrdersPage() {
                            {cart.map(item => (
                                <div key={item.id} className="flex justify-between">
                                    <span>{item.quantity} x {item.name}</span>
-                                   <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{item.totalPrice.toFixed(2)}</span>
+                                   <span className='flex items-center'>
+                                       <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>
+                                       {item.totalPrice.toFixed(2)}
+                                    </span>
                                </div>
                            ))}
                            <div className="flex justify-between font-bold pt-2 border-t">
                                <span>Total Amount</span>
-                               <span className='flex items-center'><IndianRupee className="inline-block h-4 w-4 mr-1"/>{total.toFixed(2)}</span>
+                               <span className='flex items-center'>
+                                   <IndianRupee className="inline-block h-4 w-4 mr-1"/>
+                                   {total.toFixed(2)}
+                                </span>
                            </div>
                        </div>
                     </CardContent>

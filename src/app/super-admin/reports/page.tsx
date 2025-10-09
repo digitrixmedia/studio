@@ -16,7 +16,7 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
 import { topFranchisesBySales, monthlyNewSubscriptions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, IndianRupee } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const storageChartConfig = {
@@ -98,7 +98,10 @@ export default function SuperAdminReportsPage() {
                         <TableRow key={f.id}>
                             <TableCell className='font-medium'>{f.name}</TableCell>
                             <TableCell>{f.totalOutlets}</TableCell>
-                            <TableCell>₹{f.totalSales.toLocaleString('en-IN')}</TableCell>
+                            <TableCell className='flex items-center'>
+                                <IndianRupee className="h-4 w-4 mr-1" />
+                                {f.totalSales.toLocaleString('en-IN')}
+                            </TableCell>
                             <TableCell>{f.totalStorage.toFixed(2)} GB</TableCell>
                             <TableCell>{f.lastActive.toLocaleDateString()}</TableCell>
                         </TableRow>
