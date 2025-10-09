@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type NavItem = {
   href: string;
@@ -44,6 +45,13 @@ const navItems: NavItem[] = [
   { href: '/franchise/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
   { href: '/franchise/reports', label: 'Reports', icon: BarChart2, roles: ['Admin'] },
 ];
+
+const quickAccessItems = [
+    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/reports', label: 'Reports', icon: BarChart2 },
+    { href: '/menu', label: 'Menu', icon: Book },
+    { href: '/inventory', label: 'Inventory', icon: Box },
+]
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { currentUser, selectedOutlet, clearSelectedOutlet } = useAppContext();
@@ -127,7 +135,27 @@ export default function AppLayout({ children }: { children: ReactNode }) {
              <div className='flex-1'>
                  <h2 className="text-lg sm:text-2xl font-semibold capitalize">{pageTitle}</h2>
              </div>
-             <div className='hidden sm:block'>
+             {effectiveRole === 'Manager' && (
+                <div className='hidden sm:flex flex-1 justify-center items-center gap-2'>
+                    <TooltipProvider>
+                    {quickAccessItems.map(item => (
+                         <Tooltip key={item.href}>
+                            <TooltipTrigger asChild>
+                                <Link href={item.href}>
+                                    <Button variant={pathname.startsWith(item.href) ? 'secondary' : 'ghost'} size="icon">
+                                        <item.icon className='h-5 w-5'/>
+                                    </Button>
+                                </Link>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>{item.label}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ))}
+                    </TooltipProvider>
+                </div>
+             )}
+             <div className='flex-1 hidden sm:flex justify-end'>
                 <UserNav />
              </div>
         </header>
