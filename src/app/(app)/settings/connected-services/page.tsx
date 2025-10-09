@@ -48,6 +48,11 @@ export default function ConnectedServicesSettingsPage() {
     const [sendKdsUpdateToOrderScreen, setSendKdsUpdateToOrderScreen] = useState(true);
     const [markKotAsDoneOnKds, setMarkKotAsDoneOnKds] = useState(true);
 
+    // State for Captain App Settings
+    const [printKotFromCaptainApp, setPrintKotFromCaptainApp] = useState(true);
+    const [allowDiscountFromCaptainApp, setAllowDiscountFromCaptainApp] = useState(false);
+    const [notifyCaptainUsersOn, setNotifyCaptainUsersOn] = useState('None');
+
 
     const handleSaveChanges = () => {
         toast({
@@ -70,6 +75,9 @@ export default function ConnectedServicesSettingsPage() {
             sendLoyaltyDataOn,
             sendKdsUpdateToOrderScreen,
             markKotAsDoneOnKds,
+            printKotFromCaptainApp,
+            allowDiscountFromCaptainApp,
+            notifyCaptainUsersOn,
         });
     };
 
@@ -244,7 +252,50 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && (
+                {activeTab === 'captain-app' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Captain App settings</CardTitle>
+                            <CardDescription>The following settings pertains to configuring the Captain App print settings.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="print-kot" checked={printKotFromCaptainApp} onCheckedChange={(checked) => setPrintKotFromCaptainApp(!!checked)} />
+                                <Label htmlFor="print-kot">Print KOT from Captain App</Label>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="allow-discount" checked={allowDiscountFromCaptainApp} onCheckedChange={(checked) => setAllowDiscountFromCaptainApp(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="allow-discount" className="text-gray-400">Allow Discount from Captain APP (Applicable for Dine-In orders only)</Label>
+                                    <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                             <RadioGroup value={notifyCaptainUsersOn} onValueChange={setNotifyCaptainUsersOn}>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <Label className="font-semibold pt-2">Notify captain users once the food ready is marked</Label>
+                                    <div className="md:col-span-2 flex items-center gap-x-6 gap-y-2">
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Item Ready" id="notify-item" />
+                                            <Label htmlFor="notify-item">Item Ready</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="KOT Ready" id="notify-kot" />
+                                            <Label htmlFor="notify-kot">KOT Ready</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="None" id="notify-none" />
+                                            <Label htmlFor="notify-none">None</Label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </RadioGroup>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
