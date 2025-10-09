@@ -4,8 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders, ingredients, tables, menuItems } from '@/lib/data';
-import { IndianRupee, ClipboardList, Utensils, AlertCircle, PlusCircle } from 'lucide-react';
+import { IndianRupee, ClipboardList, Utensils, AlertCircle, PlusCircle, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
+import { format } from 'date-fns';
 
 export default function DashboardPage() {
   const todaySales = orders.reduce((sum, order) => sum + (order.status === 'Completed' ? order.total : 0), 0);
@@ -25,6 +26,8 @@ export default function DashboardPage() {
     })
     .sort((a, b) => b.quantitySold - a.quantitySold)
     .slice(0, 5);
+    
+  const recentOrders = [...orders].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-8">
@@ -91,17 +94,17 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle>Top Selling Items Today</CardTitle>
+            <CardTitle>Top Selling Items</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
-                  <TableHead className="text-right">Quantity Sold</TableHead>
+                  <TableHead className="text-right">Qty Sold</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,7 +120,35 @@ export default function DashboardPage() {
             </Table>
           </CardContent>
         </Card>
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead className="text-right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentOrders.map(order => (
+                  <TableRow key={order.id}>
+                    <TableCell>
+                      <div className="font-medium">#{order.orderNumber}</div>
+                      <div className="text-sm text-muted-foreground">{order.customerName || 'N/A'}</div>
+                    </TableCell>
+                    <TableCell>₹{order.total.toFixed(2)}</TableCell>
+                    <TableCell className="text-right"><Badge>{order.status}</Badge></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle className="text-destructive" />
