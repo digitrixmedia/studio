@@ -1,3 +1,4 @@
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -43,6 +44,10 @@ export default function ConnectedServicesSettingsPage() {
     const [loyaltyOnDineIn, setLoyaltyOnDineIn] = useState(true);
     const [sendLoyaltyDataOn, setSendLoyaltyDataOn] = useState('Settle & Save');
 
+    // State for KDS Settings
+    const [sendKdsUpdateToOrderScreen, setSendKdsUpdateToOrderScreen] = useState(true);
+    const [markKotAsDoneOnKds, setMarkKotAsDoneOnKds] = useState(true);
+
 
     const handleSaveChanges = () => {
         toast({
@@ -63,6 +68,8 @@ export default function ConnectedServicesSettingsPage() {
             loyaltyOnPickUp,
             loyaltyOnDineIn,
             sendLoyaltyDataOn,
+            sendKdsUpdateToOrderScreen,
+            markKotAsDoneOnKds,
         });
     };
 
@@ -206,7 +213,38 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && (
+                 {activeTab === 'kds' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>KDS settings</CardTitle>
+                            <CardDescription>The following settings would be used to configure the Kitchen Display System or KDS</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="send-kds-update" checked={sendKdsUpdateToOrderScreen} onCheckedChange={(checked) => setSendKdsUpdateToOrderScreen(!!checked)} />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="send-kds-update">From KDS/KOT live screen send update to order screen.</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        In case of any update (like marking an item/order ready) in KDS or KOT live view, the update would be also be present in Order screen.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="mark-kot-done" checked={markKotAsDoneOnKds} onCheckedChange={(checked) => setMarkKotAsDoneOnKds(!!checked)} />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="mark-kot-done">On marking done all items on KDS, Mark KOT as done.</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        Enabling the setting would mark the full KOT done at all places (including online aggregators) when all the items are marked done.
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                           <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
