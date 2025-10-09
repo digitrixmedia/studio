@@ -56,7 +56,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders as initialOrders, tables } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Table as TableType, DeliveryBoy, Reservation } from '@/lib/types';
-import { Calendar as CalendarIcon, CheckCircle, Circle, Clock, CookingPot, Edit, Eye, IndianRupee, Mail, MapPin, Motorcycle, Phone, PlusCircle, Search, Trash2, User, XCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, CheckCircle, Circle, Clock, CookingPot, Edit, Eye, IndianRupee, Mail, MapPin, Motorcycle, Phone, PlusCircle, Search, Trash2, User, XCircle, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -101,6 +101,8 @@ export default function OperationsPage() {
     const [sheetContent, setSheetContent] = useState<'reservation' | 'deliveryBoy' | null>(null);
     const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
     const [editingDeliveryBoy, setEditingDeliveryBoy] = useState<DeliveryBoy | null>(null);
+    const [assigningDeliveryBoy, setAssigningDeliveryBoy] = useState<DeliveryBoy | null>(null);
+    const [selectedOrderToAssign, setSelectedOrderToAssign] = useState<string>('');
 
 
     const filteredOrders = orders.filter(order => {
@@ -114,6 +116,8 @@ export default function OperationsPage() {
         const statusMatch = kotStatusFilter === 'All' || order.status === kotStatusFilter;
         return isKitchenOrder && statusMatch;
     });
+
+    const deliveryOrdersReady = orders.filter(o => o.type === 'Delivery' && o.status === 'Ready');
     
     const handleCancelOrder = (orderId: string) => {
         setOrders(orders.map(o => o.id === orderId ? {...o, status: 'Cancelled'} : o));
@@ -210,6 +214,57 @@ export default function OperationsPage() {
         toast({ title: "Delivery Boy Removed" });
     }
 
+    const handleAssignOrder = () => {
+        if (!assigningDeliveryBoy || !selectedOrderToAssign) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select an order to assign.' });
+            return;
+        }
+
+        const order = orders.find(o => o.id === selectedOrderToAssign);
+        
+        // Update Delivery Boy
+        setDeliveryBoys(deliveryBoys.map(db => 
+            db.id === assigningDeliveryBoy.id 
+                ? { ...db, status: 'On a delivery', currentOrder: `#${order?.orderNumber}` }
+                : db
+        ));
+
+        // Update Order
+        setOrders(orders.map(o => 
+            o.id === selectedOrderToAssign 
+                ? { ...o, status: 'Out for Delivery' } 
+                : o
+        ));
+
+        toast({ title: 'Order Assigned', description: `Order #${order?.orderNumber} assigned to ${assigningDeliveryBoy.name}.` });
+        
+        // Reset
+        setAssigningDeliveryBoy(null);
+        setSelectedOrderToAssign('');
+    }
+    
+    const handleCompleteDelivery = (deliveryBoyId: string) => {
+        const deliveryBoy = deliveryBoys.find(db => db.id === deliveryBoyId);
+        if (!deliveryBoy || !deliveryBoy.currentOrder) return;
+        
+        const orderNumber = deliveryBoy.currentOrder.replace('#','');
+
+        // Update Order to Completed
+        setOrders(orders.map(o => 
+            o.orderNumber === orderNumber
+                ? { ...o, status: 'Completed' }
+                : o
+        ));
+
+        // Update Delivery Boy to Available
+        setDeliveryBoys(deliveryBoys.map(db => 
+            db.id === deliveryBoyId
+                ? { ...db, status: 'Available', currentOrder: undefined }
+                : db
+        ));
+        
+        toast({ title: 'Delivery Completed', description: `Order #${orderNumber} marked as complete.`});
+    }
 
   return (
     <>
@@ -239,6 +294,7 @@ export default function OperationsPage() {
                             <SelectItem value="New">New</SelectItem>
                             <SelectItem value="Preparing">Preparing</SelectItem>
                             <SelectItem value="Ready">Ready</SelectItem>
+                            <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
                             <SelectItem value="Completed">Completed</SelectItem>
                             <SelectItem value="Cancelled">Cancelled</SelectItem>
                         </SelectContent>
@@ -540,6 +596,14 @@ export default function OperationsPage() {
                                 </TableCell>
                                 <TableCell>{db.currentOrder || 'N/A'}</TableCell>
                                 <TableCell className='text-right'>
+                                    {db.status === 'Available' ? (
+                                        <Button size="sm" onClick={() => setAssigningDeliveryBoy(db)}>Assign Order</Button>
+                                    ) : (
+                                        <Button size="sm" variant="outline" onClick={() => handleCompleteDelivery(db.id)}>
+                                            <Check className="mr-2 h-4 w-4"/>
+                                            Complete
+                                        </Button>
+                                    )}
                                     <Button variant="ghost" size="icon" onClick={() => openEditDeliveryBoySheet(db)}><Edit/></Button>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
@@ -598,6 +662,39 @@ export default function OperationsPage() {
                     <span>₹{viewOrder?.total.toFixed(2)}</span>
                 </div>
             </div>
+        </DialogContent>
+    </Dialog>
+    
+    {/* Dialog for assigning a delivery boy */}
+    <Dialog open={!!assigningDeliveryBoy} onOpenChange={() => setAssigningDeliveryBoy(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Assign Order to {assigningDeliveryBoy?.name}</DialogTitle>
+                <DialogDescription>Select a "Ready" delivery order to assign.</DialogDescription>
+            </DialogHeader>
+            <div className='py-4 space-y-4'>
+                <Label htmlFor="order-to-assign">Select Order</Label>
+                <Select value={selectedOrderToAssign} onValueChange={setSelectedOrderToAssign}>
+                    <SelectTrigger id="order-to-assign">
+                        <SelectValue placeholder="Select a ready order..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {deliveryOrdersReady.length > 0 ? (
+                             deliveryOrdersReady.map(o => (
+                                <SelectItem key={o.id} value={o.id}>
+                                    #{o.orderNumber} - {o.customerName} (₹{o.total.toFixed(2)})
+                                </SelectItem>
+                             ))
+                        ) : (
+                            <div className='p-4 text-sm text-muted-foreground'>No delivery orders are ready.</div>
+                        )}
+                    </SelectContent>
+                </Select>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setAssigningDeliveryBoy(null)}>Cancel</Button>
+                <Button onClick={handleAssignOrder} disabled={!selectedOrderToAssign}>Confirm Assignment</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -667,4 +764,3 @@ export default function OperationsPage() {
     </>
   );
 }
-

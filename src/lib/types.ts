@@ -53,7 +53,7 @@ export interface OrderItem {
 }
 
 export type OrderType = 'Dine-In' | 'Takeaway' | 'Delivery';
-export type OrderStatus = 'New' | 'Preparing' | 'Ready' | 'Completed' | 'Cancelled';
+export type OrderStatus = 'New' | 'Preparing' | 'Ready' | 'Out for Delivery' | 'Completed' | 'Cancelled';
 export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
 
 export interface Order {
