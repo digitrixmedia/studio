@@ -60,7 +60,7 @@ import { Calendar as CalendarIcon, CheckCircle, Circle, Clock, CookingPot, Edit,
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { format, isSameDay } from 'date-fns';
+import { format, isSameDay, startOfToday } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -96,7 +96,7 @@ export default function OperationsPage() {
     const [selectedOrderToAssign, setSelectedOrderToAssign] = useState<string>('');
     const [assigningReservation, setAssigningReservation] = useState<Reservation | null>(null);
     const [selectedTableForReservation, setSelectedTableForReservation] = useState<string>('');
-    const [reservationDate, setReservationDate] = useState<Date | undefined>(new Date());
+    const [reservationDate, setReservationDate] = useState<Date | undefined>();
 
 
     const filteredOrders = orders.filter(order => {
@@ -111,9 +111,12 @@ export default function OperationsPage() {
         return isKitchenOrder && statusMatch;
     });
 
-    const filteredReservations = reservations.filter(res => 
-        reservationDate ? isSameDay(res.time, reservationDate) : true
-    ).sort((a,b) => a.time.getTime() - b.time.getTime());
+    const filteredReservations = reservations.filter(res => {
+        if (reservationDate) {
+            return isSameDay(res.time, reservationDate);
+        }
+        return res.time >= startOfToday();
+    }).sort((a,b) => a.time.getTime() - b.time.getTime());
 
     const deliveryOrdersReady = orders.filter(o => o.type === 'Delivery' && o.status === 'Ready');
     
@@ -527,10 +530,15 @@ export default function OperationsPage() {
          <Card>
             <CardHeader>
                 <div className="flex justify-between items-center">
-                    <CardTitle>Table Reservations</CardTitle>
+                    <div>
+                        <CardTitle>Table Reservations</CardTitle>
+                        <CardDescription>
+                            {reservationDate ? `Showing reservations for ${format(reservationDate, 'PPP')}` : 'Showing all upcoming reservations'}
+                        </CardDescription>
+                    </div>
                     <Button onClick={openNewReservationSheet}><PlusCircle className="mr-2 h-4 w-4"/> New Reservation</Button>
                 </div>
-                 <div className="flex gap-2 pt-2">
+                 <div className="flex gap-2 pt-4">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
@@ -540,13 +548,14 @@ export default function OperationsPage() {
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={reservationDate} onSelect={setReservationDate} initialFocus/></PopoverContent>
                     </Popover>
+                    {reservationDate && <Button variant="ghost" onClick={() => setReservationDate(undefined)}>View All Upcoming</Button>}
                  </div>
             </CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Time</TableHead>
+                            <TableHead>Date & Time</TableHead>
                             <TableHead>Guest</TableHead>
                             <TableHead>Guests</TableHead>
                             <TableHead>Table</TableHead>
@@ -557,7 +566,7 @@ export default function OperationsPage() {
                     <TableBody>
                         {filteredReservations.length > 0 ? filteredReservations.map(res => (
                             <TableRow key={res.id}>
-                                <TableCell className='font-bold'>{format(res.time, 'p')}</TableCell>
+                                <TableCell className='font-bold'>{format(res.time, 'PPp')}</TableCell>
                                 <TableCell>
                                     <div>{res.name}</div>
                                     <div className='text-xs text-muted-foreground'>{res.phone}</div>
