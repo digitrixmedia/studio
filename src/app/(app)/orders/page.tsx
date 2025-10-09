@@ -21,7 +21,7 @@ import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
 import { Check, CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag, Mail } from 'lucide-react';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -29,40 +29,35 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { AppOrder } from '@/contexts/AppContext';
 
-type HeldOrder = {
-  id: string;
-  cart: OrderItem[];
-  orderType: OrderType;
-  selectedTable: string;
-  customerName: string;
-  customerPhone: string;
-}
 
 export default function OrdersPage() {
-  const { menuItems, menuCategories, currentOrder, setCurrentOrder, loadOrder } = useAppContext();
+  const { 
+    menuItems, 
+    menuCategories, 
+    orders,
+    setOrders,
+    activeOrderId,
+    setActiveOrderId,
+    addOrder,
+    removeOrder,
+    updateOrder
+  } = useAppContext();
   const { settings, setSetting } = useSettings();
   
-  const [cart, setCart] = [currentOrder, setCurrentOrder];
+  const activeOrder = useMemo(() => orders.find(o => o.id === activeOrderId), [orders, activeOrderId]);
+
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
-  const [orderType, setOrderType] = useState<OrderType>(settings.defaultOrderType);
-  const [selectedTable, setSelectedTable] = useState<string>('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
+  
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
   const [noteEditingItem, setNoteEditingItem] = useState<OrderItem | null>(null);
   const [currentNote, setCurrentNote] = useState('');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
   const { toast } = useToast();
-  const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
-  const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
   const [billSearchQuery, setBillSearchQuery] = useState('');
-
-  useEffect(() => {
-    setOrderType(settings.defaultOrderType);
-  }, [settings.defaultOrderType]);
 
   const FoodTypeIndicator = ({ type }: { type: MenuItem['foodType'] }) => {
     if (!type) return null;
@@ -74,13 +69,21 @@ export default function OrdersPage() {
       </div>
     );
   };
+  
+  const updateActiveOrder = (items: OrderItem[]) => {
+    if (activeOrderId) {
+      updateOrder(activeOrderId, { items });
+    }
+  };
 
   const addToCart = (item: MenuItem) => {
+    if (!activeOrder) return;
+
     if (item.variations && item.variations.length > 0) {
       setCustomizationItem(item);
     } else {
        const uniqueCartId = `${item.id}-base-${Date.now()}`;
-       const existingItem = cart.find(cartItem => cartItem.name === item.name && !cartItem.variation && !cartItem.notes);
+       const existingItem = activeOrder.items.find(cartItem => cartItem.name === item.name && !cartItem.variation && !cartItem.notes);
        
        if (existingItem) {
          updateQuantity(existingItem.id, existingItem.quantity + 1);
@@ -92,14 +95,14 @@ export default function OrdersPage() {
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
         };
-        setCart([...cart, newOrderItem]);
+        updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
     }
   };
 
   const handleCustomizationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!customizationItem) return;
+    if (!customizationItem || !activeOrder) return;
 
     const formData = new FormData(e.currentTarget);
     const variationId = formData.get('variation') as string;
@@ -116,7 +119,7 @@ export default function OrdersPage() {
       finalName += ` (${selectedVariation.name})`;
     }
     
-    const existingItem = cart.find(cartItem => cartItem.name === finalName && cartItem.notes === (notes || undefined));
+    const existingItem = activeOrder.items.find(cartItem => cartItem.name === finalName && cartItem.notes === (notes || undefined));
 
     if (existingItem) {
         updateQuantity(existingItem.id, existingItem.quantity + 1);
@@ -130,7 +133,7 @@ export default function OrdersPage() {
           variation: selectedVariation,
           notes: notes || undefined,
         };
-        setCart([...cart, newOrderItem]);
+        updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
 
     setCustomizationItem(null);
@@ -142,45 +145,65 @@ export default function OrdersPage() {
   };
 
   const handleSaveNote = () => {
-    if (!noteEditingItem) return;
-    setCart(cart.map(item => item.id === noteEditingItem.id ? {...item, notes: currentNote} : item));
+    if (!noteEditingItem || !activeOrder) return;
+    const updatedItems = activeOrder.items.map(item => item.id === noteEditingItem.id ? {...item, notes: currentNote} : item);
+    updateActiveOrder(updatedItems);
     setNoteEditingItem(null);
     setCurrentNote('');
     toast({ title: 'Note Saved' });
   };
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
+     if (!activeOrder) return;
+
     if (newQuantity < 1) {
       removeFromCart(itemId);
     } else {
-      setCart(
-        cart.map(item =>
+      const updatedItems = activeOrder.items.map(item =>
           item.id === itemId
             ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
             : item
-        )
-      );
+        );
+      updateActiveOrder(updatedItems);
     }
   };
 
   const removeFromCart = (itemId: string) => {
-    setCart(cart.filter(item => item.id !== itemId));
+    if (!activeOrder) return;
+    const updatedItems = activeOrder.items.filter(item => item.id !== itemId);
+    updateActiveOrder(updatedItems);
   };
   
-  const resetOrder = () => {
-    setCart([]);
-    setSelectedTable('');
-    setCustomerName('');
-    setCustomerPhone('');
+  const resetCurrentOrder = () => {
+    if (!activeOrderId) return;
+    
+    // Check if it's the last order
+    if (orders.length === 1) {
+      // Just reset the order, don't remove it
+      setOrders([createNewOrder()]);
+      setActiveOrderId(orders[0].id);
+    } else {
+      removeOrder(activeOrderId);
+    }
+
     setAmountPaid('');
     setSetting('discountValue', 0);
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
     setIsPaymentDialogOpen(false);
   }
+
+  const createNewOrder = (): AppOrder => ({
+      id: `order-${Date.now()}`,
+      items: [],
+      customer: { name: '', phone: '' },
+      orderType: settings.defaultOrderType,
+      tableId: '',
+      discount: 0,
+    });
   
   const handleSendToKitchen = () => {
-    if (cart.length === 0) {
+    if (!activeOrder || activeOrder.items.length === 0) {
       toast({
         variant: "destructive",
         title: "Empty Order",
@@ -194,43 +217,7 @@ export default function OrdersPage() {
     });
   };
 
-  const handleHoldOrder = () => {
-    if (cart.length === 0) {
-      toast({ variant: "destructive", title: "Cannot hold an empty order" });
-      return;
-    }
-    const heldOrder: HeldOrder = {
-      id: `hold-${Date.now()}`,
-      cart,
-      orderType,
-      selectedTable,
-      customerName,
-      customerPhone,
-    };
-    setHeldOrders([...heldOrders, heldOrder]);
-    resetOrder();
-    toast({ title: "Order Held", description: "The current order has been saved." });
-  };
-  
-  const handleResumeOrder = (orderId: string) => {
-    const orderToResume = heldOrders.find(o => o.id === orderId);
-    if (orderToResume) {
-      if (cart.length > 0) {
-        handleHoldOrder();
-      }
-      setCart(orderToResume.cart);
-      setOrderType(orderToResume.orderType);
-      setSelectedTable(orderToResume.selectedTable);
-      setCustomerName(orderToResume.customerName);
-      setCustomerPhone(orderToResume.customerPhone);
-      
-      setHeldOrders(heldOrders.filter(o => o.id !== orderId));
-      setActiveTab('current');
-      toast({ title: "Order Resumed" });
-    }
-  };
-
-  const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
+  const subTotal = activeOrder ? activeOrder.items.reduce((acc, item) => acc + item.totalPrice, 0) : 0;
   
   let calculatedDiscount = 0;
   if (settings.discountType === 'percentage') {
@@ -266,6 +253,7 @@ export default function OrdersPage() {
   };
 
   const handlePrintBill = () => {
+    if (!activeOrder) return;
     const printSettings = {
         cafeName: 'ZappyyPOS',
         address: '123 Coffee Lane, Bengaluru',
@@ -301,11 +289,11 @@ export default function OrdersPage() {
             ${printSettings.customDetails ? `<p>${printSettings.customDetails}</p>` : ''}
             <p>Ph: ${printSettings.phone}</p>
             <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
-            <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
+            <p>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : `${activeOrder.orderType} - ${activeOrder.customer.name || 'Customer'}`}</p>
           </div>
           ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
           <div class="summary">
-            ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${item.totalPrice.toFixed(2)}</span></span></div>${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}`).join('')}
+            ${activeOrder.items.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${item.totalPrice.toFixed(2)}</span></span></div>${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}`).join('')}
           </div>
           <div class="total">
             <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
@@ -323,6 +311,7 @@ export default function OrdersPage() {
   };
   
   const handlePrintKOT = () => {
+    if (!activeOrder) return;
      const kotHtml = `
       <html>
         <head>
@@ -347,10 +336,10 @@ export default function OrdersPage() {
             <span>${new Date().toLocaleTimeString()}</span>
           </div>
           <div class="info">
-             <span>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : orderType}</span>
+             <span>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : activeOrder.orderType}</span>
           </div>
           <div class="items">
-            ${cart.map(item => `
+            ${activeOrder.items.map(item => `
               <div class="item">
                 <div class="name">${item.quantity} x ${item.name}</div>
                 ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
@@ -365,7 +354,7 @@ export default function OrdersPage() {
 
   const handlePrintAndSettle = () => {
     handlePrintBill();
-    resetOrder();
+    resetCurrentOrder();
   };
   
   const handleKotAndPrint = () => {
@@ -378,7 +367,7 @@ export default function OrdersPage() {
         title: "eBill Sent",
         description: "The bill has been sent to the customer's registered contact.",
     });
-    resetOrder();
+    resetCurrentOrder();
   }
 
   const filteredMenuItems = menuItems.filter(item => {
@@ -390,6 +379,14 @@ export default function OrdersPage() {
 
     return item.category === activeCategory;
   });
+
+  if (!activeOrder) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <p>Loading orders...</p>
+        </div>
+    )
+  }
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
@@ -463,21 +460,39 @@ export default function OrdersPage() {
       {/* Order Summary Section */}
       <div className="lg:col-span-1">
         <Card className="h-full flex flex-col">
-           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full flex flex-col">
-            <CardHeader>
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="current">Current Order</TabsTrigger>
-                    <TabsTrigger value="held">Held Orders ({heldOrders.length})</TabsTrigger>
-                </TabsList>
+          <CardHeader className="p-2">
+              <ScrollArea className="max-w-full">
+                <div className="flex items-center gap-1 p-1">
+                  {orders.map((order, index) => (
+                    <Button 
+                      key={order.id} 
+                      variant={order.id === activeOrderId ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className="relative"
+                      onClick={() => setActiveOrderId(order.id)}
+                    >
+                      Order {index + 1}
+                      {orders.length > 1 && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); removeOrder(order.id); }}
+                          className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
+                        >
+                          <X className="h-3 w-3"/>
+                        </button>
+                      )}
+                    </Button>
+                  ))}
+                  <Button variant="ghost" size="icon" onClick={addOrder}><PlusCircle /></Button>
+                </div>
+              </ScrollArea>
             </CardHeader>
-            <TabsContent value="current" className="flex-1 flex flex-col m-0">
                 <div className='flex flex-col h-full'>
-                    <div className='px-6 pb-6'>
-                        <div className="relative w-full mb-4">
+                    <div className='px-6 pb-6 border-t'>
+                        <div className="relative w-full my-4">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input placeholder="Search Bill No / KOT No..." className="pl-10" value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
                         </div>
-                        <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full">
+                        <Tabs value={activeOrder.orderType} onValueChange={(value) => updateOrder(activeOrder.id, {orderType: value as OrderType})} className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="Dine-In"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
                             <TabsTrigger value="Takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
@@ -485,8 +500,8 @@ export default function OrdersPage() {
                         </TabsList>
                         <CardDescription asChild className="space-y-2 pt-4">
                             <div>
-                                {orderType === 'Dine-In' && (
-                                    <Select value={selectedTable} onValueChange={setSelectedTable}>
+                                {activeOrder.orderType === 'Dine-In' && (
+                                    <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select Table" />
                                         </SelectTrigger>
@@ -502,11 +517,11 @@ export default function OrdersPage() {
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                     <div className="relative">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input placeholder="Customer Name" className="pl-10" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+                                    <Input placeholder="Customer Name" className="pl-10" value={activeOrder.customer.name} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, name: e.target.value}})} />
                                     </div>
                                     <div className="relative">
                                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input placeholder="Phone Number" className="pl-10" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} />
+                                    <Input placeholder="Phone Number" className="pl-10" value={activeOrder.customer.phone} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, phone: e.target.value}})} />
                                     </div>
                                 </div>
                             </div>
@@ -514,11 +529,11 @@ export default function OrdersPage() {
                         </Tabs>
                     </div>
                     <CardContent className="flex-1 overflow-y-auto pt-0">
-                        {cart.length === 0 ? (
+                        {activeOrder.items.length === 0 ? (
                         <p className="text-muted-foreground">No items in order.</p>
                         ) : (
                         <div className="space-y-2">
-                            {cart.map(item => (
+                            {activeOrder.items.map(item => (
                             <div key={item.id} className="flex items-start">
                                 <button className='flex-1 text-left' onClick={() => openNoteEditor(item)}>
                                     <p className="font-semibold text-sm">{item.name}</p>
@@ -564,7 +579,7 @@ export default function OrdersPage() {
                         </div>
                         )}
                     </CardContent>
-                    {cart.length > 0 && (
+                    {activeOrder.items.length > 0 && (
                         <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t'>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
@@ -641,7 +656,6 @@ export default function OrdersPage() {
                                 </div>
                             </div>
                             <div className='flex items-center gap-2'>
-                                <Button variant="outline" className='flex-1' onClick={handleHoldOrder}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
                                 <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
                             <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
@@ -650,40 +664,6 @@ export default function OrdersPage() {
                         </CardFooter>
                     )}
                 </div>
-            </TabsContent>
-             <TabsContent value="held" className="flex-1 overflow-hidden m-0">
-              <ScrollArea className="h-full">
-                <div className="p-6 space-y-4">
-                  {heldOrders.length === 0 ? (
-                    <p className="text-muted-foreground text-center">No orders on hold.</p>
-                  ) : (
-                    heldOrders.map((order, index) => {
-                       const itemSummary = order.cart.slice(0, 2).map(item => `${item.quantity}x ${item.name}`).join(', ');
-                       const remainingItems = order.cart.length - 2;
-
-                      return (
-                      <Card key={order.id} className="p-4">
-                        <div className="flex justify-between items-start gap-4">
-                           <div className='flex-1'>
-                                <p className="font-semibold">
-                                    {order.orderType === 'Dine-In' ? tables.find(t=> t.id === order.selectedTable)?.name : order.customerName || `Held Order ${index + 1}`}
-                                </p>
-                                <p className="text-sm text-muted-foreground">{order.cart.length} items</p>
-                                <p className="text-xs text-muted-foreground truncate mt-1">
-                                  {itemSummary}{remainingItems > 0 ? `, ...and ${remainingItems} more` : ''}
-                                </p>
-                           </div>
-                           <Button size="sm" onClick={() => handleResumeOrder(order.id)}>
-                             <PlayCircle className="mr-2 h-4 w-4" /> Resume
-                           </Button>
-                        </div>
-                      </Card>
-                    )})
-                  )}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
         </Card>
       </div>
 
@@ -756,7 +736,7 @@ export default function OrdersPage() {
                             <div>
                                 <CardTitle>Bill Summary</CardTitle>
                                 <CardDescription>
-                                {orderType === 'Dine-In' && selectedTable ? tables.find(t => t.id === selectedTable)?.name : `${orderType} - ${customerName}`}
+                                {activeOrder.orderType === 'Dine-In' && activeOrder.tableId ? tables.find(t => t.id === activeOrder.tableId)?.name : `${activeOrder.orderType} - ${activeOrder.customer.name}`}
                                 </CardDescription>
                             </div>
                             {settings.isComplimentary && <Badge variant="destructive">COMPLIMENTARY</Badge>}
@@ -764,7 +744,7 @@ export default function OrdersPage() {
                     </CardHeader>
                     <CardContent>
                        <div className="space-y-2 text-sm">
-                           {cart.map(item => (
+                           {activeOrder.items.map(item => (
                                <div key={item.id} className="flex justify-between">
                                    <span>{item.quantity} x {item.name}</span>
                                    <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
@@ -839,7 +819,7 @@ export default function OrdersPage() {
                       <Button variant="outline" onClick={handleSaveAndEbill}>
                         <Mail className="mr-2" /> Save & eBill
                       </Button>
-                       <Button onClick={resetOrder} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
+                       <Button onClick={resetCurrentOrder} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
                         <CheckCircle className="mr-2"/> Confirm Payment
                       </Button>
                     </div>

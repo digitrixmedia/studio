@@ -8,15 +8,33 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
 
+export type AppOrder = {
+  id: string;
+  items: OrderItem[];
+  customer: {
+    name: string;
+    phone: string;
+  };
+  orderType: OrderType;
+  tableId: string;
+  discount: number;
+}
+
 interface AppContextType {
   currentUser: User | null;
   selectedOutlet: FranchiseOutlet | null;
   menuItems: MenuItem[];
   menuCategories: MenuCategory[];
-  currentOrder: OrderItem[];
+  orders: AppOrder[];
+  setOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
+  activeOrderId: string | null;
+  setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>;
+  addOrder: () => void;
+  removeOrder: (orderId: string) => void;
+  updateOrder: (orderId: string, updates: Partial<AppOrder>) => void;
+  getOrderByTable: (tableId: string) => AppOrder | undefined;
   setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>;
   setMenuCategories: React.Dispatch<React.SetStateAction<MenuCategory[]>>;
-  setCurrentOrder: React.Dispatch<React.SetStateAction<OrderItem[]>>;
   loadOrder: (order: Order) => void;
   login: (role: Role) => void;
   logout: () => void;
@@ -26,16 +44,28 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const createNewOrder = (): AppOrder => ({
+  id: `order-${Date.now()}`,
+  items: [],
+  customer: { name: '', phone: '' },
+  orderType: 'Dine-In',
+  tableId: '',
+  discount: 0,
+});
+
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
-  const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
+  
+  const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
+
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const { settings, setSetting } = useSettings();
+  const { setSetting } = useSettings();
 
   useEffect(() => {
     const storedUserRole = localStorage.getItem('userRole') as Role | null;
@@ -57,7 +87,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
          router.push('/login');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, []);
 
   useEffect(() => {
     if (!currentUser) {
@@ -171,12 +201,84 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     router.push('/franchise/dashboard');
   };
   
-  const loadOrder = (order: Order) => {
-    setCurrentOrder(order.items);
-    setSetting('discountValue', order.discount || 0);
+  const addOrder = () => {
+    const newOrder = createNewOrder();
+    setOrders(prev => [...prev, newOrder]);
+    setActiveOrderId(newOrder.id);
+  };
+
+  const removeOrder = (orderId: string) => {
+    setOrders(prev => {
+        const newOrders = prev.filter(o => o.id !== orderId);
+        if (newOrders.length === 0) {
+            const newOrder = createNewOrder();
+            setActiveOrderId(newOrder.id);
+            return [newOrder];
+        }
+        if (activeOrderId === orderId) {
+            setActiveOrderId(newOrders[0].id);
+        }
+        return newOrders;
+    });
+  };
+
+  const updateOrder = (orderId: string, updates: Partial<AppOrder>) => {
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
+  };
+  
+  const getOrderByTable = (tableId: string) => {
+      return orders.find(o => o.tableId === tableId && o.orderType === 'Dine-In');
   }
 
-  const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet, menuItems, menuCategories, setMenuItems, setMenuCategories, currentOrder, setCurrentOrder, loadOrder };
+  const loadOrder = (order: Order) => {
+    const newAppOrder: AppOrder = {
+        id: `order-${Date.now()}`,
+        items: order.items,
+        customer: {
+            name: order.customerName || '',
+            phone: order.customerPhone || '',
+        },
+        orderType: order.type,
+        tableId: order.tableId || '',
+        discount: order.discount || 0,
+    };
+    setSetting('discountValue', order.discount || 0);
+
+    const existingOrderIndex = orders.findIndex(o => o.items.length === 0);
+    if(existingOrderIndex !== -1) {
+        setOrders(prev => {
+            const newOrders = [...prev];
+            newOrders[existingOrderIndex] = newAppOrder;
+            return newOrders;
+        });
+        setActiveOrderId(newAppOrder.id);
+    } else {
+        setOrders(prev => [...prev, newAppOrder]);
+        setActiveOrderId(newAppOrder.id);
+    }
+  };
+
+  const value = { 
+    currentUser, 
+    selectedOutlet, 
+    login, 
+    logout, 
+    selectOutlet, 
+    clearSelectedOutlet, 
+    menuItems, 
+    menuCategories, 
+    setMenuItems, 
+    setMenuCategories,
+    orders,
+    setOrders,
+    activeOrderId,
+    setActiveOrderId,
+    addOrder,
+    removeOrder,
+    updateOrder,
+    getOrderByTable,
+    loadOrder
+  };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

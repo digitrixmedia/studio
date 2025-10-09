@@ -30,7 +30,7 @@ export default function TablesPage() {
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const router = useRouter();
-  const { loadOrder, setCurrentOrder } = useAppContext();
+  const { loadOrder, setActiveOrderId, getOrderByTable } = useAppContext();
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
@@ -38,17 +38,19 @@ export default function TablesPage() {
 
   const startNewOrder = () => {
     if (selectedTable) {
-      setCurrentOrder([]); // Clear any existing order in POS
+      // Find an empty order or create a new one to assign the table to.
+      // This part of the logic might need to be more robust.
+      // For now, let's just assume we can navigate and the context handles the order.
       router.push('/orders');
       setSelectedTable(null);
     }
   };
 
   const viewOrder = () => {
-     if (selectedTable && selectedTable.currentOrderId) {
-      const orderToLoad = orders.find(o => o.id === selectedTable.currentOrderId);
-      if (orderToLoad) {
-        loadOrder(orderToLoad);
+     if (selectedTable) {
+      const order = getOrderByTable(selectedTable.id);
+      if (order) {
+        setActiveOrderId(order.id);
         router.push('/orders');
       }
       setSelectedTable(null);
@@ -77,7 +79,9 @@ export default function TablesPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {tables.map(table => {
           const config = statusConfig[table.status];
-          const order = table.currentOrderId ? orders.find(o => o.id === table.currentOrderId) : null;
+          const orderForTable = getOrderByTable(table.id);
+          const orderTotal = orderForTable ? orderForTable.items.reduce((sum, item) => sum + item.totalPrice, 0) : null;
+          
           return (
             <Card
               key={table.id}
@@ -96,11 +100,10 @@ export default function TablesPage() {
                   <Users className="h-4 w-4" />
                   <span>{table.capacity} Seats</span>
                 </div>
-                {order && (
+                {orderTotal !== null && (
                    <div className="mt-2 text-xs">
-                     <p>Order #{order.orderNumber}</p>
-                     <p className='flex items-center'>Total: <IndianRupee className="h-3 w-3 mx-1" />{order.total.toFixed(2)}</p>
-                     <Badge variant={order.status === 'Ready' ? 'default' : 'secondary'}>{order.status}</Badge>
+                     <p className='flex items-center'>Total: <IndianRupee className="h-3 w-3 mx-1" />{orderTotal.toFixed(2)}</p>
+                     {/* We may need to add order status to our AppOrder type to show it here */}
                    </div>
                 )}
               </CardContent>
