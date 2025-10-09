@@ -127,3 +127,23 @@ export interface FranchiseOutlet {
   totalSales?: number;
   ordersToday?: number;
 }
+
+
+// Operations Types
+export interface Reservation {
+    id: string;
+    name: string;
+    phone: string;
+    guests: number;
+    time: Date;
+    status: 'Confirmed' | 'Pending' | 'Arrived' | 'Cancelled';
+    tableId?: string;
+}
+
+export interface DeliveryBoy {
+    id: string;
+    name: string;
+    phone: string;
+    status: 'Available' | 'On a delivery' | 'Offline';
+    currentOrder?: string;
+}

@@ -24,43 +24,84 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { orders, tables } from '@/lib/data';
-import type { Order, OrderStatus, OrderType, Table as TableType } from '@/lib/types';
+import { orders as initialOrders, tables } from '@/lib/data';
+import type { Order, OrderStatus, OrderType, Table as TableType, DeliveryBoy, Reservation } from '@/lib/types';
 import { Calendar as CalendarIcon, CheckCircle, Circle, Clock, CookingPot, Edit, Eye, IndianRupee, Mail, MapPin, Motorcycle, Phone, PlusCircle, Search, Trash2, User, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { useToast } from '@/hooks/use-toast';
 
 // Mock data for new sections
-const customers = Array.from(new Set(orders.map(o => o.customerName).filter(Boolean))).map((name, i) => ({
+const initialCustomers = Array.from(new Set(initialOrders.map(o => o.customerName).filter(Boolean))).map((name, i) => ({
     id: `cust-${i+1}`,
     name,
     phone: `98765432${String(i).padStart(2, '0')}`,
     email: `${name?.toLowerCase().split(' ')[0]}@example.com`,
-    totalOrders: orders.filter(o => o.customerName === name).length,
-    totalSpent: orders.filter(o => o.customerName === name).reduce((sum, o) => sum + o.total, 0),
+    totalOrders: initialOrders.filter(o => o.customerName === name).length,
+    totalSpent: initialOrders.filter(o => o.customerName === name).reduce((sum, o) => sum + o.total, 0),
 }));
 
-const reservations = [
+const initialReservations: Reservation[] = [
     { id: 'res-1', name: 'Ankit Sharma', phone: '9988776655', guests: 4, time: new Date(new Date().setHours(20,0,0)), status: 'Confirmed' },
     { id: 'res-2', name: 'Riya Gupta', phone: '9123456789', guests: 2, time: new Date(new Date().setHours(19,30,0)), status: 'Pending' },
     { id: 'res-3', name: 'Vikram Singh', phone: '9876543210', guests: 6, time: new Date(new Date().setHours(21,0,0)), status: 'Arrived' },
 ];
 
-const deliveryBoys = [
+const initialDeliveryBoys: DeliveryBoy[] = [
     { id: 'db-1', name: 'Ravi Kumar', phone: '8877665544', status: 'Available' },
     { id: 'db-2', name: 'Suresh Patel', phone: '8123456789', status: 'On a delivery', currentOrder: '#1045' },
     { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'Available' },
 ]
 
 export default function OperationsPage() {
+    const { toast } = useToast();
+    const [orders, setOrders] = useState<Order[]>(initialOrders);
+    const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
+    const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
+    
     const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'All'>('All');
     const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'All'>('All');
     const [kotStatusFilter, setKotStatusFilter] = useState<OrderStatus | 'All'>('All');
+    
+    const [viewOrder, setViewOrder] = useState<Order | null>(null);
+    const [sheetContent, setSheetContent] = useState<'reservation' | 'deliveryBoy' | null>(null);
+    const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
+    const [editingDeliveryBoy, setEditingDeliveryBoy] = useState<DeliveryBoy | null>(null);
+
 
     const filteredOrders = orders.filter(order => {
         const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
@@ -73,6 +114,11 @@ export default function OperationsPage() {
         const statusMatch = kotStatusFilter === 'All' || order.status === kotStatusFilter;
         return isKitchenOrder && statusMatch;
     });
+    
+    const handleCancelOrder = (orderId: string) => {
+        setOrders(orders.map(o => o.id === orderId ? {...o, status: 'Cancelled'} : o));
+        toast({ title: 'Order Cancelled', description: `Order #${orders.find(o=>o.id === orderId)?.orderNumber} has been cancelled.` });
+    };
 
     const liveViewStats = {
         totalSales: orders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + o.total, 0),
@@ -82,8 +128,91 @@ export default function OperationsPage() {
         runningKots: orders.filter(o => ['New', 'Preparing'].includes(o.status)).length,
         readyKots: orders.filter(o => o.status === 'Ready').length,
     }
+    
+    const openNewReservationSheet = () => {
+        setEditingReservation(null);
+        setSheetContent('reservation');
+    }
+    
+    const openEditReservationSheet = (reservation: Reservation) => {
+        setEditingReservation(reservation);
+        setSheetContent('reservation');
+    }
+    
+    const openNewDeliveryBoySheet = () => {
+        setEditingDeliveryBoy(null);
+        setSheetContent('deliveryBoy');
+    }
+
+    const openEditDeliveryBoySheet = (boy: DeliveryBoy) => {
+        setEditingDeliveryBoy(boy);
+        setSheetContent('deliveryBoy');
+    }
+
+    const handleSaveReservation = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const reservationData = Object.fromEntries(formData.entries()) as Omit<Reservation, 'id' | 'time'> & { time: string };
+        
+        if (editingReservation) {
+            const updatedReservation = { 
+                ...editingReservation, 
+                ...reservationData,
+                guests: Number(reservationData.guests),
+                time: new Date(`${new Date().toDateString()} ${reservationData.time}`)
+            };
+            setReservations(reservations.map(r => r.id === editingReservation.id ? updatedReservation : r));
+            toast({ title: "Reservation Updated" });
+        } else {
+             const newReservation: Reservation = {
+                id: `res-${Date.now()}`,
+                name: reservationData.name,
+                phone: reservationData.phone,
+                guests: Number(reservationData.guests),
+                time: new Date(`${new Date().toDateString()} ${reservationData.time}`),
+                status: 'Confirmed'
+             };
+             setReservations([newReservation, ...reservations]);
+             toast({ title: "Reservation Created" });
+        }
+        setSheetContent(null);
+    }
+    
+    const handleDeleteReservation = (id: string) => {
+        setReservations(reservations.filter(r => r.id !== id));
+        toast({ title: "Reservation Deleted" });
+    }
+
+    const handleSaveDeliveryBoy = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const boyData = Object.fromEntries(formData.entries()) as { name: string; phone: string };
+
+        if (editingDeliveryBoy) {
+            const updatedBoy = { ...editingDeliveryBoy, ...boyData };
+            setDeliveryBoys(deliveryBoys.map(db => db.id === editingDeliveryBoy.id ? updatedBoy : db));
+            toast({ title: "Delivery Boy Updated" });
+        } else {
+            const newBoy: DeliveryBoy = {
+                id: `db-${Date.now()}`,
+                name: boyData.name,
+                phone: boyData.phone,
+                status: 'Available',
+            };
+            setDeliveryBoys([newBoy, ...deliveryBoys]);
+            toast({ title: "Delivery Boy Added" });
+        }
+        setSheetContent(null);
+    }
+    
+    const handleDeleteDeliveryBoy = (id: string) => {
+        setDeliveryBoys(deliveryBoys.filter(db => db.id !== id));
+        toast({ title: "Delivery Boy Removed" });
+    }
+
 
   return (
+    <>
     <Tabs defaultValue="orders" className="h-full">
       <CardHeader>
         <CardTitle>Operations Management</CardTitle>
@@ -152,8 +281,24 @@ export default function OperationsPage() {
                             <TableCell>₹{order.total.toFixed(2)}</TableCell>
                             <TableCell>{format(order.createdAt, 'PPp')}</TableCell>
                             <TableCell className='text-right'>
-                                <Button variant="ghost" size="icon"><Eye /></Button>
-                                <Button variant="ghost" size="icon" className='text-destructive'><XCircle /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className='text-destructive' disabled={order.status === 'Cancelled' || order.status === 'Completed'}>
+                                            <XCircle />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will cancel order #{order.orderNumber}. This action cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Close</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleCancelOrder(order.id)}>Confirm Cancel</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </TableCell>
                         </TableRow>
                     ))}
@@ -228,7 +373,7 @@ export default function OperationsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {customers.map(customer => (
+                        {initialCustomers.map(customer => (
                              <TableRow key={customer.id}>
                                 <TableCell className='font-medium'>{customer.name}</TableCell>
                                 <TableCell>
@@ -300,7 +445,7 @@ export default function OperationsPage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Table Reservations</CardTitle>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> New Reservation</Button>
+                    <Button onClick={openNewReservationSheet}><PlusCircle className="mr-2 h-4 w-4"/> New Reservation</Button>
                 </div>
                  <div className="flex gap-2 pt-2">
                     <Popover>
@@ -338,8 +483,22 @@ export default function OperationsPage() {
                                 <TableCell><Button variant="outline" size="sm">Assign</Button></TableCell>
                                 <TableCell><Badge>{res.status}</Badge></TableCell>
                                 <TableCell className='text-right'>
-                                    <Button variant="ghost" size="icon"><Edit/></Button>
-                                    <Button variant="ghost" size="icon" className='text-destructive'><Trash2/></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => openEditReservationSheet(res)}><Edit/></Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                           <Button variant="ghost" size="icon" className='text-destructive'><Trash2/></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete Reservation?</AlertDialogTitle>
+                                                <AlertDialogDescription>This will permanently delete the reservation for {res.name}.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteReservation(res.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -354,7 +513,7 @@ export default function OperationsPage() {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Delivery Personnel</CardTitle>
-                    <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Delivery Boy</Button>
+                    <Button onClick={openNewDeliveryBoySheet}><PlusCircle className="mr-2 h-4 w-4"/> Add Delivery Boy</Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -381,8 +540,22 @@ export default function OperationsPage() {
                                 </TableCell>
                                 <TableCell>{db.currentOrder || 'N/A'}</TableCell>
                                 <TableCell className='text-right'>
-                                    <Button variant="ghost" size="icon"><Edit/></Button>
-                                    <Button variant="ghost" size="icon" className='text-destructive'><Trash2/></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => openEditDeliveryBoySheet(db)}><Edit/></Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                          <Button variant="ghost" size="icon" className='text-destructive'><Trash2/></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Remove Delivery Boy?</AlertDialogTitle>
+                                                <AlertDialogDescription>Are you sure you want to remove {db.name}?</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDeleteDeliveryBoy(db.id)}>Remove</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -393,5 +566,105 @@ export default function OperationsPage() {
       </TabsContent>
 
     </Tabs>
+
+     {/* Dialog for viewing an order */}
+    <Dialog open={!!viewOrder} onOpenChange={() => setViewOrder(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Order #{viewOrder?.orderNumber}</DialogTitle>
+                <DialogDescription>
+                    {viewOrder?.customerName} | {viewOrder?.type}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Item</TableHead>
+                            <TableHead className='text-right'>Total</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {viewOrder?.items.map(item => (
+                            <TableRow key={item.id}>
+                                <TableCell>{item.quantity} x {item.name}</TableCell>
+                                <TableCell className='text-right'>₹{item.totalPrice.toFixed(2)}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                 <div className='mt-4 pt-4 border-t font-bold flex justify-between'>
+                    <span>Total</span>
+                    <span>₹{viewOrder?.total.toFixed(2)}</span>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
+
+    {/* Sheet for adding/editing a reservation or delivery boy */}
+    <Sheet open={!!sheetContent} onOpenChange={() => setSheetContent(null)}>
+        <SheetContent>
+            {sheetContent === 'reservation' && (
+                <>
+                <SheetHeader>
+                    <SheetTitle>{editingReservation ? 'Edit' : 'New'} Reservation</SheetTitle>
+                    <SheetDescription>
+                        {editingReservation ? 'Update the details for this booking.' : 'Create a new table reservation.'}
+                    </SheetDescription>
+                </SheetHeader>
+                <form onSubmit={handleSaveReservation}>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">Name</Label>
+                            <Input id="name" name="name" defaultValue={editingReservation?.name} className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="phone" className="text-right">Phone</Label>
+                            <Input id="phone" name="phone" defaultValue={editingReservation?.phone} className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="guests" className="text-right">Guests</Label>
+                            <Input id="guests" name="guests" type="number" defaultValue={editingReservation?.guests} className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="time" className="text-right">Time</Label>
+                            <Input id="time" name="time" type="time" defaultValue={editingReservation ? format(editingReservation.time, 'HH:mm') : ''} className="col-span-3" required />
+                        </div>
+                    </div>
+                    <SheetFooter>
+                        <Button type="submit">Save Reservation</Button>
+                    </SheetFooter>
+                </form>
+                </>
+            )}
+             {sheetContent === 'deliveryBoy' && (
+                <>
+                <SheetHeader>
+                    <SheetTitle>{editingDeliveryBoy ? 'Edit' : 'Add'} Delivery Boy</SheetTitle>
+                    <SheetDescription>
+                        {editingDeliveryBoy ? 'Update details for this delivery person.' : 'Add a new delivery person.'}
+                    </SheetDescription>
+                </SheetHeader>
+                 <form onSubmit={handleSaveDeliveryBoy}>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">Name</Label>
+                            <Input id="name" name="name" defaultValue={editingDeliveryBoy?.name} className="col-span-3" required />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="phone" className="text-right">Phone</Label>
+                            <Input id="phone" name="phone" defaultValue={editingDeliveryBoy?.phone} className="col-span-3" required />
+                        </div>
+                    </div>
+                    <SheetFooter>
+                        <Button type="submit">Save Delivery Boy</Button>
+                    </SheetFooter>
+                </form>
+                </>
+            )}
+        </SheetContent>
+    </Sheet>
+    </>
   );
 }
+
