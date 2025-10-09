@@ -18,11 +18,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
-import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus } from 'lucide-react';
+import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 type HeldOrder = {
   id: string;
@@ -50,6 +52,10 @@ export default function OrdersPage() {
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
   const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [discountValue, setDiscountValue] = useState<number>(0);
+  const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
+
 
   const addToCart = (item: MenuItem) => {
     if (item.variations && item.variations.length > 0) {
@@ -84,7 +90,7 @@ export default function OrdersPage() {
     
     let basePrice = customizationItem.price;
     let finalName = customizationItem.name;
-    const uniqueCartId = `${customizationaItem.id}-${selectedVariation?.id || 'base'}-${Date.now()}`;
+    const uniqueCartId = `${customizationItem.id}-${selectedVariation?.id || 'base'}-${Date.now()}`;
 
     if (selectedVariation) {
       basePrice += selectedVariation.priceModifier;
@@ -147,6 +153,8 @@ export default function OrdersPage() {
     setCustomerName('');
     setCustomerPhone('');
     setAmountPaid('');
+    setDiscountValue(0);
+    setDiscountType('fixed');
     setIsPaymentDialogOpen(false);
   }
   
@@ -201,10 +209,11 @@ export default function OrdersPage() {
     }
   };
 
-
   const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
-  const tax = subTotal * 0.05; // 5% GST
-  const total = subTotal + tax;
+  const discountAmount = discountType === 'percentage' ? subTotal * (discountValue / 100) : discountValue;
+  const discountedSubtotal = subTotal - discountAmount;
+  const tax = discountedSubtotal * 0.05; // 5% GST on discounted amount
+  const total = discountedSubtotal + tax;
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
   const printContent = (content: string) => {
@@ -267,6 +276,7 @@ export default function OrdersPage() {
           </div>
           <div class="total">
             <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
+            ${discountAmount > 0 ? `<div class="item"><span class="name">Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${discountAmount.toFixed(2)}</span></span></div>` : ''}
             <div class="item"><span class="name">GST (5%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>
             <div class="item"><span class="name"><b>Total</b></span><span class="price"><b><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${total.toFixed(2)}</span></b></span></div>
           </div>
@@ -511,12 +521,55 @@ export default function OrdersPage() {
                         <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t'>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                <span>Subtotal</span>
-                                <span className='flex items-center'>
-                                    <IndianRupee className="h-4 w-4 mr-1" />
-                                    {subTotal.toFixed(2)}
-                                </span>
+                                  <div className="flex items-center gap-2">
+                                    <span>Subtotal</span>
+                                     <Popover>
+                                        <PopoverTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Tag /></Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64">
+                                          <div className="grid gap-4">
+                                            <div className="space-y-2">
+                                              <h4 className="font-medium leading-none">Add Discount</h4>
+                                              <p className="text-sm text-muted-foreground">
+                                                Apply a fixed or percentage-based discount.
+                                              </p>
+                                            </div>
+                                            <div className="grid gap-2">
+                                              <div className="flex items-center gap-2">
+                                                <Input
+                                                  type="number"
+                                                  value={discountValue || ''}
+                                                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                                                  className="flex-1"
+                                                  placeholder="Value"
+                                                />
+                                                <ToggleGroup
+                                                  type="single"
+                                                  variant="outline"
+                                                  value={discountType}
+                                                  onValueChange={(value: 'fixed' | 'percentage') => value && setDiscountType(value)}
+                                                >
+                                                  <ToggleGroupItem value="fixed" aria-label="Fixed amount">₹</ToggleGroupItem>
+                                                  <ToggleGroupItem value="percentage" aria-label="Percentage">%</ToggleGroupItem>
+                                                </ToggleGroup>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                  </div>
+                                  <span className='flex items-center'>
+                                      <IndianRupee className="h-4 w-4 mr-1" />
+                                      {subTotal.toFixed(2)}
+                                  </span>
                                 </div>
+                                {discountAmount > 0 && (
+                                    <div className="flex justify-between text-destructive">
+                                    <span>Discount ({discountValue}{discountType === 'percentage' ? '%' : ''})</span>
+                                    <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
                                 <span>GST (5%)</span>
                                 <span className='flex items-center'>
@@ -536,7 +589,7 @@ export default function OrdersPage() {
                                 <Button variant="outline" className='flex-1' onClick={handleHoldOrder}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
                                 <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
-                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)}>
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={cart.length === 0}>
                                 <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
                             </Button>
                         </CardFooter>
@@ -656,7 +709,23 @@ export default function OrdersPage() {
                                     </span>
                                </div>
                            ))}
-                           <div className="flex justify-between font-bold pt-2 border-t">
+                           <div className="border-t pt-2 mt-2 space-y-2">
+                               <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{subTotal.toFixed(2)}</span>
+                               </div>
+                               {discountAmount > 0 && (
+                                <div className="flex justify-between text-destructive">
+                                    <span>Discount</span>
+                                    <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{discountAmount.toFixed(2)}</span>
+                                </div>
+                               )}
+                                <div className="flex justify-between">
+                                    <span>GST (5%)</span>
+                                    <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
+                               </div>
+                           </div>
+                           <div className="flex justify-between font-bold pt-2 border-t text-base">
                                <span>Total Amount</span>
                                <span className='flex items-center'>
                                    <IndianRupee className="inline-block h-4 w-4 mr-1"/>
