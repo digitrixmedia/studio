@@ -29,6 +29,8 @@ export function UserNav() {
   const { name, email, avatar } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
 
+  const showProfileAndSettings = !isFranchiseAdmin || (isFranchiseAdmin && selectedOutlet);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -58,12 +60,14 @@ export function UserNav() {
               <span>Back to Franchise</span>
             </DropdownMenuItem>
           )}
-          <Link href="/profile">
-            <DropdownMenuItem>
-              <UserIcon className="mr-2 h-4 w-4" />
-              <span>Profile & Settings</span>
-            </DropdownMenuItem>
-          </Link>
+          {showProfileAndSettings && (
+            <Link href="/profile">
+              <DropdownMenuItem>
+                <UserIcon className="mr-2 h-4 w-4" />
+                <span>Profile & Settings</span>
+              </DropdownMenuItem>
+            </Link>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
