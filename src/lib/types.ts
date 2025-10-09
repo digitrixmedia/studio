@@ -71,6 +71,8 @@ export interface Order {
   createdBy: string; // userId
   paymentMethod?: PaymentMethod;
   changeReturned?: number;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export type TableStatus = 'Vacant' | 'Occupied' | 'Billing';

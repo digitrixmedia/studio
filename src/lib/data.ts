@@ -150,6 +150,7 @@ export const ingredients: Ingredient[] = [
 
 const orderStatuses: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
 const paymentMethods: PaymentMethod[] = ['Cash', 'UPI', 'Card'];
+const customerNames = ['Aarav', 'Sanya', 'Vikram', 'Anika', 'Rohan', 'Isha'];
 
 const generateOrders = (count: number): Order[] => {
   const orders: Order[] = [];
@@ -171,6 +172,7 @@ const generateOrders = (count: number): Order[] => {
     const tax = subTotal * 0.05;
     const total = subTotal + tax;
     const status = orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
+    const customerIndex = Math.floor(Math.random() * customerNames.length);
 
     orders.push({
       id: `order-${i}`,
@@ -182,6 +184,8 @@ const generateOrders = (count: number): Order[] => {
       discount: 0,
       total,
       status: status,
+      customerName: status !== 'Cancelled' ? customerNames[customerIndex] : undefined,
+      customerPhone: status !== 'Cancelled' ? `98765432${String(customerIndex).padStart(2,'0')}` : undefined,
       paymentMethod: status === 'Completed' ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)] : undefined,
       createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
       createdBy: users[Math.floor(Math.random() * 4) + 1].id,

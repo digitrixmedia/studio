@@ -143,7 +143,10 @@ export default function OperationsPage() {
                     {filteredOrders.map(order => (
                         <TableRow key={order.id}>
                             <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
-                            <TableCell>{order.customerName || 'N/A'}</TableCell>
+                            <TableCell>
+                                <div>{order.customerName || 'N/A'}</div>
+                                {order.customerPhone && <div className='text-xs text-muted-foreground'>{order.customerPhone}</div>}
+                            </TableCell>
                             <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
                             <TableCell><Badge>{order.status}</Badge></TableCell>
                             <TableCell>₹{order.total.toFixed(2)}</TableCell>
