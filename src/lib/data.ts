@@ -170,7 +170,7 @@ const generateOrders = (count: number): Order[] => {
     });
 
     const subTotal = orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
-    const tax = subTotal * 0.05;
+    const tax = 0;
     const total = subTotal + tax;
     const status = orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
     const customerIndex = Math.floor(Math.random() * customerNames.length);

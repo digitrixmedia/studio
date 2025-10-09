@@ -214,7 +214,7 @@ export default function OrdersPage() {
   const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
   const discountAmount = discountType === 'percentage' ? subTotal * (discountValue / 100) : discountValue;
   const discountedSubtotal = subTotal - discountAmount;
-  const tax = discountedSubtotal * 0.05; // 5% GST on discounted amount
+  const tax = 0; // Tax is now manual, defaulted to 0
   const total = discountedSubtotal + tax;
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
@@ -553,7 +553,7 @@ export default function OrdersPage() {
                                                   onValueChange={(value: 'fixed' | 'percentage') => value && setDiscountType(value)}
                                                 >
                                                   <ToggleGroupItem value="fixed" aria-label="Fixed amount">Fixed</ToggleGroupItem>
-                                                  <ToggleGroupItem value="percentage" aria-label="Percentage">Percent</ToggleGroupItem>
+                                                  <ToggleGroupItem value="percentage" aria-label="Percentage">Percentage</ToggleGroupItem>
                                                 </ToggleGroup>
                                               </div>
                                             </div>
@@ -573,7 +573,7 @@ export default function OrdersPage() {
                                     </div>
                                 )}
                                 <div className="flex justify-between">
-                                <span>GST (5%)</span>
+                                <span>GST</span>
                                 <span className='flex items-center'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
                                     {tax.toFixed(2)}
@@ -727,7 +727,7 @@ export default function OrdersPage() {
                                 </div>
                                )}
                                 <div className="flex justify-between">
-                                    <span>GST (5%)</span>
+                                    <span>GST</span>
                                     <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
                                </div>
                            </div>
