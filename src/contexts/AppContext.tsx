@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem } from '@/lib/types';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType } from '@/lib/types';
 import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -27,11 +27,15 @@ interface AppContextType {
   menuCategories: MenuCategory[];
   orders: AppOrder[];
   setOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
+  heldOrders: AppOrder[];
+  setHeldOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
   activeOrderId: string | null;
   setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>;
   addOrder: () => void;
   removeOrder: (orderId: string) => void;
   updateOrder: (orderId: string, updates: Partial<AppOrder>) => void;
+  holdOrder: (orderId: string) => void;
+  resumeOrder: (orderId: string) => void;
   getOrderByTable: (tableId: string) => AppOrder | undefined;
   setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>;
   setMenuCategories: React.Dispatch<React.SetStateAction<MenuCategory[]>>;
@@ -60,6 +64,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
+  const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
 
   const router = useRouter();
@@ -230,6 +235,40 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       return orders.find(o => o.tableId === tableId && o.orderType === 'Dine-In');
   }
 
+  const holdOrder = (orderId: string) => {
+    const orderToHold = orders.find(o => o.id === orderId);
+    if (!orderToHold) return;
+
+    if (orderToHold.items.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Cannot Hold Empty Order",
+        description: "Add items to the order before placing it on hold.",
+      });
+      return;
+    }
+
+    setHeldOrders(prev => [...prev, orderToHold]);
+    removeOrder(orderId);
+    toast({
+      title: "Order Held",
+      description: `Order for ${orderToHold.customer.name || 'a customer'} has been put on hold.`,
+    });
+  };
+
+  const resumeOrder = (orderId: string) => {
+    const orderToResume = heldOrders.find(o => o.id === orderId);
+    if (!orderToResume) return;
+
+    setOrders(prev => [...prev, orderToResume]);
+    setHeldOrders(prev => prev.filter(o => o.id !== orderId));
+    setActiveOrderId(orderToResume.id);
+    toast({
+      title: "Order Resumed",
+      description: `Order for ${orderToResume.customer.name || 'a customer'} is now active.`,
+    });
+  };
+
   const loadOrder = (order: Order) => {
     const newAppOrder: AppOrder = {
         id: `order-${Date.now()}`,
@@ -271,11 +310,15 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setMenuCategories,
     orders,
     setOrders,
+    heldOrders,
+    setHeldOrders,
     activeOrderId,
     setActiveOrderId,
     addOrder,
     removeOrder,
     updateOrder,
+    holdOrder,
+    resumeOrder,
     getOrderByTable,
     loadOrder
   };

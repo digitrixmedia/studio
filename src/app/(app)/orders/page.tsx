@@ -6,7 +6,7 @@ import {
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
 } from '@/components/ui/card';
 import {
-    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,8 +18,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
-import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
-import { Check, CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag, Mail } from 'lucide-react';
+import type { MenuItem, OrderItem, OrderType, AppOrder } from '@/lib/types';
+import { Check, CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag, Mail, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { AppOrder } from '@/contexts/AppContext';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 
 
 export default function OrdersPage() {
@@ -37,12 +38,15 @@ export default function OrdersPage() {
     menuItems, 
     menuCategories, 
     orders,
+    heldOrders,
     setOrders,
     activeOrderId,
     setActiveOrderId,
     addOrder,
     removeOrder,
-    updateOrder
+    updateOrder,
+    holdOrder,
+    resumeOrder,
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -52,6 +56,7 @@ export default function OrdersPage() {
   
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
   const [noteEditingItem, setNoteEditingItem] = useState<OrderItem | null>(null);
+  const [isHeldBillsOpen, setIsHeldBillsOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState('');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
@@ -180,8 +185,9 @@ export default function OrdersPage() {
     // Check if it's the last order
     if (orders.length === 1) {
       // Just reset the order, don't remove it
-      setOrders([createNewOrder()]);
-      setActiveOrderId(orders[0].id);
+       const newOrder = createNewOrder();
+      setOrders([newOrder]);
+      setActiveOrderId(newOrder.id);
     } else {
       removeOrder(activeOrderId);
     }
@@ -482,7 +488,12 @@ export default function OrdersPage() {
                       )}
                     </Button>
                   ))}
-                  <Button variant="ghost" size="icon" onClick={addOrder}><PlusCircle /></Button>
+                   <Button variant="ghost" size="icon" onClick={addOrder}><PlusCircle /></Button>
+                   <div className="flex-grow" />
+                   <Button variant="outline" size="sm" onClick={() => setIsHeldBillsOpen(true)} className="relative">
+                      <ShoppingBag className="mr-2 h-4 w-4" /> Held Bills
+                      {heldOrders.length > 0 && <Badge className="absolute -top-2 -right-2 px-1.5">{heldOrders.length}</Badge>}
+                    </Button>
                 </div>
               </ScrollArea>
             </CardHeader>
@@ -655,8 +666,9 @@ export default function OrdersPage() {
                                 </span>
                                 </div>
                             </div>
-                            <div className='flex items-center gap-2'>
-                                <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
+                            <div className='grid grid-cols-2 gap-2'>
+                                <Button variant="secondary" onClick={() => holdOrder(activeOrder.id)}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
+                                <Button variant="outline" onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
                             <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
                                 <IndianRupee className="mr-2 h-4 w-4" /> {settings.discountButtonText || 'Generate Bill'}
@@ -724,6 +736,55 @@ export default function OrdersPage() {
           </DialogContent>
         </Dialog>
         
+        {/* Held Bills Dialog */}
+        <Dialog open={isHeldBillsOpen} onOpenChange={setIsHeldBillsOpen}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Held Orders</DialogTitle>
+                    <DialogDescription>
+                        These orders are on hold. You can resume them at any time.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Items</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {heldOrders.length > 0 ? heldOrders.map(order => (
+                                <TableRow key={order.id}>
+                                    <TableCell>{order.customer.name || 'N/A'}</TableCell>
+                                    <TableCell><Badge variant="outline">{order.orderType}</Badge></TableCell>
+                                    <TableCell>{order.items.length}</TableCell>
+                                    <TableCell className="text-right flex items-center justify-end">
+                                        <IndianRupee className="h-4 w-4 mr-1" />
+                                        {order.items.reduce((sum, i) => sum + i.totalPrice, 0).toFixed(2)}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button size="sm" onClick={() => { resumeOrder(order.id); setIsHeldBillsOpen(false); }}>
+                                            <PlayCircle className="mr-2 h-4 w-4" /> Resume
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">
+                                        No orders are currently on hold.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </DialogContent>
+        </Dialog>
+
         {/* Payment Dialog */}
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
             <DialogContent className="max-w-md">

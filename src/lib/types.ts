@@ -150,3 +150,16 @@ export interface DeliveryBoy {
     status: 'Available' | 'On a delivery' | 'Offline';
     currentOrder?: string;
 }
+
+// App-specific type for orders being built in the POS
+export interface AppOrder {
+  id: string;
+  items: OrderItem[];
+  customer: {
+    name: string;
+    phone: string;
+  };
+  orderType: OrderType;
+  tableId: string;
+  discount: number;
+}
