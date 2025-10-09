@@ -42,7 +42,7 @@ export interface MenuItem {
 }
 
 export interface OrderItem {
-  id: string; // This will be the menu item id
+  id: string; // This will be a unique id for the cart item
   name: string;
   quantity: number;
   price: number; // base price

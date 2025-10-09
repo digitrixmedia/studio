@@ -50,24 +50,8 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const addToCart = (item: MenuItem) => {
-    // Check for variations or addons to open customization dialog
-    if (item.variations && item.variations.length > 0) {
-      setCustomizationItem(item);
-    } else {
-      const existingItem = cart.find(cartItem => cartItem.id === item.id);
-      if (existingItem) {
-        updateQuantity(item.id, existingItem.quantity + 1);
-      } else {
-        const newOrderItem: OrderItem = {
-          id: item.id,
-          name: item.name,
-          quantity: 1,
-          price: item.price,
-          totalPrice: item.price,
-        };
-        setCart([...cart, newOrderItem]);
-      }
-    }
+    // Open customization dialog for any item, to add notes
+    setCustomizationItem(item);
   };
 
   const handleCustomizationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -82,25 +66,30 @@ export default function OrdersPage() {
     
     let basePrice = customizationItem.price;
     let finalName = customizationItem.name;
+    const uniqueCartId = `${customizationItem.id}-${selectedVariation?.id || 'base'}-${notes || 'no-notes'}`;
 
     if (selectedVariation) {
       basePrice += selectedVariation.priceModifier;
       finalName += ` (${selectedVariation.name})`;
     }
-    
-    // Addon logic to be implemented here
 
-    const newOrderItem: OrderItem = {
-      id: `${customizationItem.id}-${Date.now()}`,
-      name: finalName,
-      quantity: 1,
-      price: basePrice,
-      totalPrice: basePrice,
-      variation: selectedVariation,
-      notes,
-    };
+    const existingItem = cart.find(cartItem => cartItem.id === uniqueCartId);
 
-    setCart([...cart, newOrderItem]);
+    if (existingItem) {
+        updateQuantity(existingItem.id, existingItem.quantity + 1);
+    } else {
+        const newOrderItem: OrderItem = {
+          id: uniqueCartId,
+          name: finalName,
+          quantity: 1,
+          price: basePrice,
+          totalPrice: basePrice,
+          variation: selectedVariation,
+          notes,
+        };
+        setCart([...cart, newOrderItem]);
+    }
+
     setCustomizationItem(null);
   };
 
@@ -571,7 +560,7 @@ export default function OrdersPage() {
                     <form onSubmit={handleCustomizationSubmit} className="space-y-4">
                         {customizationItem.variations && customizationItem.variations.length > 0 && (
                             <div>
-                                <label className="font-medium">Select</label>
+                                <Label className="font-medium">Select Variation</Label>
                                 <Select name="variation" defaultValue={customizationItem.variations[0].id}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select a variation" />
@@ -579,19 +568,20 @@ export default function OrdersPage() {
                                     <SelectContent>
                                         {customizationItem.variations.map(v => (
                                             <SelectItem key={v.id} value={v.id}>
-                                                {v.name} (+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier})
+                                                {v.name} (+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier.toFixed(2)})
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                         )}
-                        {/* Addon selection UI can be added here */}
                         <div>
-                             <label className="font-medium">Notes</label>
-                             <Textarea name="notes" placeholder="e.g. Extra hot, no sugar"/>
+                             <Label className="font-medium">Special Notes</Label>
+                             <Textarea name="notes" placeholder="e.g. Extra hot, no sugar..."/>
                         </div>
-                        <Button type="submit" className="w-full">Add to Order</Button>
+                        <DialogFooter>
+                            <Button type="submit" className="w-full">Add to Order</Button>
+                        </DialogFooter>
                     </form>
                 )}
             </DialogContent>
