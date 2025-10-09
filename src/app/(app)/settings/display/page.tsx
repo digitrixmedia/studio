@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,8 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { users } from '@/lib/data';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 const navItems = [
     { name: 'Display Settings', id: 'display' },
@@ -30,18 +32,33 @@ export default function DisplaySettingsPage() {
     const [defaultQuantity, setDefaultQuantity] = useState('1');
     const [finalizeWithoutAmount, setFinalizeWithoutAmount] = useState(true);
 
+    // State for Discount settings
+    const [discountLabel, setDiscountLabel] = useState('Coupon Code');
+    const [discountButtonText, setDiscountButtonText] = useState('Apply');
+    const [displayNoDiscount, setDisplayNoDiscount] = useState(true);
+    const [defaultOpenDiscount, setDefaultOpenDiscount] = useState(false);
+    const [enableOrderWiseInfo, setEnableOrderWiseInfo] = useState(false);
+    const [allowNegativeQuantity, setAllowNegativeQuantity] = useState(false);
+
+
     const handleSaveChanges = () => {
         // In a real app, this would save to a context or backend.
         toast({
             title: 'Settings Saved',
-            description: 'Your default values have been updated.',
+            description: 'Your display settings have been updated.',
         });
         console.log({
             defaultOrderType,
             defaultCustomer,
             defaultPayment,
             defaultQuantity,
-            finalizeWithoutAmount
+            finalizeWithoutAmount,
+            discountLabel,
+            discountButtonText,
+            displayNoDiscount,
+            defaultOpenDiscount,
+            enableOrderWiseInfo,
+            allowNegativeQuantity,
         });
     };
 
@@ -131,21 +148,84 @@ export default function DisplaySettingsPage() {
                                     aria-label="Finalize order without amount"
                                   />
                                 </div>
-                                <div className="flex justify-end">
-                                    <Button onClick={handleSaveChanges}>Save Changes</Button>
-                                </div>
                             </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
                         </Card>
                     )}
                     {activeTab === 'discount' && (
                         <Card>
                             <CardHeader>
                                 <CardTitle>Discount Settings</CardTitle>
-                                <CardDescription>Configure how discounts are applied and displayed.</CardDescription>
+                                <CardDescription>Configure how discounts are applied and displayed in the billing screen.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <p>Discount settings will go here.</p>
+                            <CardContent className="space-y-8">
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4">Discount</h3>
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                            <Label htmlFor="discount-label" className='md:text-right'>Discount Label</Label>
+                                            <div className='md:col-span-2'>
+                                                <Input id="discount-label" value={discountLabel} onChange={e => setDiscountLabel(e.target.value)} />
+                                                <p className="text-xs text-muted-foreground mt-1">This setting would describe what the discount would be displayed as.</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                            <Label htmlFor="discount-button-text" className='md:text-right'>Discount Calculate Button Text *</Label>
+                                            <Input id="discount-button-text" className='md:col-span-2' value={discountButtonText} onChange={e => setDiscountButtonText(e.target.value)} />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                             <div className="md:col-start-2 md:col-span-2 space-y-4">
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox id="display-no-discount" checked={displayNoDiscount} onCheckedChange={checked => setDisplayNoDiscount(Boolean(checked))} />
+                                                    <Label htmlFor="display-no-discount">Display "Leave as it is. (No Discount)" on Discount Screen?</Label>
+                                                </div>
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox id="default-open-discount" checked={defaultOpenDiscount} onCheckedChange={checked => setDefaultOpenDiscount(Boolean(checked))} />
+                                                    <div>
+                                                        <Label htmlFor="default-open-discount">By default make discount area open</Label>
+                                                        <p className="text-xs text-muted-foreground">This settings enables default display of discount area in billing screen</p>
+                                                    </div>
+                                                </div>
+                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator />
+                                
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4">Order Wise Information</h3>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="enable-order-wise-info" checked={enableOrderWiseInfo} onCheckedChange={checked => setEnableOrderWiseInfo(Boolean(checked))}/>
+                                        <div>
+                                            <Label htmlFor="enable-order-wise-info">Enable Order wise information</Label>
+                                            <p className="text-xs text-muted-foreground">The following settings helps in configures enabling as well as configuring Order wise information</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <Separator />
+
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4">Negative Quantity Settings</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <Label>Negative Quantity Reason</Label>
+                                            <p className="text-sm text-muted-foreground">This setting is only available in cloud login.</p>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox id="allow-negative-quantity" checked={allowNegativeQuantity} onCheckedChange={checked => setAllowNegativeQuantity(Boolean(checked))}/>
+                                            <Label htmlFor="allow-negative-quantity">Allow negative quantity</ Label>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
                         </Card>
                     )}
                     {activeTab === 'cancel' && (
