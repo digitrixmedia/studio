@@ -69,6 +69,9 @@ export default function CalculationsSettingsPage() {
     const [splitBillOption, setSplitBillOption] = useState('Generate Separate Bills');
     const [disableTaxOnComplimentary, setDisableTaxOnComplimentary] = useState(false);
 
+    // Special Notes state
+    const [saveSpecialNote, setSaveSpecialNote] = useState(false);
+
 
     const handleSaveChanges = () => {
         toast({
@@ -111,6 +114,7 @@ export default function CalculationsSettingsPage() {
             resetKotNumber,
             splitBillOption,
             disableTaxOnComplimentary,
+            saveSpecialNote,
         });
     };
 
@@ -496,7 +500,24 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && activeTab !== 'kot-bill' && (
+                    {activeTab === 'special-notes' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Special Notes</CardTitle>
+                                <CardDescription>The following settings describes the settings related to the special notes in the billing screen.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox id="save-special-note" checked={saveSpecialNote} onCheckedChange={(checked) => setSaveSpecialNote(!!checked)} />
+                                    <Label htmlFor="save-special-note">Save special note into special notes master while saving kot / orders.</Label>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && activeTab !== 'kot-bill' && activeTab !== 'special-notes' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
@@ -516,3 +537,4 @@ export default function CalculationsSettingsPage() {
         </SettingsPageLayout>
     );
 }
+
