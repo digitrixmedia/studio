@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const navItems = [
     { name: 'Round-Off Options', id: 'round-off' },
@@ -23,9 +24,13 @@ const navItems = [
 
 export default function CalculationsSettingsPage() {
     const { toast } = useToast();
+    // Round-off state
     const [roundOffOption, setRoundOffOption] = useState('Normal');
     const [roundOffIncrement, setRoundOffIncrement] = useState('1');
     const [decimalPoints, setDecimalPoints] = useState('2');
+    // Service Charge state
+    const [displayServiceCharge, setDisplayServiceCharge] = useState(false);
+
 
     const handleSaveChanges = () => {
         toast({
@@ -36,6 +41,7 @@ export default function CalculationsSettingsPage() {
             roundOffOption,
             roundOffIncrement,
             decimalPoints,
+            displayServiceCharge,
         });
     };
 
@@ -111,7 +117,31 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && (
+                    {activeTab === 'service-charge' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Service Charge</CardTitle>
+                                <CardDescription>The following settings describes the settings related to the service charge in the billing screen.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="display-service-charge" checked={displayServiceCharge} onCheckedChange={(checked) => setDisplayServiceCharge(!!checked)} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="display-service-charge">Display & Calculate Service Charge</Label>
+                                             <p className="text-xs text-muted-foreground">
+                                                Note: As per guidelines issued by the Central Consumer Protection Authority, service charges cannot be automatically (or by default) added to a bill. In addition, outlets cannot charge taxes on service charges
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
