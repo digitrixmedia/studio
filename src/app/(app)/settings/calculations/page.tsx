@@ -48,6 +48,15 @@ export default function CalculationsSettingsPage() {
     const [taxOnDeliveryCharge, setTaxOnDeliveryCharge] = useState(false);
     const [deliveryAmountCondition, setDeliveryAmountCondition] = useState('None');
     const [deliverySpecificAmount, setDeliverySpecificAmount] = useState('0');
+    // Discount state
+    const [calculateTaxBeforeDiscount, setCalculateTaxBeforeDiscount] = useState(false);
+    const [calculateBackwardTax, setCalculateBackwardTax] = useState(false);
+    const [autoApplyItemDiscount, setAutoApplyItemDiscount] = useState(false);
+    const [showItemDiscountBox, setShowItemDiscountBox] = useState(false);
+    const [applyBogoAutomatically, setApplyBogoAutomatically] = useState(false);
+    const [ignoreAddonPrice, setIgnoreAddonPrice] = useState(false);
+    const [specialDiscountReasonMandatory, setSpecialDiscountReasonMandatory] = useState(false);
+    const [displayDiscountTextbox, setDisplayDiscountTextbox] = useState(true);
 
 
     const handleSaveChanges = () => {
@@ -74,6 +83,14 @@ export default function CalculationsSettingsPage() {
             taxOnDeliveryCharge,
             deliveryAmountCondition,
             deliverySpecificAmount,
+            calculateTaxBeforeDiscount,
+            calculateBackwardTax,
+            autoApplyItemDiscount,
+            showItemDiscountBox,
+            applyBogoAutomatically,
+            ignoreAddonPrice,
+            specialDiscountReasonMandatory,
+            displayDiscountTextbox,
         });
     };
 
@@ -323,7 +340,61 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && (
+                     {activeTab === 'discount' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Discount</CardTitle>
+                                <CardDescription>The following settings help in describing the in the billing screen.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                 <div className="flex items-start space-x-2">
+                                    <Checkbox id="tax-before-discount" checked={calculateTaxBeforeDiscount} onCheckedChange={checked => setCalculateTaxBeforeDiscount(!!checked)} />
+                                    <Label htmlFor="tax-before-discount">Calculate Tax Before Discount Calculation</Label>
+                                </div>
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox id="backward-tax" checked={calculateBackwardTax} onCheckedChange={checked => setCalculateBackwardTax(!!checked)} />
+                                    <div>
+                                        <Label htmlFor="backward-tax">Calculate Backward Tax After Discount</Label>
+                                        <p className="text-xs text-muted-foreground">Note: Ignore this settings if you are using forward tax configuration for your outlet</p>
+                                    </div>
+                                </div>
+                                 <div className="flex items-start space-x-2">
+                                    <Checkbox id="auto-apply-discount" checked={autoApplyItemDiscount} onCheckedChange={checked => setAutoApplyItemDiscount(!!checked)} />
+                                    <div>
+                                        <Label htmlFor="auto-apply-discount">Item/ Category discount auto-applied</Label>
+                                        <p className="text-xs text-muted-foreground">This setting enables discount without pressing a button beside the label in billing screen.</p>
+                                    </div>
+                                </div>
+                                 <div className="flex items-start space-x-2">
+                                    <Checkbox id="show-item-discount" checked={showItemDiscountBox} onCheckedChange={checked => setShowItemDiscountBox(!!checked)} />
+                                    <Label htmlFor="show-item-discount">Show Item/Category wise discount box while adding an item</Label>
+                                </div>
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox id="apply-bogo" checked={applyBogoAutomatically} onCheckedChange={checked => setApplyBogoAutomatically(!!checked)} />
+                                    <div>
+                                        <Label htmlFor="apply-bogo">Apply Bogo Automatically</Label>
+                                        <p className="text-xs text-muted-foreground">This setting enables Bogo discount without pressing a button in billing screen.</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox id="ignore-addon-price" checked={ignoreAddonPrice} onCheckedChange={checked => setIgnoreAddonPrice(!!checked)} />
+                                    <Label htmlFor="ignore-addon-price">Ignore add-on price while calculating discount (works for all types for discount)</Label>
+                                </div>
+                                 <div className="flex items-start space-x-2">
+                                    <Checkbox id="special-discount-reason" checked={specialDiscountReasonMandatory} onCheckedChange={checked => setSpecialDiscountReasonMandatory(!!checked)} />
+                                    <Label htmlFor="special-discount-reason">Special discount reason mandatory</Label>
+                                </div>
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox id="display-discount-textbox" checked={displayDiscountTextbox} onCheckedChange={checked => setDisplayDiscountTextbox(!!checked)} />
+                                    <Label htmlFor="display-discount-textbox">Display Discount/Coupon Textbox</Label>
+                                </div>
+                            </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
@@ -343,5 +414,3 @@ export default function CalculationsSettingsPage() {
         </SettingsPageLayout>
     );
 }
-
-    
