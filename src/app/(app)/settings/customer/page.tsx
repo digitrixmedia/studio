@@ -27,6 +27,9 @@ export default function CustomerSettingsPage() {
     const [showCustomerEmail, setShowCustomerEmail] = useState(false);
     const [createBillsWithTaxId, setCreateBillsWithTaxId] = useState(true);
 
+    // State for Due Payment Settings
+    const [isPhoneMandatoryForDue, setIsPhoneMandatoryForDue] = useState(true);
+
 
     const handleSaveChanges = () => {
         toast({
@@ -41,6 +44,7 @@ export default function CustomerSettingsPage() {
             maxLength,
             showCustomerEmail,
             createBillsWithTaxId,
+            isPhoneMandatoryForDue,
         });
     };
 
@@ -112,12 +116,26 @@ export default function CustomerSettingsPage() {
                     {activeTab === 'due-payment' && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Due Payment Settings</CardTitle>
-                                <CardDescription>Configure settings related to due payments from customers.</CardDescription>
+                                <CardTitle>Due Payment settings</CardTitle>
+                                <CardDescription>The following settings configures the Due Payment module in billing screen.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <p>Due payment settings will be available here.</p>
+                                <div className="flex items-start space-x-3">
+                                    <Checkbox 
+                                        id="due-payment-phone" 
+                                        checked={isPhoneMandatoryForDue} 
+                                        onCheckedChange={checked => setIsPhoneMandatoryForDue(!!checked)}
+                                        disabled
+                                    />
+                                    <div className="grid gap-1.5 leading-none">
+                                        <Label htmlFor="due-payment-phone" className="text-gray-400">Customer Phone number mandatory when the due payment is selected</Label>
+                                        <p className="text-sm text-muted-foreground">This setting is only available in cloud login.</p>
+                                    </div>
+                                </div>
                             </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
                         </Card>
                     )}
                 </>
