@@ -1,19 +1,17 @@
 
 'use client';
 
-import { useState } from 'react';
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
 import { users } from '@/lib/data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useSettings } from "@/contexts/SettingsContext";
 
 const navItems = [
     { name: 'Display Settings', id: 'display' },
@@ -24,86 +22,11 @@ const navItems = [
 ]
 
 export default function DisplaySettingsPage() {
-    const { toast } = useToast();
+    const { settings, setSetting, saveSettings } = useSettings();
     
-    // State for Display settings
-    const [billingLayout, setBillingLayout] = useState('Touch Screen');
-    const [menuPreference, setMenuPreference] = useState('On the Left');
-    const [defaultScreen, setDefaultScreen] = useState('Table Management');
-    const [orderLiveView, setOrderLiveView] = useState('DESC');
-    const [kotLiveView, setKotLiveView] = useState('ASC');
-    const [kptBreachedOnTop, setKptBreachedOnTop] = useState(true);
-    const [displayPrepTimeAlerts, setDisplayPrepTimeAlerts] = useState(true);
-    const [displayItemImages, setDisplayItemImages] = useState(false);
-    const [displaySearch, setDisplaySearch] = useState(true);
-    const [displaySettleAmount, setDisplaySettleAmount] = useState(true);
-    const [showTip, setShowTip] = useState(true);
-    const [tipSelection, setTipSelection] = useState('None');
-    const [tipValue, setTipValue] = useState('');
-    const [showCwt, setShowCwt] = useState(true);
-
-
-    // State for Default Values settings
-    const [defaultOrderType, setDefaultOrderType] = useState('Dine-In');
-    const [defaultCustomer, setDefaultCustomer] = useState(users[0].id);
-    const [defaultPayment, setDefaultPayment] = useState('Cash');
-    const [defaultQuantity, setDefaultQuantity] = useState('1');
-    const [finalizeWithoutAmount, setFinalizeWithoutAmount] = useState(true);
-
-    // State for Discount settings
-    const [discountLabel, setDiscountLabel] = useState('Coupon Code');
-    const [discountButtonText, setDiscountButtonText] = useState('Apply');
-    const [displayNoDiscount, setDisplayNoDiscount] = useState(true);
-    const [defaultOpenDiscount, setDefaultOpenDiscount] = useState(false);
-    const [enableOrderWiseInfo, setEnableOrderWiseInfo] = useState(false);
-    const [allowNegativeQuantity, setAllowNegativeQuantity] = useState(false);
-
-    // State for Table Settlement settings
-    const [lockActiveTable, setLockActiveTable] = useState<'save-print' | 'settle-save' | 'none'>('settle-save');
-    const [releaseTableOn, setReleaseTableOn] = useState<'print-bill' | 'settle-save'>('settle-save');
-    const [releaseRecentSectionOn, setReleaseRecentSectionOn] = useState<'print-bill' | 'settle-save'>('settle-save');
-    const [releaseForOnlineOrders, setReleaseForOnlineOrders] = useState(false);
-
-
     const handleSaveChanges = () => {
-        // In a real app, this would save to a context or backend.
-        toast({
-            title: 'Settings Saved',
-            description: 'Your display settings have been updated.',
-        });
-        console.log({
-            billingLayout,
-            menuPreference,
-            defaultScreen,
-            orderLiveView,
-            kotLiveView,
-            kptBreachedOnTop,
-            displayPrepTimeAlerts,
-            displayItemImages,
-            displaySearch,
-            displaySettleAmount,
-            showTip,
-            tipSelection,
-            tipValue,
-            showCwt,
-            defaultOrderType,
-            defaultCustomer,
-            defaultPayment,
-            defaultQuantity,
-            finalizeWithoutAmount,
-            discountLabel,
-            discountButtonText,
-            displayNoDiscount,
-            defaultOpenDiscount,
-            enableOrderWiseInfo,
-            allowNegativeQuantity,
-            lockActiveTable,
-            releaseTableOn,
-            releaseRecentSectionOn,
-            releaseForOnlineOrders,
-        });
+        saveSettings('Display');
     };
-
 
     return (
         <SettingsPageLayout navItems={navItems}>
@@ -119,36 +42,36 @@ export default function DisplaySettingsPage() {
                                 <SettingRadioGroup
                                     label="Layout for Billing Screen"
                                     description="Configure the type of display between a touch based or keyboard based."
-                                    value={billingLayout}
-                                    onValueChange={setBillingLayout}
+                                    value={settings.billingLayout}
+                                    onValueChange={(value) => setSetting('billingLayout', value as 'Touch Screen' | 'Keyboard')}
                                     options={['Keyboard', 'Touch Screen']}
                                 />
                                 <SettingRadioGroup
                                     label="Display preference for the Menu"
                                     description="Note: Only for Touch Screen"
-                                    value={menuPreference}
-                                    onValueChange={setMenuPreference}
+                                    value={settings.menuPreference}
+                                    onValueChange={(value) => setSetting('menuPreference', value as 'On the Left' | 'On the Right')}
                                     options={['On the Left', 'On the Right']}
                                 />
                                 <SettingRadioGroup
                                     label="Default Screen to Display"
                                     description="Configure the type of display between a touch based or keyboard based."
-                                    value={defaultScreen}
-                                    onValueChange={setDefaultScreen}
+                                    value={settings.defaultScreen}
+                                    onValueChange={(value) => setSetting('defaultScreen', value as 'Billing' | 'Table Management')}
                                     options={['Billing', 'Table Management']}
                                 />
                                 <SettingRadioGroup
                                     label="Order Live View"
                                     description="This settings describe how would the orders be displayed in Order live view."
-                                    value={orderLiveView}
-                                    onValueChange={setOrderLiveView}
+                                    value={settings.orderLiveView}
+                                    onValueChange={(value) => setSetting('orderLiveView', value as 'ASC' | 'DESC')}
                                     options={['ASC', 'DESC']}
                                 />
                                 <SettingRadioGroup
                                     label="KOT Live View"
                                     description="This settings describe how would the orders be displayed in KOT live view."
-                                    value={kotLiveView}
-                                    onValueChange={setKotLiveView}
+                                    value={settings.kotLiveView}
+                                    onValueChange={(value) => setSetting('kotLiveView', value as 'ASC' | 'DESC')}
                                     options={['ASC', 'DESC']}
                                 />
                                 
@@ -157,27 +80,27 @@ export default function DisplaySettingsPage() {
                                 <div className="space-y-4">
                                      <h3 className="font-medium text-lg">General Display Options</h3>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="kpt-breached" checked={kptBreachedOnTop} onCheckedChange={(checked) => setKptBreachedOnTop(!!checked)} />
+                                        <Checkbox id="kpt-breached" checked={settings.kptBreachedOnTop} onCheckedChange={(checked) => setSetting('kptBreachedOnTop', !!checked)} />
                                         <Label htmlFor="kpt-breached">KPT breached order should remain on top of the screen in live view</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="prep-time-alerts" checked={displayPrepTimeAlerts} onCheckedChange={(checked) => setDisplayPrepTimeAlerts(!!checked)} />
+                                        <Checkbox id="prep-time-alerts" checked={settings.displayPrepTimeAlerts} onCheckedChange={(checked) => setSetting('displayPrepTimeAlerts', !!checked)} />
                                         <Label htmlFor="prep-time-alerts">Display alerts for prep time exceeding or order handover on the live view card</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="display-item-images" checked={displayItemImages} onCheckedChange={(checked) => setDisplayItemImages(!!checked)} />
+                                        <Checkbox id="display-item-images" checked={settings.displayItemImages} onCheckedChange={(checked) => setSetting('displayItemImages', !!checked)} />
                                         <Label htmlFor="display-item-images">Display item images on the billing screen</Label>
                                     </div>
                                      <div className="flex items-center space-x-2">
-                                        <Checkbox id="display-search" checked={displaySearch} onCheckedChange={(checked) => setDisplaySearch(!!checked)} />
+                                        <Checkbox id="display-search" checked={settings.displaySearch} onCheckedChange={(checked) => setSetting('displaySearch', !!checked)} />
                                         <Label htmlFor="display-search">Display Search Item option on billing screen (Only for Touch view)</Label>
                                     </div>
                                      <div className="flex items-center space-x-2">
-                                        <Checkbox id="display-settle-amount" checked={displaySettleAmount} onCheckedChange={(checked) => setDisplaySettleAmount(!!checked)} />
+                                        <Checkbox id="display-settle-amount" checked={settings.displaySettleAmount} onCheckedChange={(checked) => setSetting('displaySettleAmount', !!checked)} />
                                         <Label htmlFor="display-settle-amount">Display settle amount Textbox</Label>
                                     </div>
                                      <div className="flex items-center space-x-2">
-                                        <Checkbox id="show-cwt" checked={showCwt} onCheckedChange={(checked) => setShowCwt(!!checked)} />
+                                        <Checkbox id="show-cwt" checked={settings.showCwt} onCheckedChange={(checked) => setSetting('showCwt', !!checked)} />
                                         <Label htmlFor="show-cwt">Show CWT (Category Wise Taxes) Bifurcation On Billing Screen</Label>
                                     </div>
                                 </div>
@@ -187,32 +110,32 @@ export default function DisplaySettingsPage() {
                                 <div className="space-y-6">
                                      <h3 className="font-medium text-lg">Tip Settings</h3>
                                      <div className="flex items-center space-x-2">
-                                        <Checkbox id="show-tip" checked={showTip} onCheckedChange={(checked) => setShowTip(!!checked)} />
+                                        <Checkbox id="show-tip" checked={settings.showTip} onCheckedChange={(checked) => setSetting('showTip', !!checked)} />
                                         <Label htmlFor="show-tip">Show Tip</Label>
                                     </div>
-                                    <RadioGroup value={tipSelection} onValueChange={setTipSelection} className={!showTip ? 'opacity-50' : ''}>
+                                    <RadioGroup value={settings.tipSelection} onValueChange={(value) => setSetting('tipSelection', value as 'None' | 'Percentage' | 'Fixed')}>
                                         <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                             <Label className='md:text-right'>Set Tip selection as :</Label>
                                             <div className='md:col-span-2 flex items-center gap-6 pt-2'>
                                                  <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="None" id="tip-none" disabled={!showTip} />
+                                                    <RadioGroupItem value="None" id="tip-none" disabled={!settings.showTip} />
                                                     <Label htmlFor="tip-none">None</Label>
                                                 </div>
                                                 <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="Percentage" id="tip-percentage" disabled={!showTip} />
+                                                    <RadioGroupItem value="Percentage" id="tip-percentage" disabled={!settings.showTip} />
                                                     <Label htmlFor="tip-percentage">Percentage</Label>
                                                 </div>
                                                 <div className="flex items-center space-x-2">
-                                                    <RadioGroupItem value="Fixed" id="tip-fixed" disabled={!showTip} />
+                                                    <RadioGroupItem value="Fixed" id="tip-fixed" disabled={!settings.showTip} />
                                                     <Label htmlFor="tip-fixed">Fixed</Label>
                                                 </div>
                                             </div>
                                         </div>
                                     </RadioGroup>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                                        <Label htmlFor="tip-value" className={`md:text-right ${!showTip ? 'opacity-50' : ''}`}>Set Tip value</Label>
+                                        <Label htmlFor="tip-value" className={`md:text-right ${!settings.showTip ? 'opacity-50' : ''}`}>Set Tip value</Label>
                                         <div className="md:col-span-2">
-                                            <Input id="tip-value" value={tipValue} onChange={e => setTipValue(e.target.value)} placeholder="Comma separated numeric values only" disabled={!showTip || tipSelection === 'None'} />
+                                            <Input id="tip-value" value={settings.tipValue} onChange={e => setSetting('tipValue', e.target.value)} placeholder="Comma separated numeric values only" disabled={!settings.showTip || settings.tipSelection === 'None'} />
                                             <p className="text-xs text-muted-foreground mt-1">This configuration would be for customer selection of tip in Kiosk.</p>
                                         </div>
                                     </div>
@@ -234,7 +157,7 @@ export default function DisplaySettingsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label htmlFor="default-order-type">Default Order Type</Label>
-                                        <Select value={defaultOrderType} onValueChange={setDefaultOrderType}>
+                                        <Select value={settings.defaultOrderType} onValueChange={(value) => setSetting('defaultOrderType', value as 'Dine-In' | 'Takeaway' | 'Delivery')}>
                                             <SelectTrigger id="default-order-type">
                                                 <SelectValue placeholder="Select order type" />
                                             </SelectTrigger>
@@ -247,7 +170,7 @@ export default function DisplaySettingsPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="default-customer">Default Customer</Label>
-                                        <Select value={defaultCustomer} onValueChange={setDefaultCustomer}>
+                                        <Select value={settings.defaultCustomer} onValueChange={(value) => setSetting('defaultCustomer', value)}>
                                             <SelectTrigger id="default-customer">
                                                 <SelectValue placeholder="Select a customer" />
                                             </SelectTrigger>
@@ -260,7 +183,7 @@ export default function DisplaySettingsPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="default-payment">Default Payment Type</Label>
-                                        <Select value={defaultPayment} onValueChange={setDefaultPayment}>
+                                        <Select value={settings.defaultPayment} onValueChange={(value) => setSetting('defaultPayment', value as 'Cash' | 'UPI' | 'Due')}>
                                             <SelectTrigger id="default-payment">
                                                 <SelectValue placeholder="Select payment type" />
                                             </SelectTrigger>
@@ -276,8 +199,8 @@ export default function DisplaySettingsPage() {
                                         <Input
                                             id="default-quantity"
                                             type="number"
-                                            value={defaultQuantity}
-                                            onChange={(e) => setDefaultQuantity(e.target.value)}
+                                            value={settings.defaultQuantity}
+                                            onChange={(e) => setSetting('defaultQuantity', e.target.value)}
                                         />
                                     </div>
                                 </div>
@@ -288,9 +211,9 @@ export default function DisplaySettingsPage() {
                                       If enabled, the finalize button will be active even if the paid amount is zero.
                                     </p>
                                   </div>
-                                  <Switch
-                                    checked={finalizeWithoutAmount}
-                                    onCheckedChange={setFinalizeWithoutAmount}
+                                  <Checkbox
+                                    checked={settings.finalizeWithoutAmount}
+                                    onCheckedChange={(checked) => setSetting('finalizeWithoutAmount', !!checked)}
                                     aria-label="Finalize order without amount"
                                   />
                                 </div>
@@ -313,22 +236,22 @@ export default function DisplaySettingsPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                             <Label htmlFor="discount-label" className='md:text-right'>Discount Label</Label>
                                             <div className='md:col-span-2'>
-                                                <Input id="discount-label" value={discountLabel} onChange={e => setDiscountLabel(e.target.value)} />
+                                                <Input id="discount-label" value={settings.discountLabel} onChange={e => setSetting('discountLabel', e.target.value)} />
                                                 <p className="text-xs text-muted-foreground mt-1">This setting would describe what the discount would be displayed as.</p>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                             <Label htmlFor="discount-button-text" className='md:text-right'>Discount Calculate Button Text *</Label>
-                                            <Input id="discount-button-text" className='md:col-span-2' value={discountButtonText} onChange={e => setDiscountButtonText(e.target.value)} />
+                                            <Input id="discount-button-text" className='md:col-span-2' value={settings.discountButtonText} onChange={e => setSetting('discountButtonText', e.target.value)} />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                              <div className="md:col-start-2 md:col-span-2 space-y-4">
                                                 <div className="flex items-center space-x-2">
-                                                    <Checkbox id="display-no-discount" checked={displayNoDiscount} onCheckedChange={checked => setDisplayNoDiscount(Boolean(checked))} />
+                                                    <Checkbox id="display-no-discount" checked={settings.displayNoDiscount} onCheckedChange={checked => setSetting('displayNoDiscount', Boolean(checked))} />
                                                     <Label htmlFor="display-no-discount">Display "Leave as it is. (No Discount)" on Discount Screen?</Label>
                                                 </div>
                                                 <div className="flex items-center space-x-2">
-                                                    <Checkbox id="default-open-discount" checked={defaultOpenDiscount} onCheckedChange={checked => setDefaultOpenDiscount(Boolean(checked))} />
+                                                    <Checkbox id="default-open-discount" checked={settings.defaultOpenDiscount} onCheckedChange={checked => setSetting('defaultOpenDiscount', Boolean(checked))} />
                                                     <div>
                                                         <Label htmlFor="default-open-discount">By default make discount area open</Label>
                                                         <p className="text-xs text-muted-foreground">This settings enables default display of discount area in billing screen</p>
@@ -344,7 +267,7 @@ export default function DisplaySettingsPage() {
                                 <div>
                                     <h3 className="text-lg font-semibold mb-4">Order Wise Information</h3>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="enable-order-wise-info" checked={enableOrderWiseInfo} onCheckedChange={checked => setEnableOrderWiseInfo(Boolean(checked))}/>
+                                        <Checkbox id="enable-order-wise-info" checked={settings.enableOrderWiseInfo} onCheckedChange={checked => setSetting('enableOrderWiseInfo', Boolean(checked))}/>
                                         <div>
                                             <Label htmlFor="enable-order-wise-info">Enable Order wise information</Label>
                                             <p className="text-xs text-muted-foreground">The following settings helps in configures enabling as well as configuring Order wise information</p>
@@ -362,7 +285,7 @@ export default function DisplaySettingsPage() {
                                             <p className="text-sm text-muted-foreground">This setting is only available in cloud login.</p>
                                         </div>
                                         <div className="flex items-center space-x-2">
-                                            <Checkbox id="allow-negative-quantity" checked={allowNegativeQuantity} onCheckedChange={checked => setAllowNegativeQuantity(Boolean(checked))}/>
+                                            <Checkbox id="allow-negative-quantity" checked={settings.allowNegativeQuantity} onCheckedChange={checked => setSetting('allowNegativeQuantity', Boolean(checked))}/>
                                             <Label htmlFor="allow-negative-quantity">Allow negative quantity</ Label>
                                         </div>
                                     </div>
@@ -392,7 +315,7 @@ export default function DisplaySettingsPage() {
                                 <CardDescription>The following settings helps in configuring locking and releasing table in billing screen.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-8">
-                                <RadioGroup value={lockActiveTable} onValueChange={(value) => setLockActiveTable(value as any)}>
+                                <RadioGroup value={settings.lockActiveTable} onValueChange={(value) => setSetting('lockActiveTable', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                         <Label className='md:text-right'>Lock Active Table :</Label>
                                         <div className='md:col-span-2 flex items-center gap-6'>
@@ -411,7 +334,7 @@ export default function DisplaySettingsPage() {
                                         </div>
                                     </div>
                                 </RadioGroup>
-                                 <RadioGroup value={releaseTableOn} onValueChange={(value) => setReleaseTableOn(value as any)}>
+                                 <RadioGroup value={settings.releaseTableOn} onValueChange={(value) => setSetting('releaseTableOn', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                         <Label className='md:text-right'>Release Table On :</Label>
                                         <div className='md:col-span-2 flex items-center gap-6'>
@@ -426,7 +349,7 @@ export default function DisplaySettingsPage() {
                                         </div>
                                     </div>
                                 </RadioGroup>
-                                <RadioGroup value={releaseRecentSectionOn} onValueChange={(value) => setReleaseRecentSectionOn(value as any)}>
+                                <RadioGroup value={settings.releaseRecentSectionOn} onValueChange={(value) => setSetting('releaseRecentSectionOn', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                         <Label className='md:text-right'>Release Recent Section On :</Label>
                                         <div className='md:col-span-2 flex items-center gap-6'>
@@ -443,7 +366,7 @@ export default function DisplaySettingsPage() {
                                 </RadioGroup>
                                  <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                     <div className="md:col-start-2 md:col-span-2 flex items-center space-x-2">
-                                        <Checkbox id="release-online" checked={releaseForOnlineOrders} onCheckedChange={checked => setReleaseForOnlineOrders(Boolean(checked))} />
+                                        <Checkbox id="release-online" checked={settings.releaseForOnlineOrders} onCheckedChange={checked => setSetting('releaseForOnlineOrders', Boolean(checked))} />
                                         <Label htmlFor="release-online">Release Recent Section On Order Delivered (For Online Orders)</Label>
                                     </div>
                                  </div>
@@ -487,5 +410,3 @@ function SettingRadioGroup({ label, description, value, onValueChange, options }
         </RadioGroup>
     )
 }
-
-    

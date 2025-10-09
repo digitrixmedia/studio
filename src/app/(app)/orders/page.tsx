@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useSettings } from '@/contexts/SettingsContext';
 
 type HeldOrder = {
   id: string;
@@ -37,9 +38,11 @@ type HeldOrder = {
 
 export default function OrdersPage() {
   const { menuItems, menuCategories, currentOrder, setCurrentOrder, loadOrder } = useAppContext();
+  const { settings, setSetting } = useSettings();
+  
   const [cart, setCart] = [currentOrder, setCurrentOrder];
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
-  const [orderType, setOrderType] = useState<OrderType>('Dine-In');
+  const [orderType, setOrderType] = useState<OrderType>(settings.defaultOrderType);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -52,9 +55,10 @@ export default function OrdersPage() {
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
   const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  const [discountValue, setDiscountValue] = useState<number>(0);
-  const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
+
+  useEffect(() => {
+    setOrderType(settings.defaultOrderType);
+  }, [settings.defaultOrderType]);
 
 
   const addToCart = (item: MenuItem) => {
@@ -70,9 +74,9 @@ export default function OrdersPage() {
          const newOrderItem: OrderItem = {
           id: uniqueCartId,
           name: item.name,
-          quantity: 1,
+          quantity: parseInt(settings.defaultQuantity, 10) || 1,
           price: item.price,
-          totalPrice: item.price,
+          totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
         };
         setCart([...cart, newOrderItem]);
        }
@@ -155,8 +159,8 @@ export default function OrdersPage() {
     setCustomerName('');
     setCustomerPhone('');
     setAmountPaid('');
-    setDiscountValue(0);
-    setDiscountType('fixed');
+    setSetting('discountValue', 0);
+    setSetting('discountType', 'fixed');
     setIsPaymentDialogOpen(false);
   }
   
@@ -212,10 +216,20 @@ export default function OrdersPage() {
   };
 
   const subTotal = cart.reduce((acc, item) => acc + item.totalPrice, 0);
-  const discountAmount = discountType === 'percentage' ? subTotal * (discountValue / 100) : discountValue;
+  
+  let calculatedDiscount = 0;
+  if (settings.discountType === 'percentage') {
+    calculatedDiscount = subTotal * (settings.discountValue / 100);
+  } else {
+    calculatedDiscount = settings.discountValue;
+  }
+  const discountAmount = Math.min(subTotal, calculatedDiscount); // Cannot discount more than subtotal
+
+  const totalBeforeTax = settings.calculateTaxBeforeDiscount ? subTotal : subTotal - discountAmount;
+  const tax = totalBeforeTax * (settings.taxAmount / 100);
   const discountedSubtotal = subTotal - discountAmount;
-  const tax = 0; // Tax is now manual, defaulted to 0
   const total = discountedSubtotal + tax;
+
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
   const printContent = (content: string) => {
@@ -279,7 +293,7 @@ export default function OrdersPage() {
           <div class="total">
             <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
             ${discountAmount > 0 ? `<div class="item"><span class="name">Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${discountAmount.toFixed(2)}</span></span></div>` : ''}
-            <div class="item"><span class="name">GST (5%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>
+            <div class="item"><span class="name">GST (${settings.taxAmount}%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>
             <div class="item"><span class="name"><b>Total</b></span><span class="price"><b><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${total.toFixed(2)}</span></b></span></div>
           </div>
           <div class="center">
@@ -375,15 +389,17 @@ export default function OrdersPage() {
                 ))}
               </TabsList>
             </Tabs>
-            <div className="relative mt-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search menu items..." 
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            {settings.displaySearch && (
+              <div className="relative mt-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search menu items..." 
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            )}
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
@@ -396,7 +412,9 @@ export default function OrdersPage() {
                             disabled={!item.isAvailable}
                           >
                             <div className="relative aspect-video">
-                                <Image src={item.imageUrl} alt={item.name} fill objectFit="cover" data-ai-hint={item.imageHint}/>
+                                {settings.displayItemImages && <Image src={item.imageUrl} alt={item.name} fill objectFit="cover" data-ai-hint={item.imageHint}/>}
+                                {!settings.displayItemImages && <div className="aspect-video bg-muted flex items-center justify-center"><Utensils className="w-8 h-8 text-muted-foreground"/></div>}
+
                                 {!item.isAvailable && (
                                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                                         <span className="text-white font-bold">Unavailable</span>
@@ -525,6 +543,7 @@ export default function OrdersPage() {
                                 <div className="flex justify-between">
                                   <div className="flex items-center gap-2">
                                     <span>Subtotal</span>
+                                    {settings.displayDiscountTextbox && (
                                      <Popover>
                                         <PopoverTrigger asChild>
                                           <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Tag /></Button>
@@ -532,7 +551,7 @@ export default function OrdersPage() {
                                         <PopoverContent className="w-64">
                                           <div className="grid gap-4">
                                             <div className="space-y-2">
-                                              <h4 className="font-medium leading-none">Add Discount</h4>
+                                              <h4 className="font-medium leading-none">{settings.discountLabel || 'Add Discount'}</h4>
                                               <p className="text-sm text-muted-foreground">
                                                 Apply a fixed or percentage-based discount.
                                               </p>
@@ -541,16 +560,16 @@ export default function OrdersPage() {
                                               <div className="flex items-center gap-2">
                                                 <Input
                                                   type="number"
-                                                  value={discountValue || ''}
-                                                  onChange={(e) => setDiscountValue(Number(e.target.value))}
+                                                  value={settings.discountValue || ''}
+                                                  onChange={(e) => setSetting('discountValue', Number(e.target.value))}
                                                   className="flex-1"
                                                   placeholder="Value"
                                                 />
                                                 <ToggleGroup
                                                   type="single"
                                                   variant="outline"
-                                                  value={discountType}
-                                                  onValueChange={(value: 'fixed' | 'percentage') => value && setDiscountType(value)}
+                                                  value={settings.discountType}
+                                                  onValueChange={(value: 'fixed' | 'percentage') => value && setSetting('discountType', value)}
                                                 >
                                                   <ToggleGroupItem value="fixed" aria-label="Fixed amount">Fixed</ToggleGroupItem>
                                                   <ToggleGroupItem value="percentage" aria-label="Percentage">Percentage</ToggleGroupItem>
@@ -560,6 +579,7 @@ export default function OrdersPage() {
                                           </div>
                                         </PopoverContent>
                                       </Popover>
+                                      )}
                                   </div>
                                   <span className='flex items-center'>
                                       <IndianRupee className="h-4 w-4 mr-1" />
@@ -568,12 +588,12 @@ export default function OrdersPage() {
                                 </div>
                                 {discountAmount > 0 && (
                                     <div className="flex justify-between text-destructive">
-                                    <span>Discount ({discountValue}{discountType === 'percentage' ? '%' : ''})</span>
+                                    <span>Discount ({settings.discountValue}{settings.discountType === 'percentage' ? '%' : ''})</span>
                                     <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{discountAmount.toFixed(2)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between">
-                                <span>GST</span>
+                                <span>GST ({settings.taxAmount}%)</span>
                                 <span className='flex items-center'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
                                     {tax.toFixed(2)}
@@ -591,8 +611,8 @@ export default function OrdersPage() {
                                 <Button variant="outline" className='flex-1' onClick={handleHoldOrder}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
                                 <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
-                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)}>
-                                <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
+                                <IndianRupee className="mr-2 h-4 w-4" /> {settings.discountButtonText || 'Generate Bill'}
                             </Button>
                         </CardFooter>
                     )}
@@ -727,7 +747,7 @@ export default function OrdersPage() {
                                 </div>
                                )}
                                 <div className="flex justify-between">
-                                    <span>GST</span>
+                                    <span>GST ({settings.taxAmount}%)</span>
                                     <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
                                </div>
                            </div>
@@ -745,16 +765,18 @@ export default function OrdersPage() {
                     <Button variant="outline">UPI / Card</Button>
                     <Button>Cash</Button>
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="amount-paid">Amount Paid</Label>
-                    <Input 
-                        id="amount-paid" 
-                        type="number" 
-                        placeholder="Enter amount customer paid" 
-                        value={amountPaid} 
-                        onChange={(e) => setAmountPaid(e.target.value)}
-                    />
-                </div>
+                 {settings.displaySettleAmount && (
+                    <div className="space-y-2">
+                        <Label htmlFor="amount-paid">Amount Paid</Label>
+                        <Input 
+                            id="amount-paid" 
+                            type="number" 
+                            placeholder="Enter amount customer paid" 
+                            value={amountPaid} 
+                            onChange={(e) => setAmountPaid(e.target.value)}
+                        />
+                    </div>
+                 )}
                 {changeDue > 0 && (
                     <div className="text-center font-bold text-xl p-4 bg-muted rounded-md">
                         Change Due: <span className='flex items-center justify-center'><IndianRupee className="inline-block h-5 w-5 mr-1"/>{changeDue.toFixed(2)}</span>
@@ -769,7 +791,7 @@ export default function OrdersPage() {
                         <Printer className="mr-2" /> Bill & KOT
                       </Button>
                     </div>
-                    <Button onClick={resetOrder} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <Button onClick={resetOrder} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
                         <CheckCircle className="mr-2"/> Confirm Payment
                     </Button>
                 </DialogFooter>
@@ -779,5 +801,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-    

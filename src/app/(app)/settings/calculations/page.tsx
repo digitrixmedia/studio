@@ -1,19 +1,19 @@
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useSettings } from "@/contexts/SettingsContext";
 
 const navItems = [
-    { name: 'Round-Off Options', id: 'round-off' },
+    { name: 'Round-Off & Tax', id: 'round-off' },
     { name: 'Service Charge', id: 'service-charge' },
     { name: 'Container Charge', id: 'container-charge' },
     { name: 'Delivery Charge', id: 'delivery-charge' },
@@ -24,101 +24,10 @@ const navItems = [
 ];
 
 export default function CalculationsSettingsPage() {
-    const { toast } = useToast();
-    // Round-off state
-    const [roundOffOption, setRoundOffOption] = useState('Normal');
-    const [roundOffIncrement, setRoundOffIncrement] = useState('1');
-    const [decimalPoints, setDecimalPoints] = useState('2');
-    // Service Charge state
-    const [displayServiceCharge, setDisplayServiceCharge] = useState(false);
-    // Container Charge state
-    const [showContainerCharge, setShowContainerCharge] = useState(true);
-    const [containerChargeLabel, setContainerChargeLabel] = useState('Container Charge');
-    const [containerChargeType, setContainerChargeType] = useState('Item wise');
-    const [autoCalcDelivery, setAutoCalcDelivery] = useState(true);
-    const [autoCalcPickUp, setAutoCalcPickUp] = useState(true);
-    const [autoCalcDineIn, setAutoCalcDineIn] = useState(false);
-    const [taxOnContainerCharge, setTaxOnContainerCharge] = useState(false);
-    const [specificAmountCondition, setSpecificAmountCondition] = useState('None');
-    const [specificAmount, setSpecificAmount] = useState('0');
-    // Delivery Charge state
-    const [showDeliveryCharge, setShowDeliveryCharge] = useState(true);
-    const [defaultDeliveryCharge, setDefaultDeliveryCharge] = useState('0');
-    const [taxOnDeliveryCharge, setTaxOnDeliveryCharge] = useState(false);
-    const [deliveryAmountCondition, setDeliveryAmountCondition] = useState('None');
-    const [deliverySpecificAmount, setDeliverySpecificAmount] = useState('0');
-    // Discount state
-    const [calculateTaxBeforeDiscount, setCalculateTaxBeforeDiscount] = useState(false);
-    const [calculateBackwardTax, setCalculateBackwardTax] = useState(false);
-    const [autoApplyItemDiscount, setAutoApplyItemDiscount] = useState(false);
-    const [showItemDiscountBox, setShowItemDiscountBox] = useState(false);
-    const [applyBogoAutomatically, setApplyBogoAutomatically] = useState(false);
-    const [ignoreAddonPrice, setIgnoreAddonPrice] = useState(false);
-    const [specialDiscountReasonMandatory, setSpecialDiscountReasonMandatory] = useState(false);
-    const [displayDiscountTextbox, setDisplayDiscountTextbox] = useState(true);
-
-    // KOT/Bill state
-    const [assignBillToKotUser, setAssignBillToKotUser] = useState(false);
-    const [saveKotOnSaveBill, setSaveKotOnSaveBill] = useState(true);
-    const [considerNonPreparedKot, setConsiderNonPreparedKot] = useState(true);
-    const [mergeDuplicateItems, setMergeDuplicateItems] = useState(true);
-    const [splitBillWithGroups, setSplitBillWithGroups] = useState(false);
-    const [autoFinalize, setAutoFinalize] = useState(false);
-    const [resetKotNumber, setResetKotNumber] = useState('1');
-    const [splitBillOption, setSplitBillOption] = useState('Generate Separate Bills');
-    const [disableTaxOnComplimentary, setDisableTaxOnComplimentary] = useState(false);
-
-    // Special Notes state
-    const [saveSpecialNote, setSaveSpecialNote] = useState(false);
-    
-    // Surcharge state
-    const [displaySurcharge, setDisplaySurcharge] = useState(false);
-
+    const { settings, setSetting, saveSettings } = useSettings();
 
     const handleSaveChanges = () => {
-        toast({
-            title: "Settings Saved",
-            description: "Your calculation settings have been updated.",
-        });
-        console.log({
-            roundOffOption,
-            roundOffIncrement,
-            decimalPoints,
-            displayServiceCharge,
-            showContainerCharge,
-            containerChargeLabel,
-            containerChargeType,
-            autoCalcDelivery,
-            autoCalcPickUp,
-            autoCalcDineIn,
-            taxOnContainerCharge,
-            specificAmountCondition,
-            specificAmount,
-            showDeliveryCharge,
-            defaultDeliveryCharge,
-            taxOnDeliveryCharge,
-            deliveryAmountCondition,
-            deliverySpecificAmount,
-            calculateTaxBeforeDiscount,
-            calculateBackwardTax,
-            autoApplyItemDiscount,
-            showItemDiscountBox,
-            applyBogoAutomatically,
-            ignoreAddonPrice,
-            specialDiscountReasonMandatory,
-            displayDiscountTextbox,
-            assignBillToKotUser,
-            saveKotOnSaveBill,
-            considerNonPreparedKot,
-            mergeDuplicateItems,
-            splitBillWithGroups,
-            autoFinalize,
-            resetKotNumber,
-            splitBillOption,
-            disableTaxOnComplimentary,
-            saveSpecialNote,
-            displaySurcharge,
-        });
+        saveSettings('Calculations');
     };
 
     return (
@@ -128,11 +37,11 @@ export default function CalculationsSettingsPage() {
                     {activeTab === 'round-off' && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Round-Off Options</CardTitle>
-                                <CardDescription>The following settings pertains to configuring the Round-Off Options.</CardDescription>
+                                <CardTitle>Round-Off & Tax Options</CardTitle>
+                                <CardDescription>The following settings pertains to configuring the Round-Off & Tax Options.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-8">
-                                <RadioGroup value={roundOffOption} onValueChange={setRoundOffOption}>
+                                <RadioGroup value={settings.roundOffOption} onValueChange={(value) => setSetting('roundOffOption', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                         <Label className="font-semibold pt-2 md:text-right">Round off options for billing.:</Label>
                                         <div className="md:col-span-2 flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -158,7 +67,7 @@ export default function CalculationsSettingsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                     <Label htmlFor="increment" className="font-semibold pt-2 md:text-right">Round the number to the increments of *:</Label>
                                     <div className="md:col-span-2">
-                                        <Select value={roundOffIncrement} onValueChange={setRoundOffIncrement}>
+                                        <Select value={settings.roundOffIncrement} onValueChange={(value) => setSetting('roundOffIncrement', value as any)}>
                                             <SelectTrigger id="increment" className="w-full md:w-1/2">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -174,7 +83,7 @@ export default function CalculationsSettingsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                     <Label htmlFor="decimal" className="font-semibold pt-2 md:text-right">Select decimal points for invoice calculation and Menu price input*:</Label>
                                     <div className="md:col-span-2">
-                                        <Select value={decimalPoints} onValueChange={setDecimalPoints}>
+                                        <Select value={settings.decimalPoints} onValueChange={(value) => setSetting('decimalPoints', value as any)}>
                                             <SelectTrigger id="decimal" className="w-full md:w-1/2">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -185,6 +94,19 @@ export default function CalculationsSettingsPage() {
                                             </SelectContent>
                                         </Select>
                                         <p className="text-xs text-muted-foreground mt-2">The rounding calculation related to invoice would be based on the number selected in the dropdown. For example, if 1 is selected, 0.9277 would be rounded to 1.0</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <Label htmlFor="tax" className="font-semibold pt-2 md:text-right">Tax Amount (%):</Label>
+                                    <div className="md:col-span-2">
+                                        <Input
+                                            id="tax"
+                                            type="number"
+                                            value={settings.taxAmount}
+                                            onChange={(e) => setSetting('taxAmount', Number(e.target.value))}
+                                            className="w-full md:w-1/2"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-2">Set the GST/Tax percentage to be applied to orders.</p>
                                     </div>
                                 </div>
                             </CardContent>
@@ -202,7 +124,7 @@ export default function CalculationsSettingsPage() {
                             <CardContent>
                                 <div className="space-y-4">
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="display-service-charge" checked={displayServiceCharge} onCheckedChange={(checked) => setDisplayServiceCharge(!!checked)} />
+                                        <Checkbox id="display-service-charge" checked={settings.displayServiceCharge} onCheckedChange={(checked) => setSetting('displayServiceCharge', !!checked)} />
                                         <div className="grid gap-1.5 leading-none">
                                             <Label htmlFor="display-service-charge">Display & Calculate Service Charge</Label>
                                              <p className="text-xs text-muted-foreground">
@@ -225,15 +147,15 @@ export default function CalculationsSettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-8">
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id="show-container-charge" checked={showContainerCharge} onCheckedChange={checked => setShowContainerCharge(!!checked)} />
+                                    <Checkbox id="show-container-charge" checked={settings.showContainerCharge} onCheckedChange={checked => setSetting('showContainerCharge', !!checked)} />
                                     <Label htmlFor="show-container-charge">Show Container Charge On Billing Screen</Label>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                     <Label htmlFor="container-charge-label" className="md:text-right">Container Charge Label*:</Label>
-                                    <Input id="container-charge-label" value={containerChargeLabel} onChange={e => setContainerChargeLabel(e.target.value)} className="md:col-span-2 w-full md:w-1/2" />
+                                    <Input id="container-charge-label" value={settings.containerChargeLabel} onChange={e => setSetting('containerChargeLabel', e.target.value)} className="md:col-span-2 w-full md:w-1/2" />
                                 </div>
                                 
-                                <RadioGroup value={containerChargeType} onValueChange={setContainerChargeType}>
+                                <RadioGroup value={settings.containerChargeType} onValueChange={(value) => setSetting('containerChargeType', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                         <Label className="md:text-right pt-2">Container Charge :</Label>
                                         <div className="md:col-span-2">
@@ -261,15 +183,15 @@ export default function CalculationsSettingsPage() {
                                     <div className="md:col-span-2">
                                          <div className="flex items-center gap-x-6 gap-y-2">
                                             <div className="flex items-center space-x-2">
-                                                <Checkbox id="auto-delivery" checked={autoCalcDelivery} onCheckedChange={checked => setAutoCalcDelivery(!!checked)} />
+                                                <Checkbox id="auto-delivery" checked={settings.autoCalcDelivery} onCheckedChange={checked => setSetting('autoCalcDelivery', !!checked)} />
                                                 <Label htmlFor="auto-delivery">Delivery</Label>
                                             </div>
                                             <div className="flex items-center space-x-2">
-                                                <Checkbox id="auto-pickup" checked={autoCalcPickUp} onCheckedChange={checked => setAutoCalcPickUp(!!checked)} />
+                                                <Checkbox id="auto-pickup" checked={settings.autoCalcPickUp} onCheckedChange={checked => setSetting('autoCalcPickUp', !!checked)} />
                                                 <Label htmlFor="auto-pickup">Pick Up</Label>
                                             </div>
                                              <div className="flex items-center space-x-2">
-                                                <Checkbox id="auto-dinein" checked={autoCalcDineIn} onCheckedChange={checked => setAutoCalcDineIn(!!checked)} />
+                                                <Checkbox id="auto-dinein" checked={settings.autoCalcDineIn} onCheckedChange={checked => setSetting('autoCalcDineIn', !!checked)} />
                                                 <Label htmlFor="auto-dinein">Dine In</Label>
                                             </div>
                                         </div>
@@ -278,12 +200,12 @@ export default function CalculationsSettingsPage() {
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                     <div className="flex items-center space-x-2 md:col-start-2">
-                                        <Checkbox id="tax-on-container" checked={taxOnContainerCharge} onCheckedChange={checked => setTaxOnContainerCharge(!!checked)} />
+                                        <Checkbox id="tax-on-container" checked={settings.taxOnContainerCharge} onCheckedChange={checked => setSetting('taxOnContainerCharge', !!checked)} />
                                         <Label htmlFor="tax-on-container">Calculate tax on Container Charge.</Label>
                                     </div>
                                 </div>
                                 <Separator />
-                                 <RadioGroup value={specificAmountCondition} onValueChange={setSpecificAmountCondition}>
+                                 <RadioGroup value={settings.specificAmountCondition} onValueChange={(value) => setSetting('specificAmountCondition', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                         <Label className="md:text-right pt-2">Set a specific amount to calculate :</Label>
                                         <div className="md:col-span-2 flex items-center gap-x-6 gap-y-2">
@@ -304,7 +226,7 @@ export default function CalculationsSettingsPage() {
                                 </RadioGroup>
                                  <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                     <Label htmlFor="specific-amount" className="md:text-right">Amount :</Label>
-                                    <Input id="specific-amount" value={specificAmount} onChange={e => setSpecificAmount(e.target.value)} className="md:col-span-2 w-full md:w-1/2" disabled={specificAmountCondition === 'None'} />
+                                    <Input id="specific-amount" value={settings.specificAmount} onChange={e => setSetting('specificAmount', e.target.value)} className="md:col-span-2 w-full md:w-1/2" disabled={settings.specificAmountCondition === 'None'} />
                                 </div>
 
                             </CardContent>
@@ -322,23 +244,23 @@ export default function CalculationsSettingsPage() {
                             <CardContent className="space-y-8">
                                 <div className="space-y-2">
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="show-delivery-charge" checked={showDeliveryCharge} onCheckedChange={(checked) => setShowDeliveryCharge(!!checked)} />
+                                        <Checkbox id="show-delivery-charge" checked={settings.showDeliveryCharge} onCheckedChange={(checked) => setSetting('showDeliveryCharge', !!checked)} />
                                         <Label htmlFor="show-delivery-charge">Show Delivery Charge On Billing Screen</Label>
                                     </div>
                                      <p className="text-xs text-muted-foreground ml-6">This setting would describe what would the delivery charge would be displayed as.</p>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                     <Label htmlFor="default-delivery-charge" className="md:text-right">Default Delivery Charge (Only for Delivery) *:</Label>
-                                    <Input id="default-delivery-charge" value={defaultDeliveryCharge} onChange={e => setDefaultDeliveryCharge(e.target.value)} className="md:col-span-2 w-full md:w-1/2" />
+                                    <Input id="default-delivery-charge" value={settings.defaultDeliveryCharge} onChange={e => setSetting('defaultDeliveryCharge', e.target.value)} className="md:col-span-2 w-full md:w-1/2" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                     <div className="flex items-center space-x-2 md:col-start-2">
-                                        <Checkbox id="tax-on-delivery" checked={taxOnDeliveryCharge} onCheckedChange={checked => setTaxOnDeliveryCharge(!!checked)} />
+                                        <Checkbox id="tax-on-delivery" checked={settings.taxOnDeliveryCharge} onCheckedChange={checked => setSetting('taxOnDeliveryCharge', !!checked)} />
                                         <Label htmlFor="tax-on-delivery">Calculate tax on Delivery Charge.</Label>
                                     </div>
                                 </div>
                                 <Separator />
-                                <RadioGroup value={deliveryAmountCondition} onValueChange={setDeliveryAmountCondition}>
+                                <RadioGroup value={settings.deliveryAmountCondition} onValueChange={(value) => setSetting('deliveryAmountCondition', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
                                         <Label className="md:text-right pt-2">Set a specific amount to calculate :</Label>
                                         <div className="md:col-span-2 flex items-center gap-x-6 gap-y-2">
@@ -359,7 +281,7 @@ export default function CalculationsSettingsPage() {
                                 </RadioGroup>
                                  <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                     <Label htmlFor="delivery-specific-amount" className="md:text-right">Amount :</Label>
-                                    <Input id="delivery-specific-amount" value={deliverySpecificAmount} onChange={e => setDeliverySpecificAmount(e.target.value)} className="md:col-span-2 w-full md:w-1/2" disabled={deliveryAmountCondition === 'None'} />
+                                    <Input id="delivery-specific-amount" value={settings.deliverySpecificAmount} onChange={e => setSetting('deliverySpecificAmount', e.target.value)} className="md:col-span-2 w-full md:w-1/2" disabled={settings.deliveryAmountCondition === 'None'} />
                                 </div>
                             </CardContent>
                             <CardFooter>
@@ -375,44 +297,44 @@ export default function CalculationsSettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-6">
                                  <div className="flex items-start space-x-2">
-                                    <Checkbox id="tax-before-discount" checked={calculateTaxBeforeDiscount} onCheckedChange={checked => setCalculateTaxBeforeDiscount(!!checked)} />
+                                    <Checkbox id="tax-before-discount" checked={settings.calculateTaxBeforeDiscount} onCheckedChange={checked => setSetting('calculateTaxBeforeDiscount', !!checked)} />
                                     <Label htmlFor="tax-before-discount">Calculate Tax Before Discount Calculation</Label>
                                 </div>
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="backward-tax" checked={calculateBackwardTax} onCheckedChange={checked => setCalculateBackwardTax(!!checked)} />
+                                    <Checkbox id="backward-tax" checked={settings.calculateBackwardTax} onCheckedChange={checked => setSetting('calculateBackwardTax', !!checked)} />
                                     <div>
                                         <Label htmlFor="backward-tax">Calculate Backward Tax After Discount</Label>
                                         <p className="text-xs text-muted-foreground">Note: Ignore this settings if you are using forward tax configuration for your outlet</p>
                                     </div>
                                 </div>
                                  <div className="flex items-start space-x-2">
-                                    <Checkbox id="auto-apply-discount" checked={autoApplyItemDiscount} onCheckedChange={checked => setAutoApplyItemDiscount(!!checked)} />
+                                    <Checkbox id="auto-apply-discount" checked={settings.autoApplyItemDiscount} onCheckedChange={checked => setSetting('autoApplyItemDiscount', !!checked)} />
                                     <div>
                                         <Label htmlFor="auto-apply-discount">Item/ Category discount auto-applied</Label>
                                         <p className="text-xs text-muted-foreground">This setting enables discount without pressing a button beside the label in billing screen.</p>
                                     </div>
                                 </div>
                                  <div className="flex items-start space-x-2">
-                                    <Checkbox id="show-item-discount" checked={showItemDiscountBox} onCheckedChange={checked => setShowItemDiscountBox(!!checked)} />
+                                    <Checkbox id="show-item-discount" checked={settings.showItemDiscountBox} onCheckedChange={checked => setSetting('showItemDiscountBox', !!checked)} />
                                     <Label htmlFor="show-item-discount">Show Item/Category wise discount box while adding an item</Label>
                                 </div>
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="apply-bogo" checked={applyBogoAutomatically} onCheckedChange={checked => setApplyBogoAutomatically(!!checked)} />
+                                    <Checkbox id="apply-bogo" checked={settings.applyBogoAutomatically} onCheckedChange={checked => setSetting('applyBogoAutomatically', !!checked)} />
                                     <div>
                                         <Label htmlFor="apply-bogo">Apply Bogo Automatically</Label>
                                         <p className="text-xs text-muted-foreground">This setting enables Bogo discount without pressing a button in billing screen.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="ignore-addon-price" checked={ignoreAddonPrice} onCheckedChange={checked => setIgnoreAddonPrice(!!checked)} />
+                                    <Checkbox id="ignore-addon-price" checked={settings.ignoreAddonPrice} onCheckedChange={checked => setSetting('ignoreAddonPrice', !!checked)} />
                                     <Label htmlFor="ignore-addon-price">Ignore add-on price while calculating discount (works for all types for discount)</Label>
                                 </div>
                                  <div className="flex items-start space-x-2">
-                                    <Checkbox id="special-discount-reason" checked={specialDiscountReasonMandatory} onCheckedChange={checked => setSpecialDiscountReasonMandatory(!!checked)} />
+                                    <Checkbox id="special-discount-reason" checked={settings.specialDiscountReasonMandatory} onCheckedChange={checked => setSetting('specialDiscountReasonMandatory', !!checked)} />
                                     <Label htmlFor="special-discount-reason">Special discount reason mandatory</Label>
                                 </div>
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="display-discount-textbox" checked={displayDiscountTextbox} onCheckedChange={checked => setDisplayDiscountTextbox(!!checked)} />
+                                    <Checkbox id="display-discount-textbox" checked={settings.displayDiscountTextbox} onCheckedChange={checked => setSetting('displayDiscountTextbox', !!checked)} />
                                     <Label htmlFor="display-discount-textbox">Display Discount/Coupon Textbox</Label>
                                 </div>
                             </CardContent>
@@ -430,36 +352,36 @@ export default function CalculationsSettingsPage() {
                             <CardContent className="space-y-6">
                                 <div className="space-y-4">
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="assign-bill-sales" checked={assignBillToKotUser} onCheckedChange={(checked) => setAssignBillToKotUser(!!checked)} />
+                                        <Checkbox id="assign-bill-sales" checked={settings.assignBillToKotUser} onCheckedChange={(checked) => setSetting('assignBillToKotUser', !!checked)} />
                                         <div>
                                             <Label htmlFor="assign-bill-sales">Assign Bill sales to KOT punched user</Label>
                                             <p className="text-xs text-muted-foreground">When this setting is enabled, the bill sales would be assigned to the user who punched the KOT in the relevant reports.</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="save-kot" checked={saveKotOnSaveBill} onCheckedChange={(checked) => setSaveKotOnSaveBill(!!checked)} />
+                                        <Checkbox id="save-kot" checked={settings.saveKotOnSaveBill} onCheckedChange={(checked) => setSetting('saveKotOnSaveBill', !!checked)} />
                                         <Label htmlFor="save-kot">Save KOT On Save Bill (Only first time not in edit)</Label>
                                     </div>
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="consider-non-prepared" checked={considerNonPreparedKot} onCheckedChange={(checked) => setConsiderNonPreparedKot(!!checked)} />
+                                        <Checkbox id="consider-non-prepared" checked={settings.considerNonPreparedKot} onCheckedChange={(checked) => setSetting('considerNonPreparedKot', !!checked)} />
                                         <div>
                                             <Label htmlFor="consider-non-prepared">Consider Non Prepared KOT in Bill</Label>
                                             <p className="text-xs text-muted-foreground">When this setting is enabled, even the KOT which is not marked as prepared in the system would be considered while printing bill</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="merge-duplicates" checked={mergeDuplicateItems} onCheckedChange={(checked) => setMergeDuplicateItems(!!checked)} />
+                                        <Checkbox id="merge-duplicates" checked={settings.mergeDuplicateItems} onCheckedChange={(checked) => setSetting('mergeDuplicateItems', !!checked)} />
                                         <div>
                                         <Label htmlFor="merge-duplicates">Merge duplicate items</Label>
                                         <p className="text-xs text-muted-foreground">This setting enables merging same items on billing screen.</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="split-bill" checked={splitBillWithGroups} onCheckedChange={(checked) => setSplitBillWithGroups(!!checked)} />
+                                        <Checkbox id="split-bill" checked={settings.splitBillWithGroups} onCheckedChange={(checked) => setSetting('splitBillWithGroups', !!checked)} />
                                         <Label htmlFor="split-bill">Split a bill when multiple groups are present</Label>
                                     </div>
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="auto-finalize" disabled checked={autoFinalize} onCheckedChange={(checked) => setAutoFinalize(!!checked)} />
+                                        <Checkbox id="auto-finalize" disabled checked={settings.autoFinalize} onCheckedChange={(checked) => setSetting('autoFinalize', !!checked)} />
                                         <div>
                                             <Label htmlFor="auto-finalize">Auto Finalize Order</Label>
                                             <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
@@ -469,11 +391,11 @@ export default function CalculationsSettingsPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                     <Label htmlFor="reset-kot" className="md:text-right">Everyday reset KOT number from*:</Label>
                                     <div className="md:col-span-2">
-                                        <Input id="reset-kot" type="number" value={resetKotNumber} onChange={(e) => setResetKotNumber(e.target.value)} className="w-full md:w-1/2" />
+                                        <Input id="reset-kot" type="number" value={settings.resetKotNumber} onChange={(e) => setSetting('resetKotNumber', e.target.value)} className="w-full md:w-1/2" />
                                         <p className="text-xs text-muted-foreground mt-1">When this setting is enabled, the KOT number would reset to this particular number at the start of every day.</p>
                                     </div>
                                 </div>
-                                <RadioGroup value={splitBillOption} onValueChange={setSplitBillOption}>
+                                <RadioGroup value={settings.splitBillOption} onValueChange={(value) => setSetting('splitBillOption', value as any)}>
                                     <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                         <Label className="md:text-right">Split Bill Options.</Label>
                                         <div className="md:col-span-2 flex items-center gap-6">
@@ -493,7 +415,7 @@ export default function CalculationsSettingsPage() {
                                     <h3 className="text-lg font-semibold mb-2">Complimentary Bill</h3>
                                     <p className="text-sm text-muted-foreground mb-4">The following settings configures the complimentary order in billing screen</p>
                                     <div className="flex items-start space-x-2">
-                                        <Checkbox id="disable-tax-complimentary" checked={disableTaxOnComplimentary} onCheckedChange={(checked) => setDisableTaxOnComplimentary(!!checked)} />
+                                        <Checkbox id="disable-tax-complimentary" checked={settings.disableTaxOnComplimentary} onCheckedChange={(checked) => setSetting('disableTaxOnComplimentary', !!checked)} />
                                         <Label htmlFor="disable-tax-complimentary">Disable Taxes and other Charges(Packing Charge, Delivery charge, Service charge) on Complimentary Bill</Label>
                                     </div>
                                 </div>
@@ -511,7 +433,7 @@ export default function CalculationsSettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="save-special-note" checked={saveSpecialNote} onCheckedChange={(checked) => setSaveSpecialNote(!!checked)} />
+                                    <Checkbox id="save-special-note" checked={settings.saveSpecialNote} onCheckedChange={(checked) => setSetting('saveSpecialNote', !!checked)} />
                                     <Label htmlFor="save-special-note">Save special note into special notes master while saving kot / orders.</Label>
                                 </div>
                             </CardContent>
@@ -528,28 +450,13 @@ export default function CalculationsSettingsPage() {
                             </CardHeader>
                              <CardContent className="space-y-6">
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="display-surcharge" checked={displaySurcharge} onCheckedChange={(checked) => setDisplaySurcharge(!!checked)} />
+                                    <Checkbox id="display-surcharge" checked={settings.displaySurcharge} onCheckedChange={(checked) => setSetting('displaySurcharge', !!checked)} />
                                     <Label htmlFor="display-surcharge">Display & Calculate Surcharge</Label>
                                 </div>
                             </CardContent>
                              <CardFooter>
                                 <Button onClick={handleSaveChanges}>Save Changes</Button>
                             </CardFooter>
-                        </Card>
-                    )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && activeTab !== 'kot-bill' && activeTab !== 'special-notes' && activeTab !== 'surcharge' && (
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>
-                                    {navItems.find(item => item.id === activeTab)?.name}
-                                </CardTitle>
-                                <CardDescription>
-                                    Configure settings for {navItems.find(item => item.id === activeTab)?.name.toLowerCase()}.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Settings for {activeTab} will be available here.</p>
-                            </CardContent>
                         </Card>
                     )}
                 </>

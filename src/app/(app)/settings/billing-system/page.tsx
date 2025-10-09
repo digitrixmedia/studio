@@ -3,13 +3,12 @@
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { useSettings } from "@/contexts/SettingsContext";
 
 const navItems = [
     { name: 'Order and Order Sync Settings', id: 'order-sync' },
@@ -19,53 +18,10 @@ const navItems = [
 ];
 
 export default function BillingSystemSettingsPage() {
-    const { toast } = useToast();
-
-    // State for Order and Order Sync Settings
-    const [closingHour, setClosingHour] = useState('01');
-    const [closingMinute, setClosingMinute] = useState('00');
-    const [displayExtendNotification, setDisplayExtendNotification] = useState(true);
-    const [is24x7, setIs24x7] = useState(false);
-    const [syncPacketSize, setSyncPacketSize] = useState('100');
-    const [defaultOrderLimit, setDefaultOrderLimit] = useState('500');
-    const [autoSyncTime, setAutoSyncTime] = useState('15');
-    const [pendingOrderSyncTime, setPendingOrderSyncTime] = useState('5');
-    const [captainOrderSyncTime, setCaptainOrderSyncTime] = useState('5');
-    const [minutesToEdit, setMinutesToEdit] = useState('2880');
-
-    // State for Payment Sync Settings
-    const [paymentRequestSyncTime, setPaymentRequestSyncTime] = useState('5');
-    const [checkPaymentRequestSyncTime, setCheckPaymentRequestSyncTime] = useState('5');
-    
-    // State for Display settings
-    const [billingScreenRefreshCount, setBillingScreenRefreshCount] = useState('0');
-
-    // State for Security Setting
-    const [managerPassword, setManagerPassword] = useState('');
-    const [idleTime, setIdleTime] = useState('0');
+    const { settings, setSetting, saveSettings } = useSettings();
 
     const handleSaveChanges = () => {
-        toast({
-            title: "Settings Saved",
-            description: "Your billing system settings have been updated.",
-        });
-        console.log({
-            closingHour,
-            closingMinute,
-            displayExtendNotification,
-            is24x7,
-            syncPacketSize,
-            defaultOrderLimit,
-            autoSyncTime,
-            pendingOrderSyncTime,
-            captainOrderSyncTime,
-            minutesToEdit,
-            paymentRequestSyncTime,
-            checkPaymentRequestSyncTime,
-            billingScreenRefreshCount,
-            managerPassword,
-            idleTime,
-        });
+        saveSettings('Billing System');
     };
 
     return (
@@ -83,14 +39,14 @@ export default function BillingSystemSettingsPage() {
                                 <Label className="font-semibold">Restaurant Closing Hours</Label>
                                 <div className="md:col-span-2 flex items-end gap-2">
                                      <div className="flex items-center gap-2">
-                                        <Select value={closingHour} onValueChange={setClosingHour}>
+                                        <Select value={settings.closingHour} onValueChange={(val) => setSetting('closingHour', val)}>
                                             <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 {Array.from({length: 24}, (_, i) => String(i).padStart(2, '0')).map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                         <span>:</span>
-                                         <Select value={closingMinute} onValueChange={setClosingMinute}>
+                                         <Select value={settings.closingMinute} onValueChange={(val) => setSetting('closingMinute', val)}>
                                             <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                  {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
@@ -106,11 +62,11 @@ export default function BillingSystemSettingsPage() {
                                  <div className="md:col-span-2 space-y-4">
                                      <p className="text-sm text-muted-foreground">Current day will be closed on 2025-10-10 01:00</p>
                                      <div className="flex items-center space-x-2">
-                                        <Checkbox id="display-notification" checked={displayExtendNotification} onCheckedChange={(checked) => setDisplayExtendNotification(!!checked)} />
+                                        <Checkbox id="display-notification" checked={settings.displayExtendNotification} onCheckedChange={(checked) => setSetting('displayExtendNotification', !!checked)} />
                                         <Label htmlFor="display-notification">Display the notification (toaster) for temporary Extend Closing Hours</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="is-24x7" checked={is24x7} onCheckedChange={(checked) => setIs24x7(!!checked)} />
+                                        <Checkbox id="is-24x7" checked={settings.is24x7} onCheckedChange={(checked) => setSetting('is24x7', !!checked)} />
                                         <Label htmlFor="is-24x7">Is the outlet open round-the-clock (24*7)?</Label>
                                     </div>
                                  </div>
@@ -119,7 +75,7 @@ export default function BillingSystemSettingsPage() {
                              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="sync-packet-size" className="font-semibold">Sync Batch Packet Size</Label>
                                 <div className="md:col-span-2">
-                                    <Select value={syncPacketSize} onValueChange={setSyncPacketSize}>
+                                    <Select value={settings.syncPacketSize} onValueChange={(val) => setSetting('syncPacketSize', val)}>
                                         <SelectTrigger className="w-full md:w-1/2"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="100">100</SelectItem>
@@ -134,7 +90,7 @@ export default function BillingSystemSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="default-order-limit" className="font-semibold">Default Order Limit * :</Label>
                                 <div className="md:col-span-2">
-                                    <Input id="default-order-limit" value={defaultOrderLimit} onChange={e => setDefaultOrderLimit(e.target.value)} className="w-full md:w-1/2" />
+                                    <Input id="default-order-limit" value={settings.defaultOrderLimit} onChange={e => setSetting('defaultOrderLimit', e.target.value)} className="w-full md:w-1/2" />
                                     <p className="text-xs text-muted-foreground mt-1">The maximum number of orders that would be displayed in PoS.</p>
                                 </div>
                             </div>
@@ -143,7 +99,7 @@ export default function BillingSystemSettingsPage() {
                                 <Label htmlFor="auto-sync-time" className="font-semibold">Default Auto Sync Time</Label>
                                 <div className="md:col-span-2">
                                     <div className="flex items-center gap-2">
-                                        <Select value={autoSyncTime} onValueChange={setAutoSyncTime}>
+                                        <Select value={settings.autoSyncTime} onValueChange={(val) => setSetting('autoSyncTime', val)}>
                                             <SelectTrigger className="w-full md:w-1/2"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="5">5</SelectItem>
@@ -161,7 +117,7 @@ export default function BillingSystemSettingsPage() {
                                 <Label htmlFor="pending-sync-time" className="font-semibold">Default Pending Order Sync Time</Label>
                                 <div className="md:col-span-2">
                                     <div className="flex items-center gap-2">
-                                        <Select value={pendingOrderSyncTime} onValueChange={setPendingOrderSyncTime}>
+                                        <Select value={settings.pendingOrderSyncTime} onValueChange={(val) => setSetting('pendingOrderSyncTime', val)}>
                                             <SelectTrigger className="w-full md:w-1/2"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="5">5</SelectItem>
@@ -179,7 +135,7 @@ export default function BillingSystemSettingsPage() {
                                 <Label htmlFor="captain-sync-time" className="font-semibold">Default Captain Order Intranet Sync Time</Label>
                                 <div className="md:col-span-2">
                                     <div className="flex items-center gap-2">
-                                        <Select value={captainOrderSyncTime} onValueChange={setCaptainOrderSyncTime}>
+                                        <Select value={settings.captainOrderSyncTime} onValueChange={(val) => setSetting('captainOrderSyncTime', val)}>
                                             <SelectTrigger className="w-full md:w-1/2"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="5">5</SelectItem>
@@ -195,7 +151,7 @@ export default function BillingSystemSettingsPage() {
                              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="minutes-to-edit" className="font-semibold">No. of Minutes to Edit Orders* :</Label>
                                 <div className="md:col-span-2">
-                                    <Input id="minutes-to-edit" value={minutesToEdit} onChange={e => setMinutesToEdit(e.target.value)} className="w-full md:w-1/2" />
+                                    <Input id="minutes-to-edit" value={settings.minutesToEdit} onChange={e => setSetting('minutesToEdit', e.target.value)} className="w-full md:w-1/2" />
                                 </div>
                             </div>
                         </CardContent>
@@ -214,14 +170,14 @@ export default function BillingSystemSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="payment-request-sync-time" className="font-semibold">Payment request sync time*:</Label>
                                 <div className="md:col-span-2 flex items-center gap-2">
-                                    <Input id="payment-request-sync-time" value={paymentRequestSyncTime} onChange={e => setPaymentRequestSyncTime(e.target.value)} className="w-24" />
+                                    <Input id="payment-request-sync-time" value={settings.paymentRequestSyncTime} onChange={e => setSetting('paymentRequestSyncTime', e.target.value)} className="w-24" />
                                     <span>Sec</span>
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="check-payment-request-sync-time" className="font-semibold">Check payment request sync time*:</Label>
                                 <div className="md:col-span-2 flex items-center gap-2">
-                                    <Input id="check-payment-request-sync-time" value={checkPaymentRequestSyncTime} onChange={e => setCheckPaymentRequestSyncTime(e.target.value)} className="w-24" />
+                                    <Input id="check-payment-request-sync-time" value={settings.checkPaymentRequestSyncTime} onChange={e => setSetting('checkPaymentRequestSyncTime', e.target.value)} className="w-24" />
                                     <span>Sec</span>
                                 </div>
                             </div>
@@ -241,7 +197,7 @@ export default function BillingSystemSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="billing-screen-refresh" className="font-semibold">Billing Screen Refresh After No. Of Bill Print *:</Label>
                                 <div className="md:col-span-2">
-                                    <Input id="billing-screen-refresh" value={billingScreenRefreshCount} onChange={e => setBillingScreenRefreshCount(e.target.value)} className="w-full md:w-1/2" />
+                                    <Input id="billing-screen-refresh" value={settings.billingScreenRefreshCount} onChange={e => setSetting('billingScreenRefreshCount', e.target.value)} className="w-full md:w-1/2" />
                                     <p className="text-xs text-muted-foreground mt-1">This setting describes after how many bill prints would the screen refreshes.</p>
                                 </div>
                             </div>
@@ -261,13 +217,13 @@ export default function BillingSystemSettingsPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="manager-password">Default Manager<br/>Password for Desktop<br/>Use :</Label>
                                 <div className="md:col-span-2">
-                                    <Input id="manager-password" type="password" value={managerPassword} onChange={e => setManagerPassword(e.target.value)} className="w-full md:w-1/2" />
+                                    <Input id="manager-password" type="password" value={settings.managerPassword} onChange={e => setSetting('managerPassword', e.target.value)} className="w-full md:w-1/2" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
                                 <Label htmlFor="idle-time">User Idle time for Logout</Label>
                                 <div className="md:col-span-2 flex items-center gap-2">
-                                    <Input id="idle-time" type="number" value={idleTime} onChange={e => setIdleTime(e.target.value)} className="w-24" />
+                                    <Input id="idle-time" type="number" value={settings.idleTime} onChange={e => setSetting('idleTime', e.target.value)} className="w-24" />
                                     <span>Min</span>
                                 </div>
                             </div>
@@ -277,25 +233,8 @@ export default function BillingSystemSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'order-sync' && activeTab !== 'payment-sync' && activeTab !== 'display' && activeTab !== 'security' && (
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>
-                            {navItems.find(item => item.id === activeTab)?.name}
-                            </CardTitle>
-                            <CardDescription>
-                            Configure settings for {navItems.find(item => item.id === activeTab)?.name.toLowerCase()}.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p>Settings for this section will be available here.</p>
-                        </CardContent>
-                    </Card>
-                )}
                 </>
             )}
         </SettingsPageLayout>
     );
 }
-
-    

@@ -6,6 +6,7 @@ import { users, menuItems as initialMenuItems, menuCategories as initialMenuCate
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useSettings } from './SettingsContext';
 
 interface AppContextType {
   currentUser: User | null;
@@ -34,6 +35,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
+  const { settings, setSetting } = useSettings();
 
   useEffect(() => {
     const storedUserRole = localStorage.getItem('userRole') as Role | null;
@@ -171,8 +173,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const loadOrder = (order: Order) => {
     setCurrentOrder(order.items);
-    // Potentially load other order details like customer info, table etc.
-    // This part is left for future expansion if needed.
+    setSetting('discountValue', order.discount || 0);
   }
 
   const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet, menuItems, menuCategories, setMenuItems, setMenuCategories, currentOrder, setCurrentOrder, loadOrder };
