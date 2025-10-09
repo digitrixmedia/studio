@@ -2,9 +2,10 @@
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem } from '@/lib/types';
-import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
+import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppContextType {
   currentUser: User | null;
@@ -32,16 +33,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedUserRole = localStorage.getItem('userRole') as Role | null;
     const storedOutlet = localStorage.getItem('selectedOutlet');
     
     if (storedUserRole) {
-      const user = users.find(u => u.role === storedUserRole);
-      if (user) {
-        setCurrentUser(user);
-      }
+      login(storedUserRole);
     }
     
     if (storedOutlet) {
@@ -55,6 +54,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!storedUserRole && !pathname.startsWith('/login')) {
          router.push('/login');
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, pathname]);
 
   useEffect(() => {
@@ -105,15 +105,30 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const login = (role: Role) => {
     const user = users.find(u => u.role === role);
     if (user) {
-      setCurrentUser(user);
-      localStorage.setItem('userRole', role);
-      if (role === 'Super Admin') {
+      // Super Admins can always log in
+      if (user.role === 'Super Admin') {
+        setCurrentUser(user);
+        localStorage.setItem('userRole', role);
         router.push('/super-admin/dashboard');
-      } else if (role === 'Admin') {
-        router.push('/franchise/dashboard');
+        return;
       }
-      else {
-        router.push('/dashboard');
+      
+      // Check subscription status for all other users
+      const userSubscription = subscriptions.find(s => s.id === user.subscriptionId);
+      if (userSubscription && userSubscription.status === 'Active') {
+        setCurrentUser(user);
+        localStorage.setItem('userRole', role);
+        if (role === 'Admin') {
+          router.push('/franchise/dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        toast({
+            variant: "destructive",
+            title: "Login Failed",
+            description: `Your subscription is ${userSubscription?.status || 'not found'}. Please contact support.`,
+        });
       }
     }
   };

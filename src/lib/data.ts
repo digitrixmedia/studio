@@ -3,11 +3,11 @@ import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatu
 import { addDays } from 'date-fns';
 
 export const users: User[] = [
-  { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'Admin', avatar: '/avatars/01.png' },
-  { id: 'user-2', name: 'Manoj Manager', email: 'manager@zappyy.com', role: 'Manager', avatar: '/avatars/02.png' },
-  { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'Cashier', avatar: '/avatars/03.png' },
-  { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'Waiter', avatar: '/avatars/04.png' },
-  { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'Kitchen', avatar: '/avatars/05.png' },
+  { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'Admin', avatar: '/avatars/01.png', subscriptionId: 'sub-1' },
+  { id: 'user-2', name: 'Manoj Manager', email: 'manager@zappyy.com', role: 'Manager', avatar: '/avatars/02.png', subscriptionId: 'sub-2' },
+  { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'Cashier', avatar: '/avatars/03.png', subscriptionId: 'sub-2' },
+  { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'Waiter', avatar: '/avatars/04.png', subscriptionId: 'sub-2' },
+  { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'Kitchen', avatar: '/avatars/05.png', subscriptionId: 'sub-2' },
   { id: 'user-6', name: 'Sonia Super', email: 'super@zappyy.com', role: 'Super Admin', avatar: '/avatars/06.png' },
 ];
 
@@ -238,7 +238,10 @@ export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) =
     let status: SubscriptionStatus = 'Active';
     if (endDate < new Date()) {
         status = 'Expired';
-    } else {
+    } else if (i === 1) { // Ensure Manager user has an active subscription for demo
+        status = 'Active';
+    }
+     else {
         status = subscriptionStatuses[Math.floor(Math.random() * 2)]; // Active or Inactive
     }
     
@@ -247,13 +250,17 @@ export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) =
         franchiseName: franchise.name,
         outletName: `${franchise.name} - Outlet ${outletNumber}`,
         adminName: `Manager ${i+1}`,
-        adminEmail: `admin${i+1}@${franchise.name.toLowerCase().replace(/\s/g, '')}.com`,
+        adminEmail: `admin${i}@zappyy.com`,
         startDate: new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
         endDate,
         status,
         storageUsedMB: Math.floor(Math.random() * 5000),
     };
 });
+
+// Ensure the main users have predictable subscription statuses
+subscriptions[0] = {...subscriptions[0], id: 'sub-1', adminEmail: 'admin@zappyy.com', status: 'Active'}; // For Admin
+subscriptions[1] = {...subscriptions[1], id: 'sub-2', adminEmail: 'manager@zappyy.com', status: 'Active'}; // For Manager/Cashier/etc
 
 
 export const superAdminStats = {
@@ -360,5 +367,3 @@ export const franchiseData = {
         ordersToday: Math.floor((salesPerOutletData.find(s => s.name === o.name)?.today || 0) / (Math.random() * 400 + 300)),
     }))
 }
-
-    
