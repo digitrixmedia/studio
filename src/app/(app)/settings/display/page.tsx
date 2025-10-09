@@ -26,6 +26,15 @@ const navItems = [
 export default function DisplaySettingsPage() {
     const { toast } = useToast();
     
+    // State for Display settings
+    const [billingLayout, setBillingLayout] = useState('Touch Screen');
+    const [menuPreference, setMenuPreference] = useState('On the Left');
+    const [defaultScreen, setDefaultScreen] = useState('Table Management');
+    const [orderLiveView, setOrderLiveView] = useState('DESC');
+    const [kotLiveView, setKotLiveView] = useState('ASC');
+    const [kptBreachedOnTop, setKptBreachedOnTop] = useState(true);
+    const [displayPrepTimeAlerts, setDisplayPrepTimeAlerts] = useState(true);
+
     // State for Default Values settings
     const [defaultOrderType, setDefaultOrderType] = useState('Dine-In');
     const [defaultCustomer, setDefaultCustomer] = useState(users[0].id);
@@ -55,6 +64,13 @@ export default function DisplaySettingsPage() {
             description: 'Your display settings have been updated.',
         });
         console.log({
+            billingLayout,
+            menuPreference,
+            defaultScreen,
+            orderLiveView,
+            kotLiveView,
+            kptBreachedOnTop,
+            displayPrepTimeAlerts,
             defaultOrderType,
             defaultCustomer,
             defaultPayment,
@@ -82,11 +98,62 @@ export default function DisplaySettingsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Display Settings</CardTitle>
-                                <CardDescription>Manage general display preferences.</CardDescription>
+                                <CardDescription>Defines the default value for the components of billing screen.</CardDescription>
                             </CardHeader>
-                            <CardContent>
-                                <p>General display settings will go here.</p>
+                            <CardContent className="space-y-8">
+                                <SettingRadioGroup
+                                    label="Layout for Billing Screen"
+                                    description="Configure the type of display between a touch based or keyboard based."
+                                    value={billingLayout}
+                                    onValueChange={setBillingLayout}
+                                    options={['Keyboard', 'Touch Screen']}
+                                />
+                                <SettingRadioGroup
+                                    label="Display preference for the Menu"
+                                    description="Note: Only for Touch Screen"
+                                    value={menuPreference}
+                                    onValueChange={setMenuPreference}
+                                    options={['On the Left', 'On the Right']}
+                                />
+                                <SettingRadioGroup
+                                    label="Default Screen to Display"
+                                    description="Configure the type of display between a touch based or keyboard based."
+                                    value={defaultScreen}
+                                    onValueChange={setDefaultScreen}
+                                    options={['Billing', 'Table Management']}
+                                />
+                                <SettingRadioGroup
+                                    label="Order Live View"
+                                    description="This settings describe how would the orders be displayed in Order live view."
+                                    value={orderLiveView}
+                                    onValueChange={setOrderLiveView}
+                                    options={['ASC', 'DESC']}
+                                />
+                                <SettingRadioGroup
+                                    label="KOT Live View"
+                                    description="This settings describe how would the orders be displayed in KOT live view."
+                                    value={kotLiveView}
+                                    onValueChange={setKotLiveView}
+                                    options={['ASC', 'DESC']}
+                                />
+                                <div className="space-y-4">
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="kpt-breached" checked={kptBreachedOnTop} onCheckedChange={(checked) => setKptBreachedOnTop(!!checked)} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="kpt-breached">KPT breached order should remain on top of the screen in live view</Label>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="prep-time-alerts" checked={displayPrepTimeAlerts} onCheckedChange={(checked) => setDisplayPrepTimeAlerts(!!checked)} />
+                                        <div className="grid gap-1.5 leading-none">
+                                            <Label htmlFor="prep-time-alerts">Display alerts for prep time exceeding or order handover on the live view card</Label>
+                                        </div>
+                                    </div>
+                                </div>
                             </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
                         </Card>
                     )}
                     {activeTab === 'defaults' && (
@@ -323,3 +390,34 @@ export default function DisplaySettingsPage() {
         </SettingsPageLayout>
     );
 }
+
+interface SettingRadioGroupProps {
+    label: string;
+    description: string;
+    value: string;
+    onValueChange: (value: string) => void;
+    options: string[];
+}
+
+function SettingRadioGroup({ label, description, value, onValueChange, options }: SettingRadioGroupProps) {
+    return (
+        <RadioGroup value={value} onValueChange={onValueChange}>
+            <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                <div className='space-y-1'>
+                    <Label>{label}</Label>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                </div>
+                <div className='md:col-span-2 flex items-center gap-6 pt-2'>
+                    {options.map(option => (
+                        <div key={option} className="flex items-center space-x-2">
+                            <RadioGroupItem value={option} id={`${label.toLowerCase().replace(/ /g, '-')}-${option.toLowerCase()}`} />
+                            <Label htmlFor={`${label.toLowerCase().replace(/ /g, '-')}-${option.toLowerCase()}`}>{option}</Label>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </RadioGroup>
+    )
+}
+
+    
