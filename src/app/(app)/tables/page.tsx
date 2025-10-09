@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { Users, Utensils, Circle, CheckCircle, IndianRupee } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { useAppContext } from '@/contexts/AppContext';
 
 const statusConfig: { [key in TableStatus]: { color: string; icon: React.ElementType } } = {
   Vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
@@ -28,6 +30,7 @@ export default function TablesPage() {
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const router = useRouter();
+  const { loadOrder, setCurrentOrder } = useAppContext();
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
@@ -35,16 +38,19 @@ export default function TablesPage() {
 
   const startNewOrder = () => {
     if (selectedTable) {
-      // In a real app, this would create a new order and navigate
+      setCurrentOrder([]); // Clear any existing order in POS
       router.push('/orders');
       setSelectedTable(null);
     }
   };
 
   const viewOrder = () => {
-     if (selectedTable) {
-      // In a real app, this would fetch the order and navigate
-      router.push('/orders'); // for now, just go to orders page
+     if (selectedTable && selectedTable.currentOrderId) {
+      const orderToLoad = orders.find(o => o.id === selectedTable.currentOrderId);
+      if (orderToLoad) {
+        loadOrder(orderToLoad);
+        router.push('/orders');
+      }
       setSelectedTable(null);
     }
   }

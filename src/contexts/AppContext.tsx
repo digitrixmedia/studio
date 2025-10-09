@@ -1,7 +1,7 @@
 
 'use client';
 
-import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory } from '@/lib/types';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem } from '@/lib/types';
 import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -11,8 +11,11 @@ interface AppContextType {
   selectedOutlet: FranchiseOutlet | null;
   menuItems: MenuItem[];
   menuCategories: MenuCategory[];
+  currentOrder: OrderItem[];
   setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>;
   setMenuCategories: React.Dispatch<React.SetStateAction<MenuCategory[]>>;
+  setCurrentOrder: React.Dispatch<React.SetStateAction<OrderItem[]>>;
+  loadOrder: (order: Order) => void;
   login: (role: Role) => void;
   logout: () => void;
   selectOutlet: (outlet: FranchiseOutlet) => void;
@@ -26,6 +29,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
+  const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -135,8 +139,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('selectedOutlet');
     router.push('/franchise/dashboard');
   };
+  
+  const loadOrder = (order: Order) => {
+    setCurrentOrder(order.items);
+    // Potentially load other order details like customer info, table etc.
+    // This part is left for future expansion if needed.
+  }
 
-  const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet, menuItems, menuCategories, setMenuItems, setMenuCategories };
+  const value = { currentUser, selectedOutlet, login, logout, selectOutlet, clearSelectedOutlet, menuItems, menuCategories, setMenuItems, setMenuCategories, currentOrder, setCurrentOrder, loadOrder };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

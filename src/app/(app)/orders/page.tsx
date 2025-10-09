@@ -20,7 +20,7 @@ import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
 import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -34,8 +34,8 @@ type HeldOrder = {
 }
 
 export default function OrdersPage() {
-  const { menuItems, menuCategories } = useAppContext();
-  const [cart, setCart] = useState<OrderItem[]>([]);
+  const { menuItems, menuCategories, currentOrder, setCurrentOrder } = useAppContext();
+  const [cart, setCart] = [currentOrder, setCurrentOrder];
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
   const [orderType, setOrderType] = useState<OrderType>('Dine-In');
   const [selectedTable, setSelectedTable] = useState<string>('');
