@@ -1,5 +1,6 @@
 
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod } from '@/lib/types';
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation } from '@/lib/types';
+import { addDays } from 'date-fns';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'Admin', avatar: '/avatars/01.png' },
@@ -148,7 +149,7 @@ export const ingredients: Ingredient[] = [
   { id: 'ing-6', name: 'Cheesecake Slice', unit: 'pcs', stock: 5, minStock: 4 },
 ];
 
-const orderStatuses: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Completed', 'Cancelled'];
+const orderStatuses: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Out for Delivery', 'Completed', 'Cancelled'];
 const paymentMethods: PaymentMethod[] = ['Cash', 'UPI', 'Card'];
 const customerNames = ['Aarav', 'Sanya', 'Vikram', 'Anika', 'Rohan', 'Isha'];
 
@@ -294,6 +295,21 @@ export const monthlyNewSubscriptions = [
     { month: 'Jan', count: 5 }, { month: 'Feb', count: 8 }, { month: 'Mar', count: 12 },
     { month: 'Apr', count: 7 }, { month: 'May', count: 10 }, { month: 'Jun', count: 15 },
 ];
+
+export const reservations: Reservation[] = [
+    { id: 'res-1', name: 'Ankit Sharma', phone: '9988776655', guests: 4, time: new Date(new Date().setHours(20,0,0)), status: 'Confirmed' },
+    { id: 'res-2', name: 'Riya Gupta', phone: '9123456789', guests: 2, time: new Date(new Date().setHours(19,30,0)), status: 'Pending' },
+    { id: 'res-3', name: 'Vikram Singh', phone: '9876543210', guests: 6, time: new Date(new Date().setHours(21,0,0)), status: 'Arrived', tableId: 'table-6' },
+    { id: 'res-4', name: 'Priya Mehta', phone: '9876501234', guests: 3, time: addDays(new Date(), 1).setHours(20,30,0), status: 'Confirmed' },
+    { id: 'res-5', name: 'Rahul Verma', phone: '9998887776', guests: 5, time: addDays(new Date(), 2).setHours(19,0,0), status: 'Confirmed' },
+];
+
+
+export const deliveryBoys = [
+    { id: 'db-1', name: 'Ravi Kumar', phone: '8877665544', status: 'Available' },
+    { id: 'db-2', name: 'Suresh Patel', phone: '8123456789', status: 'On a delivery', currentOrder: '#1045' },
+    { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'Available' },
+]
 
 // MOCKED FRANCHISE ADMIN DATA
 

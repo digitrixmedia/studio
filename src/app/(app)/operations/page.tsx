@@ -54,13 +54,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { orders as initialOrders, tables } from '@/lib/data';
+import { orders as initialOrders, tables as initialTables, reservations as initialReservations, deliveryBoys as initialDeliveryBoys } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Table as TableType, DeliveryBoy, Reservation } from '@/lib/types';
 import { Calendar as CalendarIcon, CheckCircle, Circle, Clock, CookingPot, Edit, Eye, IndianRupee, Mail, MapPin, Motorcycle, Phone, PlusCircle, Search, Trash2, User, XCircle, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { format } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
@@ -76,21 +76,11 @@ const initialCustomers = Array.from(new Set(initialOrders.map(o => o.customerNam
     totalSpent: initialOrders.filter(o => o.customerName === name).reduce((sum, o) => sum + o.total, 0),
 }));
 
-const initialReservations: Reservation[] = [
-    { id: 'res-1', name: 'Ankit Sharma', phone: '9988776655', guests: 4, time: new Date(new Date().setHours(20,0,0)), status: 'Confirmed' },
-    { id: 'res-2', name: 'Riya Gupta', phone: '9123456789', guests: 2, time: new Date(new Date().setHours(19,30,0)), status: 'Pending' },
-    { id: 'res-3', name: 'Vikram Singh', phone: '9876543210', guests: 6, time: new Date(new Date().setHours(21,0,0)), status: 'Arrived' },
-];
-
-const initialDeliveryBoys: DeliveryBoy[] = [
-    { id: 'db-1', name: 'Ravi Kumar', phone: '8877665544', status: 'Available' },
-    { id: 'db-2', name: 'Suresh Patel', phone: '8123456789', status: 'On a delivery', currentOrder: '#1045' },
-    { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'Available' },
-]
 
 export default function OperationsPage() {
     const { toast } = useToast();
     const [orders, setOrders] = useState<Order[]>(initialOrders);
+    const [tables, setTables] = useState<TableType[]>(initialTables);
     const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
     const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
     
@@ -121,6 +111,10 @@ export default function OperationsPage() {
         return isKitchenOrder && statusMatch;
     });
 
+    const filteredReservations = reservations.filter(res => 
+        reservationDate ? isSameDay(res.time, reservationDate) : true
+    ).sort((a,b) => a.time.getTime() - b.time.getTime());
+
     const deliveryOrdersReady = orders.filter(o => o.type === 'Delivery' && o.status === 'Ready');
     
     const handleCancelOrder = (orderId: string) => {
@@ -139,7 +133,6 @@ export default function OperationsPage() {
     
     const openNewReservationSheet = () => {
         setEditingReservation(null);
-        setReservationDate(new Date());
         setSheetContent('reservation');
     }
     
@@ -285,11 +278,15 @@ export default function OperationsPage() {
                 : r
         ));
 
-        // In a real app, you might also want to update the table's status
+        setTables(tables.map(t => 
+            t.id === selectedTableForReservation 
+                ? { ...t, status: 'Occupied' }
+                : t
+        ));
         
         toast({
             title: 'Table Assigned',
-            description: `Table assigned to reservation for ${assigningReservation.name}.`
+            description: `Table ${tables.find(t=>t.id === selectedTableForReservation)?.name} assigned to reservation for ${assigningReservation.name}.`
         });
 
         setAssigningReservation(null);
@@ -536,12 +533,12 @@ export default function OperationsPage() {
                  <div className="flex gap-2 pt-2">
                     <Popover>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className="w-[200px] justify-start text-left font-normal">
+                            <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {format(new Date(), 'LLL dd, y')}
+                                {reservationDate ? format(reservationDate, 'PPP') : <span>Pick a date</span>}
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><Calendar mode="single" /></PopoverContent>
+                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={reservationDate} onSelect={setReservationDate} initialFocus/></PopoverContent>
                     </Popover>
                  </div>
             </CardHeader>
@@ -558,7 +555,7 @@ export default function OperationsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {reservations.map(res => (
+                        {filteredReservations.length > 0 ? filteredReservations.map(res => (
                             <TableRow key={res.id}>
                                 <TableCell className='font-bold'>{format(res.time, 'p')}</TableCell>
                                 <TableCell>
@@ -587,7 +584,13 @@ export default function OperationsPage() {
                                     </AlertDialog>
                                 </TableCell>
                             </TableRow>
-                        ))}
+                        )) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    No reservations for this date.
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
