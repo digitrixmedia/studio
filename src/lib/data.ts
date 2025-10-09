@@ -1,5 +1,5 @@
 
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation } from '@/lib/types';
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy } from '@/lib/types';
 import { addDays } from 'date-fns';
 
 export const users: User[] = [
@@ -300,12 +300,12 @@ export const reservations: Reservation[] = [
     { id: 'res-1', name: 'Ankit Sharma', phone: '9988776655', guests: 4, time: new Date(new Date().setHours(20,0,0)), status: 'Confirmed' },
     { id: 'res-2', name: 'Riya Gupta', phone: '9123456789', guests: 2, time: new Date(new Date().setHours(19,30,0)), status: 'Pending' },
     { id: 'res-3', name: 'Vikram Singh', phone: '9876543210', guests: 6, time: new Date(new Date().setHours(21,0,0)), status: 'Arrived', tableId: 'table-6' },
-    { id: 'res-4', name: 'Priya Mehta', phone: '9876501234', guests: 3, time: addDays(new Date(), 1).setHours(20,30,0), status: 'Confirmed' },
-    { id: 'res-5', name: 'Rahul Verma', phone: '9998887776', guests: 5, time: addDays(new Date(), 2).setHours(19,0,0), status: 'Confirmed' },
+    { id: 'res-4', name: 'Priya Mehta', phone: '9876501234', guests: 3, time: new Date(addDays(new Date(), 1).setHours(20,30,0)), status: 'Confirmed' },
+    { id: 'res-5', name: 'Rahul Verma', phone: '9998887776', guests: 5, time: new Date(addDays(new Date(), 2).setHours(19,0,0)), status: 'Confirmed' },
 ];
 
 
-export const deliveryBoys = [
+export const deliveryBoys: DeliveryBoy[] = [
     { id: 'db-1', name: 'Ravi Kumar', phone: '8877665544', status: 'Available' },
     { id: 'db-2', name: 'Suresh Patel', phone: '8123456789', status: 'On a delivery', currentOrder: '#1045' },
     { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'Available' },

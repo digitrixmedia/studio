@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -136,6 +137,7 @@ export default function OperationsPage() {
     
     const openNewReservationSheet = () => {
         setEditingReservation(null);
+        setReservationDate(new Date());
         setSheetContent('reservation');
     }
     
@@ -159,9 +161,16 @@ export default function OperationsPage() {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const reservationData = Object.fromEntries(formData.entries()) as Omit<Reservation, 'id' | 'time'> & { time: string, date: string };
+        
+        if (!reservationDate || !reservationData.time) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please select a date and time.' });
+            return;
+        }
+
         const timeParts = reservationData.time.split(':');
-        const newDate = reservationDate ? new Date(reservationDate) : new Date();
-        newDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]));
+        const newDate = new Date(reservationDate);
+        newDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]), 0, 0);
+
 
         if (editingReservation) {
             const updatedReservation = { 
@@ -186,6 +195,7 @@ export default function OperationsPage() {
              toast({ title: "Reservation Created" });
         }
         setSheetContent(null);
+        setEditingReservation(null);
     }
     
     const handleDeleteReservation = (id: string) => {
