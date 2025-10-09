@@ -103,6 +103,8 @@ export default function OperationsPage() {
     const [editingDeliveryBoy, setEditingDeliveryBoy] = useState<DeliveryBoy | null>(null);
     const [assigningDeliveryBoy, setAssigningDeliveryBoy] = useState<DeliveryBoy | null>(null);
     const [selectedOrderToAssign, setSelectedOrderToAssign] = useState<string>('');
+    const [assigningReservation, setAssigningReservation] = useState<Reservation | null>(null);
+    const [selectedTableForReservation, setSelectedTableForReservation] = useState<string>('');
 
 
     const filteredOrders = orders.filter(order => {
@@ -265,6 +267,26 @@ export default function OperationsPage() {
         
         toast({ title: 'Delivery Completed', description: `Order #${orderNumber} marked as complete.`});
     }
+
+    const handleAssignTableToReservation = () => {
+        if (!assigningReservation || !selectedTableForReservation) return;
+
+        setReservations(reservations.map(r => 
+            r.id === assigningReservation.id 
+                ? { ...r, tableId: selectedTableForReservation, status: 'Arrived' } 
+                : r
+        ));
+
+        // In a real app, you might also want to update the table's status
+        
+        toast({
+            title: 'Table Assigned',
+            description: `Table assigned to reservation for ${assigningReservation.name}.`
+        });
+
+        setAssigningReservation(null);
+        setSelectedTableForReservation('');
+    };
 
   return (
     <>
@@ -536,7 +558,7 @@ export default function OperationsPage() {
                                     <div className='text-xs text-muted-foreground'>{res.phone}</div>
                                 </TableCell>
                                 <TableCell>{res.guests}</TableCell>
-                                <TableCell><Button variant="outline" size="sm">Assign</Button></TableCell>
+                                <TableCell>{res.tableId ? tables.find(t=> t.id === res.tableId)?.name : <Button variant="outline" size="sm" onClick={() => setAssigningReservation(res)}>Assign</Button>}</TableCell>
                                 <TableCell><Badge>{res.status}</Badge></TableCell>
                                 <TableCell className='text-right'>
                                     <Button variant="ghost" size="icon" onClick={() => openEditReservationSheet(res)}><Edit/></Button>
@@ -694,6 +716,39 @@ export default function OperationsPage() {
             <DialogFooter>
                 <Button variant="outline" onClick={() => setAssigningDeliveryBoy(null)}>Cancel</Button>
                 <Button onClick={handleAssignOrder} disabled={!selectedOrderToAssign}>Confirm Assignment</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    
+    {/* Dialog for assigning a table to a reservation */}
+    <Dialog open={!!assigningReservation} onOpenChange={() => setAssigningReservation(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Assign Table for {assigningReservation?.name}</DialogTitle>
+                <DialogDescription>Select a vacant table for this reservation.</DialogDescription>
+            </DialogHeader>
+            <div className='py-4 space-y-4'>
+                <Label htmlFor="table-for-reservation">Select Table</Label>
+                <Select value={selectedTableForReservation} onValueChange={setSelectedTableForReservation}>
+                    <SelectTrigger id="table-for-reservation">
+                        <SelectValue placeholder="Select a vacant table..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {tables.filter(t => t.status === 'Vacant').length > 0 ? (
+                             tables.filter(t => t.status === 'Vacant').map(t => (
+                                <SelectItem key={t.id} value={t.id}>
+                                    {t.name} (Capacity: {t.capacity})
+                                </SelectItem>
+                             ))
+                        ) : (
+                            <div className='p-4 text-sm text-muted-foreground'>No vacant tables available.</div>
+                        )}
+                    </SelectContent>
+                </Select>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setAssigningReservation(null)}>Cancel</Button>
+                <Button onClick={handleAssignTableToReservation} disabled={!selectedTableForReservation}>Confirm Assignment</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
