@@ -36,6 +36,9 @@ export default function BillingSystemSettingsPage() {
     // State for Payment Sync Settings
     const [paymentRequestSyncTime, setPaymentRequestSyncTime] = useState('5');
     const [checkPaymentRequestSyncTime, setCheckPaymentRequestSyncTime] = useState('5');
+    
+    // State for Display settings
+    const [billingScreenRefreshCount, setBillingScreenRefreshCount] = useState('0');
 
     const handleSaveChanges = () => {
         toast({
@@ -55,6 +58,7 @@ export default function BillingSystemSettingsPage() {
             minutesToEdit,
             paymentRequestSyncTime,
             checkPaymentRequestSyncTime,
+            billingScreenRefreshCount,
         });
     };
 
@@ -221,7 +225,27 @@ export default function BillingSystemSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'order-sync' && activeTab !== 'payment-sync' && (
+                {activeTab === 'display' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Display settings</CardTitle>
+                            <CardDescription>The following settings would be used to configure the display settings of the PoS</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                <Label htmlFor="billing-screen-refresh" className="font-semibold">Billing Screen Refresh After No. Of Bill Print *:</Label>
+                                <div className="md:col-span-2">
+                                    <Input id="billing-screen-refresh" value={billingScreenRefreshCount} onChange={e => setBillingScreenRefreshCount(e.target.value)} className="w-full md:w-1/2" />
+                                    <p className="text-xs text-muted-foreground mt-1">This setting describes after how many bill prints would the screen refreshes.</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'order-sync' && activeTab !== 'payment-sync' && activeTab !== 'display' && (
                      <Card>
                         <CardHeader>
                             <CardTitle>
