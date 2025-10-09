@@ -85,6 +85,7 @@ export default function OrdersPage() {
 
     const formData = new FormData(e.currentTarget);
     const variationId = formData.get('variation') as string;
+    const notes = formData.get('notes') as string;
     
     const selectedVariation = customizationItem.variations?.find(v => v.id === variationId);
     
@@ -97,7 +98,7 @@ export default function OrdersPage() {
       finalName += ` (${selectedVariation.name})`;
     }
     
-    const existingItem = cart.find(cartItem => cartItem.name === finalName && !cartItem.notes);
+    const existingItem = cart.find(cartItem => cartItem.name === finalName && cartItem.notes === (notes || undefined));
 
     if (existingItem) {
         updateQuantity(existingItem.id, existingItem.quantity + 1);
@@ -109,6 +110,7 @@ export default function OrdersPage() {
           price: basePrice,
           totalPrice: basePrice,
           variation: selectedVariation,
+          notes: notes || undefined,
         };
         setCart([...cart, newOrderItem]);
     }
@@ -550,8 +552,8 @@ export default function OrdersPage() {
                                                   value={discountType}
                                                   onValueChange={(value: 'fixed' | 'percentage') => value && setDiscountType(value)}
                                                 >
-                                                  <ToggleGroupItem value="fixed" aria-label="Fixed amount">₹</ToggleGroupItem>
-                                                  <ToggleGroupItem value="percentage" aria-label="Percentage">%</ToggleGroupItem>
+                                                  <ToggleGroupItem value="fixed" aria-label="Fixed amount">Fixed</ToggleGroupItem>
+                                                  <ToggleGroupItem value="percentage" aria-label="Percentage">Percent</ToggleGroupItem>
                                                 </ToggleGroup>
                                               </div>
                                             </div>
@@ -589,7 +591,7 @@ export default function OrdersPage() {
                                 <Button variant="outline" className='flex-1' onClick={handleHoldOrder}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
                                 <Button variant="outline" className='flex-1' onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
-                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={cart.length === 0}>
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)}>
                                 <IndianRupee className="mr-2 h-4 w-4" /> Generate Bill
                             </Button>
                         </CardFooter>
@@ -657,6 +659,10 @@ export default function OrdersPage() {
                                 </Select>
                             </div>
                         )}
+                        <div>
+                            <Label className="font-medium">Special Notes</Label>
+                            <Textarea name="notes" placeholder="e.g. Extra spicy, no onions..." />
+                        </div>
                         <DialogFooter>
                             <Button type="submit" className="w-full">Add to Order</Button>
                         </DialogFooter>
@@ -773,3 +779,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+    
