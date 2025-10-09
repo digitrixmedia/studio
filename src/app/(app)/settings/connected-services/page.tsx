@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -37,6 +36,14 @@ export default function ConnectedServicesSettingsPage() {
     const [preventDayEndOnUnsynced, setPreventDayEndOnUnsynced] = useState(false);
     const [restrictEditAfterDayEnd, setRestrictEditAfterDayEnd] = useState(false);
 
+    // State for Loyalty Settings
+    const [sendLoyaltyDefault, setSendLoyaltyDefault] = useState(true);
+    const [loyaltyOnDelivery, setLoyaltyOnDelivery] = useState(true);
+    const [loyaltyOnPickUp, setLoyaltyOnPickUp] = useState(true);
+    const [loyaltyOnDineIn, setLoyaltyOnDineIn] = useState(true);
+    const [sendLoyaltyDataOn, setSendLoyaltyDataOn] = useState('Settle & Save');
+
+
     const handleSaveChanges = () => {
         toast({
             title: "Settings Saved",
@@ -50,7 +57,12 @@ export default function ConnectedServicesSettingsPage() {
             enableManualDayEnd,
             preventDayEndOnActiveTable,
             preventDayEndOnUnsynced,
-            restrictEditAfterDayEnd
+            restrictEditAfterDayEnd,
+            sendLoyaltyDefault,
+            loyaltyOnDelivery,
+            loyaltyOnPickUp,
+            loyaltyOnDineIn,
+            sendLoyaltyDataOn,
         });
     };
 
@@ -142,7 +154,59 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && (
+                {activeTab === 'loyalty' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Loyalty Settings</CardTitle>
+                            <CardDescription>The following settings pertains to configuring the loyalty settings in the billing screen</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                             <div className="flex items-start space-x-2">
+                                <Checkbox id="send-loyalty-default" checked={sendLoyaltyDefault} onCheckedChange={(checked) => setSendLoyaltyDefault(!!checked)} />
+                                <Label htmlFor="send-loyalty-default">Make "Send Loyalty" option set as default on Billing screen.</Label>
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label className="font-semibold">Apply Loyalty points when order punched as</Label>
+                                <div className="flex items-center gap-x-6 gap-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="loyalty-delivery" checked={loyaltyOnDelivery} onCheckedChange={(checked) => setLoyaltyOnDelivery(!!checked)} />
+                                        <Label htmlFor="loyalty-delivery">Delivery</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="loyalty-pickup" checked={loyaltyOnPickUp} onCheckedChange={(checked) => setLoyaltyOnPickUp(!!checked)} />
+                                        <Label htmlFor="loyalty-pickup">Pick Up</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="loyalty-dinein" checked={loyaltyOnDineIn} onCheckedChange={(checked) => setLoyaltyOnDineIn(!!checked)} />
+                                        <Label htmlFor="loyalty-dinein">Dine In</Label>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-muted-foreground">Above settings enabled POS system to apply loyalty points on selected order types. This setting is only available in cloud login.</p>
+                            </div>
+
+                             <RadioGroup value={sendLoyaltyDataOn} onValueChange={setSendLoyaltyDataOn}>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <Label className="font-semibold pt-2">Send Loyalty Data <br/>(Only for Table Order) :</Label>
+                                    <div className="md:col-span-2 flex items-center gap-x-6 gap-y-2">
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Print Bill" id="loyalty-print" />
+                                            <Label htmlFor="loyalty-print">Print Bill</Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <RadioGroupItem value="Settle & Save" id="loyalty-settle" />
+                                            <Label htmlFor="loyalty-settle">Settle & Save</Label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </RadioGroup>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
