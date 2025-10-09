@@ -58,6 +58,17 @@ export default function CalculationsSettingsPage() {
     const [specialDiscountReasonMandatory, setSpecialDiscountReasonMandatory] = useState(false);
     const [displayDiscountTextbox, setDisplayDiscountTextbox] = useState(true);
 
+    // KOT/Bill state
+    const [assignBillToKotUser, setAssignBillToKotUser] = useState(false);
+    const [saveKotOnSaveBill, setSaveKotOnSaveBill] = useState(true);
+    const [considerNonPreparedKot, setConsiderNonPreparedKot] = useState(true);
+    const [mergeDuplicateItems, setMergeDuplicateItems] = useState(true);
+    const [splitBillWithGroups, setSplitBillWithGroups] = useState(false);
+    const [autoFinalize, setAutoFinalize] = useState(false);
+    const [resetKotNumber, setResetKotNumber] = useState('1');
+    const [splitBillOption, setSplitBillOption] = useState('Generate Separate Bills');
+    const [disableTaxOnComplimentary, setDisableTaxOnComplimentary] = useState(false);
+
 
     const handleSaveChanges = () => {
         toast({
@@ -91,6 +102,15 @@ export default function CalculationsSettingsPage() {
             ignoreAddonPrice,
             specialDiscountReasonMandatory,
             displayDiscountTextbox,
+            assignBillToKotUser,
+            saveKotOnSaveBill,
+            considerNonPreparedKot,
+            mergeDuplicateItems,
+            splitBillWithGroups,
+            autoFinalize,
+            resetKotNumber,
+            splitBillOption,
+            disableTaxOnComplimentary,
         });
     };
 
@@ -394,7 +414,89 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && (
+                     {activeTab === 'kot-bill' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>KOT/Bill</CardTitle>
+                                <CardDescription>The following settings describes the settings related to the KOT/Bill in the billing screen.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="assign-bill-sales" checked={assignBillToKotUser} onCheckedChange={(checked) => setAssignBillToKotUser(!!checked)} />
+                                        <div>
+                                            <Label htmlFor="assign-bill-sales">Assign Bill sales to KOT punched user</Label>
+                                            <p className="text-xs text-muted-foreground">When this setting is enabled, the bill sales would be assigned to the user who punched the KOT in the relevant reports.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="save-kot" checked={saveKotOnSaveBill} onCheckedChange={(checked) => setSaveKotOnSaveBill(!!checked)} />
+                                        <Label htmlFor="save-kot">Save KOT On Save Bill (Only first time not in edit)</Label>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="consider-non-prepared" checked={considerNonPreparedKot} onCheckedChange={(checked) => setConsiderNonPreparedKot(!!checked)} />
+                                        <div>
+                                            <Label htmlFor="consider-non-prepared">Consider Non Prepared KOT in Bill</Label>
+                                            <p className="text-xs text-muted-foreground">When this setting is enabled, even the KOT which is not marked as prepared in the system would be considered while printing bill</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="merge-duplicates" checked={mergeDuplicateItems} onCheckedChange={(checked) => setMergeDuplicateItems(!!checked)} />
+                                        <div>
+                                        <Label htmlFor="merge-duplicates">Merge duplicate items</Label>
+                                        <p className="text-xs text-muted-foreground">This setting enables merging same items on billing screen.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="split-bill" checked={splitBillWithGroups} onCheckedChange={(checked) => setSplitBillWithGroups(!!checked)} />
+                                        <Label htmlFor="split-bill">Split a bill when multiple groups are present</Label>
+                                    </div>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="auto-finalize" disabled checked={autoFinalize} onCheckedChange={(checked) => setAutoFinalize(!!checked)} />
+                                        <div>
+                                            <Label htmlFor="auto-finalize">Auto Finalize Order</Label>
+                                            <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                    <Label htmlFor="reset-kot" className="md:text-right">Everyday reset KOT number from*:</Label>
+                                    <div className="md:col-span-2">
+                                        <Input id="reset-kot" type="number" value={resetKotNumber} onChange={(e) => setResetKotNumber(e.target.value)} className="w-full md:w-1/2" />
+                                        <p className="text-xs text-muted-foreground mt-1">When this setting is enabled, the KOT number would reset to this particular number at the start of every day.</p>
+                                    </div>
+                                </div>
+                                <RadioGroup value={splitBillOption} onValueChange={setSplitBillOption}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                        <Label className="md:text-right">Split Bill Options.</Label>
+                                        <div className="md:col-span-2 flex items-center gap-6">
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Print Group wise" id="split-group" />
+                                                <Label htmlFor="split-group">Print Group wise</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Generate Separate Bills" id="split-separate" />
+                                                <Label htmlFor="split-separate">Generate Separate Bills</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                <Separator />
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-2">Complimentary Bill</h3>
+                                    <p className="text-sm text-muted-foreground mb-4">The following settings configures the complimentary order in billing screen</p>
+                                    <div className="flex items-start space-x-2">
+                                        <Checkbox id="disable-tax-complimentary" checked={disableTaxOnComplimentary} onCheckedChange={(checked) => setDisableTaxOnComplimentary(!!checked)} />
+                                        <Label htmlFor="disable-tax-complimentary">Disable Taxes and other Charges(Packing Charge, Delivery charge, Service charge) on Complimentary Bill</Label>
+                                    </div>
+                                </div>
+                            </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && activeTab !== 'kot-bill' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
