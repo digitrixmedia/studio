@@ -1,4 +1,5 @@
 
+
 export type Role = 'Admin' | 'Manager' | 'Cashier' | 'Waiter' | 'Kitchen' | 'Super Admin';
 
 export interface User {
@@ -36,6 +37,7 @@ export interface MenuItem {
   category: string; // categoryId
   imageUrl: string;
   imageHint: string;
+  foodType?: 'Veg' | 'Non-Veg' | 'Jain';
   variations?: MenuItemVariation[];
   addons?: MenuItemAddon[];
   isAvailable: boolean;

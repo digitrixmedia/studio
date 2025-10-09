@@ -1,4 +1,5 @@
 
+
 import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy } from '@/lib/types';
 import { addDays } from 'date-fns';
 
@@ -27,6 +28,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     imageUrl: 'https://picsum.photos/seed/cappuccino/400/300',
     imageHint: 'cappuccino coffee',
+    foodType: 'Veg',
     isAvailable: true,
     variations: [
       { id: 'var-1-1', name: 'Regular', priceModifier: 0, ingredients: [] },
@@ -50,6 +52,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     imageUrl: 'https://picsum.photos/seed/espresso/400/300',
     imageHint: 'espresso shot',
+    foodType: 'Veg',
     isAvailable: true,
     ingredients: [{ ingredientId: 'ing-1', quantity: 8 }],
   },
@@ -61,6 +64,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     imageUrl: 'https://picsum.photos/seed/latte/400/300',
     imageHint: 'latte art',
+    foodType: 'Veg',
     isAvailable: false,
     ingredients: [
       { ingredientId: 'ing-1', quantity: 10 },
@@ -75,6 +79,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-2',
     imageUrl: 'https://picsum.photos/seed/icedcoffee/400/300',
     imageHint: 'iced coffee',
+    foodType: 'Veg',
     isAvailable: true,
     ingredients: [
         { ingredientId: 'ing-1', quantity: 12 },
@@ -88,6 +93,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-3',
     imageUrl: 'https://picsum.photos/seed/sandwich/400/300',
     imageHint: 'vegetable sandwich',
+    foodType: 'Veg',
     isAvailable: true,
     ingredients: [
       { ingredientId: 'ing-4', quantity: 2 },
@@ -102,6 +108,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/cheesecake/400/300',
     imageHint: 'cheesecake slice',
+    foodType: 'Veg',
     isAvailable: true,
     ingredients: [{ ingredientId: 'ing-6', quantity: 1 }],
   },
@@ -113,6 +120,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/brownie/400/300',
     imageHint: 'chocolate brownie',
+    foodType: 'Veg',
     isAvailable: true,
     ingredients: [],
   },
@@ -124,6 +132,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/croissant/400/300',
     imageHint: 'croissant pastry',
+    foodType: 'Veg',
     isAvailable: true,
     ingredients: [],
   },

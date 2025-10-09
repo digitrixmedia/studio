@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
@@ -163,12 +164,13 @@ export interface AppSettings {
   // POS State (not really settings, but managed here for convenience)
   discountValue: number;
   discountType: 'fixed' | 'percentage';
+  isComplimentary: boolean;
 }
 
 interface SettingsContextType {
   settings: AppSettings;
   setSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
-  saveSettings: () => void;
+  saveSettings: (section: string) => void;
 }
 
 const defaultSettings: AppSettings = {
@@ -236,7 +238,7 @@ const defaultSettings: AppSettings = {
   autoFinalize: false,
   resetKotNumber: '1',
   splitBillOption: 'Generate Separate Bills',
-  disableTaxOnComplimentary: false,
+  disableTaxOnComplimentary: true,
   saveSpecialNote: false,
   displaySurcharge: false,
   enableAutoConsumption: false,
@@ -311,6 +313,7 @@ const defaultSettings: AppSettings = {
   idleTime: '0',
   discountValue: 0,
   discountType: 'fixed',
+  isComplimentary: false,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

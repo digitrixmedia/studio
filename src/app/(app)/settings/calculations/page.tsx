@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -415,6 +416,10 @@ export default function CalculationsSettingsPage() {
                                     <h3 className="text-lg font-semibold mb-2">Complimentary Bill</h3>
                                     <p className="text-sm text-muted-foreground mb-4">The following settings configures the complimentary order in billing screen</p>
                                     <div className="flex items-start space-x-2">
+                                        <Checkbox id="is-complimentary" checked={settings.isComplimentary} onCheckedChange={(checked) => setSetting('isComplimentary', !!checked)} />
+                                        <Label htmlFor="is-complimentary">Mark current bill as complimentary</Label>
+                                    </div>
+                                    <div className="flex items-start space-x-2 mt-4">
                                         <Checkbox id="disable-tax-complimentary" checked={settings.disableTaxOnComplimentary} onCheckedChange={(checked) => setSetting('disableTaxOnComplimentary', !!checked)} />
                                         <Label htmlFor="disable-tax-complimentary">Disable Taxes and other Charges(Packing Charge, Delivery charge, Service charge) on Complimentary Bill</Label>
                                     </div>

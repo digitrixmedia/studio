@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -18,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
-import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag } from 'lucide-react';
+import { Check, CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,8 @@ import { useAppContext } from '@/contexts/AppContext';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useSettings } from '@/contexts/SettingsContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 type HeldOrder = {
   id: string;
@@ -55,11 +58,22 @@ export default function OrdersPage() {
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
   const [activeTab, setActiveTab] = useState('current');
   const [searchQuery, setSearchQuery] = useState('');
+  const [billSearchQuery, setBillSearchQuery] = useState('');
 
   useEffect(() => {
     setOrderType(settings.defaultOrderType);
   }, [settings.defaultOrderType]);
 
+  const FoodTypeIndicator = ({ type }: { type: MenuItem['foodType'] }) => {
+    if (!type) return null;
+    const color = type === 'Veg' ? 'border-green-500' : 'border-red-500';
+    const bgColor = type === 'Veg' ? 'bg-green-500' : 'bg-red-500';
+    return (
+      <div className={`absolute top-1 right-1 border ${color} p-0.5 rounded-full`}>
+        <div className={`h-1.5 w-1.5 rounded-full ${bgColor}`}></div>
+      </div>
+    );
+  };
 
   const addToCart = (item: MenuItem) => {
     if (item.variations && item.variations.length > 0) {
@@ -161,6 +175,7 @@ export default function OrdersPage() {
     setAmountPaid('');
     setSetting('discountValue', 0);
     setSetting('discountType', 'fixed');
+    setSetting('isComplimentary', false);
     setIsPaymentDialogOpen(false);
   }
   
@@ -223,12 +238,12 @@ export default function OrdersPage() {
   } else {
     calculatedDiscount = settings.discountValue;
   }
-  const discountAmount = Math.min(subTotal, calculatedDiscount); // Cannot discount more than subtotal
+  const discountAmount = Math.min(subTotal, calculatedDiscount);
 
   const totalBeforeTax = settings.calculateTaxBeforeDiscount ? subTotal : subTotal - discountAmount;
-  const tax = totalBeforeTax * (settings.taxAmount / 100);
+  const tax = settings.isComplimentary && settings.disableTaxOnComplimentary ? 0 : totalBeforeTax * (settings.taxAmount / 100);
   const discountedSubtotal = subTotal - discountAmount;
-  const total = discountedSubtotal + tax;
+  const total = settings.isComplimentary ? 0 : discountedSubtotal + tax;
 
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
@@ -276,6 +291,7 @@ export default function OrdersPage() {
             .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 14px; }
             .center { text-align: center; margin-top: 16px; font-size: 13px; }
             .notes { font-size: 12px; font-style: italic; padding-left: 10px; }
+            .complimentary-tag { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 8px; }
           </style>
         </head>
         <body>
@@ -287,13 +303,14 @@ export default function OrdersPage() {
             <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
             <p>For: ${orderType === 'Dine-In' ? tables.find(t => t.id === selectedTable)?.name || 'Dine-In' : `${orderType} - ${customerName || 'Customer'}`}</p>
           </div>
+          ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
           <div class="summary">
             ${cart.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${item.totalPrice.toFixed(2)}</span></span></div>${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}`).join('')}
           </div>
           <div class="total">
             <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
             ${discountAmount > 0 ? `<div class="item"><span class="name">Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${discountAmount.toFixed(2)}</span></span></div>` : ''}
-            <div class="item"><span class="name">GST (${settings.taxAmount}%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>
+            ${tax > 0 ? `<div class="item"><span class="name">GST (${settings.taxAmount}%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>` : ''}
             <div class="item"><span class="name"><b>Total</b></span><span class="price"><b><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${total.toFixed(2)}</span></b></span></div>
           </div>
           <div class="center">
@@ -351,13 +368,18 @@ export default function OrdersPage() {
     resetOrder();
   };
   
-  const handlePrintAllAndSettle = () => {
+  const handleKotAndPrint = () => {
+    handlePrintKOT();
     handlePrintBill();
-    setTimeout(() => {
-        handlePrintKOT();
-        resetOrder();
-    }, 500);
   };
+  
+  const handleSaveAndEbill = () => {
+    toast({
+        title: "eBill Sent",
+        description: "The bill has been sent to the customer's registered contact.",
+    });
+    resetOrder();
+  }
 
   const filteredMenuItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -405,7 +427,8 @@ export default function OrdersPage() {
                 <ScrollArea className="h-full">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
                     {filteredMenuItems.map(item => (
-                        <Card key={item.id} className="overflow-hidden">
+                        <Card key={item.id} className="overflow-hidden relative">
+                           <FoodTypeIndicator type={item.foodType} />
                           <button
                             className="w-full text-left"
                             onClick={() => addToCart(item)}
@@ -450,6 +473,10 @@ export default function OrdersPage() {
             <TabsContent value="current" className="flex-1 flex flex-col m-0">
                 <div className='flex flex-col h-full'>
                     <div className='px-6 pb-6'>
+                        <div className="relative w-full mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input placeholder="Search Bill No / KOT No..." className="pl-10" value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
+                        </div>
                         <Tabs value={orderType} onValueChange={(value) => setOrderType(value as OrderType)} className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="Dine-In"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
@@ -575,30 +602,36 @@ export default function OrdersPage() {
                                                   <ToggleGroupItem value="percentage" aria-label="Percentage">Percentage</ToggleGroupItem>
                                                 </ToggleGroup>
                                               </div>
+                                               <div className="flex items-center space-x-2 pt-2">
+                                                    <Checkbox id="is-complimentary" checked={settings.isComplimentary} onCheckedChange={(checked) => setSetting('isComplimentary', !!checked)} />
+                                                    <Label htmlFor="is-complimentary">Mark as Complimentary</Label>
+                                                </div>
                                             </div>
                                           </div>
                                         </PopoverContent>
                                       </Popover>
                                       )}
                                   </div>
-                                  <span className='flex items-center'>
+                                  <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
                                       <IndianRupee className="h-4 w-4 mr-1" />
                                       {subTotal.toFixed(2)}
                                   </span>
                                 </div>
-                                {discountAmount > 0 && (
+                                {discountAmount > 0 && !settings.isComplimentary && (
                                     <div className="flex justify-between text-destructive">
                                     <span>Discount ({settings.discountValue}{settings.discountType === 'percentage' ? '%' : ''})</span>
                                     <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{discountAmount.toFixed(2)}</span>
                                     </div>
                                 )}
+                                {tax > 0 && (
                                 <div className="flex justify-between">
                                 <span>GST ({settings.taxAmount}%)</span>
-                                <span className='flex items-center'>
+                                <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
                                     <IndianRupee className="h-4 w-4 mr-1" />
                                     {tax.toFixed(2)}
                                 </span>
                                 </div>
+                                )}
                                 <div className="flex justify-between font-bold text-lg">
                                 <span>Total</span>
                                 <span className='flex items-center'>
@@ -719,17 +752,22 @@ export default function OrdersPage() {
                 </DialogHeader>
                 <Card>
                     <CardHeader>
-                        <CardTitle>Bill Summary</CardTitle>
-                        <CardDescription>
-                          {orderType === 'Dine-In' && selectedTable ? tables.find(t => t.id === selectedTable)?.name : `${orderType} - ${customerName}`}
-                        </CardDescription>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle>Bill Summary</CardTitle>
+                                <CardDescription>
+                                {orderType === 'Dine-In' && selectedTable ? tables.find(t => t.id === selectedTable)?.name : `${orderType} - ${customerName}`}
+                                </CardDescription>
+                            </div>
+                            {settings.isComplimentary && <Badge variant="destructive">COMPLIMENTARY</Badge>}
+                        </div>
                     </CardHeader>
                     <CardContent>
                        <div className="space-y-2 text-sm">
                            {cart.map(item => (
                                <div key={item.id} className="flex justify-between">
                                    <span>{item.quantity} x {item.name}</span>
-                                   <span className='flex items-center'>
+                                   <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
                                        <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>
                                        {item.totalPrice.toFixed(2)}
                                     </span>
@@ -738,18 +776,20 @@ export default function OrdersPage() {
                            <div className="border-t pt-2 mt-2 space-y-2">
                                <div className="flex justify-between">
                                     <span>Subtotal</span>
-                                    <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{subTotal.toFixed(2)}</span>
+                                    <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{subTotal.toFixed(2)}</span>
                                </div>
-                               {discountAmount > 0 && (
+                               {discountAmount > 0 && !settings.isComplimentary && (
                                 <div className="flex justify-between text-destructive">
                                     <span>Discount</span>
                                     <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{discountAmount.toFixed(2)}</span>
                                 </div>
                                )}
+                                {tax > 0 && (
                                 <div className="flex justify-between">
                                     <span>GST ({settings.taxAmount}%)</span>
-                                    <span className='flex items-center'><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
+                                    <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
                                </div>
+                               )}
                            </div>
                            <div className="flex justify-between font-bold pt-2 border-t text-base">
                                <span>Total Amount</span>
@@ -761,39 +801,48 @@ export default function OrdersPage() {
                        </div>
                     </CardContent>
                 </Card>
-                <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline">UPI / Card</Button>
-                    <Button>Cash</Button>
-                </div>
-                 {settings.displaySettleAmount && (
-                    <div className="space-y-2">
-                        <Label htmlFor="amount-paid">Amount Paid</Label>
-                        <Input 
-                            id="amount-paid" 
-                            type="number" 
-                            placeholder="Enter amount customer paid" 
-                            value={amountPaid} 
-                            onChange={(e) => setAmountPaid(e.target.value)}
-                        />
-                    </div>
+                 {!settings.isComplimentary && (
+                    <>
+                        <div className="grid grid-cols-2 gap-4">
+                            <Button variant="outline">UPI / Card</Button>
+                            <Button>Cash</Button>
+                        </div>
+                        {settings.displaySettleAmount && (
+                            <div className="space-y-2">
+                                <Label htmlFor="amount-paid">Amount Paid</Label>
+                                <Input 
+                                    id="amount-paid" 
+                                    type="number" 
+                                    placeholder="Enter amount customer paid" 
+                                    value={amountPaid} 
+                                    onChange={(e) => setAmountPaid(e.target.value)}
+                                />
+                            </div>
+                        )}
+                        {changeDue > 0 && (
+                            <div className="text-center font-bold text-xl p-4 bg-muted rounded-md">
+                                Change Due: <span className='flex items-center justify-center'><IndianRupee className="inline-block h-5 w-5 mr-1"/>{changeDue.toFixed(2)}</span>
+                            </div>
+                        )}
+                    </>
                  )}
-                {changeDue > 0 && (
-                    <div className="text-center font-bold text-xl p-4 bg-muted rounded-md">
-                        Change Due: <span className='flex items-center justify-center'><IndianRupee className="inline-block h-5 w-5 mr-1"/>{changeDue.toFixed(2)}</span>
-                    </div>
-                )}
                  <DialogFooter className='sm:flex-col sm:space-x-0 gap-2'>
                     <div className='grid grid-cols-2 gap-2'>
-                      <Button variant="outline" onClick={handlePrintAndSettle}>
+                      <Button variant="outline" onClick={handlePrintBill}>
                         <Printer className="mr-2" /> Print Bill
                       </Button>
-                       <Button variant="outline" onClick={handlePrintAllAndSettle}>
-                        <Printer className="mr-2" /> Bill & KOT
+                       <Button variant="outline" onClick={handleKotAndPrint}>
+                        <Printer className="mr-2" /> KOT & Print
                       </Button>
                     </div>
-                    <Button onClick={resetOrder} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
+                    <div className='grid grid-cols-2 gap-2'>
+                      <Button variant="outline" onClick={handleSaveAndEbill}>
+                        <Mail className="mr-2" /> Save & eBill
+                      </Button>
+                       <Button onClick={resetOrder} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
                         <CheckCircle className="mr-2"/> Confirm Payment
-                    </Button>
+                      </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
