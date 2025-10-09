@@ -40,6 +40,7 @@ export default function OrdersPage() {
     orders,
     heldOrders,
     setOrders,
+    setHeldOrders,
     activeOrderId,
     setActiveOrderId,
     addOrder,
@@ -890,3 +891,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+
