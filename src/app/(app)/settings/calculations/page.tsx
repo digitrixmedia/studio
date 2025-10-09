@@ -1,4 +1,3 @@
-
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -71,6 +70,9 @@ export default function CalculationsSettingsPage() {
 
     // Special Notes state
     const [saveSpecialNote, setSaveSpecialNote] = useState(false);
+    
+    // Surcharge state
+    const [displaySurcharge, setDisplaySurcharge] = useState(false);
 
 
     const handleSaveChanges = () => {
@@ -115,6 +117,7 @@ export default function CalculationsSettingsPage() {
             splitBillOption,
             disableTaxOnComplimentary,
             saveSpecialNote,
+            displaySurcharge,
         });
     };
 
@@ -517,7 +520,24 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && activeTab !== 'kot-bill' && activeTab !== 'special-notes' && (
+                    {activeTab === 'surcharge' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Surcharge</CardTitle>
+                                <CardDescription>The following settings describes the settings related to the surcharge in the billing screen.</CardDescription>
+                            </CardHeader>
+                             <CardContent className="space-y-6">
+                                <div className="flex items-start space-x-2">
+                                    <Checkbox id="display-surcharge" checked={displaySurcharge} onCheckedChange={(checked) => setDisplaySurcharge(!!checked)} />
+                                    <Label htmlFor="display-surcharge">Display & Calculate Surcharge</Label>
+                                </div>
+                            </CardContent>
+                             <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && activeTab !== 'discount' && activeTab !== 'kot-bill' && activeTab !== 'special-notes' && activeTab !== 'surcharge' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
@@ -537,4 +557,3 @@ export default function CalculationsSettingsPage() {
         </SettingsPageLayout>
     );
 }
-
