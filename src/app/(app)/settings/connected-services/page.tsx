@@ -64,6 +64,11 @@ export default function ConnectedServicesSettingsPage() {
     
     // State for Expense settings
     const [restrictExpenseToCurrentDate, setRestrictExpenseToCurrentDate] = useState(false);
+    
+    // State for Invoice Structure settings
+    const [invoicePrefix, setInvoicePrefix] = useState('{yy}/ABC');
+    const [invoiceNumberLength, setInvoiceNumberLength] = useState('2');
+    const [invoiceSuffix, setInvoiceSuffix] = useState('');
 
 
     const handleSaveChanges = () => {
@@ -95,6 +100,9 @@ export default function ConnectedServicesSettingsPage() {
             barcodeWeightChars,
             barcodeWeightDenominator,
             restrictExpenseToCurrentDate,
+            invoicePrefix,
+            invoiceNumberLength,
+            invoiceSuffix,
         });
     };
 
@@ -402,7 +410,46 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && activeTab !== 'barcode' && activeTab !== 'expense' && (
+                 {activeTab === 'invoice-structure' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Invoice Structure</CardTitle>
+                            <CardDescription>The following settings pertains to configuring the Invoice Structure.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-4 items-end gap-4">
+                                <Label className="md:col-span-1 md:text-right font-semibold">Invoice structure*:</Label>
+                                <div className="md:col-span-3 grid grid-cols-3 gap-2">
+                                    <Input placeholder="Prefix" value={invoicePrefix} onChange={e => setInvoicePrefix(e.target.value)} />
+                                    <Input placeholder="Number Length" value={invoiceNumberLength} onChange={e => setInvoiceNumberLength(e.target.value)} />
+                                    <Input placeholder="Suffix" value={invoiceSuffix} onChange={e => setInvoiceSuffix(e.target.value)} />
+                                </div>
+                            </div>
+                            <div className="p-4 bg-muted/50 border rounded-md text-sm">
+                                <p className="font-semibold text-primary">Note : Enter any values from configured sets :</p>
+                                <ul className="mt-2 space-y-1 list-disc list-inside">
+                                    <li><code className="bg-muted px-1 rounded">{'{yy}'}</code> : Ex. 24 [current year]</li>
+                                    <li><code className="bg-muted px-1 rounded">{'{yyyy}'}</code> : Ex. 2024 [current year]</li>
+                                    <li><code className="bg-muted px-1 rounded">{'{mm}'}</code> : Ex. 07 [current month]</li>
+                                    <li><code className="bg-muted px-1 rounded">{'{mnn}'}</code> : Ex. Jul [current month]</li>
+                                    <li><code className="bg-muted px-1 rounded">{'{dd}'}</code> : Ex. 01 [current day]</li>
+                                </ul>
+                                <div className="mt-4">
+                                    <p className="font-semibold">If Ex:</p>
+                                    <div className="flex items-center gap-2">
+                                        <Input value="{yy}/ABC" readOnly className="w-24 bg-background"/>
+                                        <Input value="2" readOnly className="w-16 bg-background"/>
+                                    </div>
+                                    <p className="mt-1">means invoice will be <code className="bg-primary text-primary-foreground font-semibold px-2 py-1 rounded">18/ABC02</code></p>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && activeTab !== 'loyalty' && activeTab !== 'kds' && activeTab !== 'captain-app' && activeTab !== 'e-invoice' && activeTab !== 'barcode' && activeTab !== 'expense' && activeTab !== 'invoice-structure' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
