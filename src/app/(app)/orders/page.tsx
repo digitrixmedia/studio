@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType } from '@/lib/types';
-import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Send, Truck, User, Utensils, X } from 'lucide-react';
+import { CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,7 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
   const [activeTab, setActiveTab] = useState('current');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const addToCart = (item: MenuItem) => {
     // Check for variations or addons to open customization dialog
@@ -320,6 +321,11 @@ export default function OrdersPage() {
     }, 500);
   };
 
+  const filteredMenuItems = menuItems.filter(item => 
+    item.category === activeCategory &&
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
       {/* Menu Section */}
@@ -340,13 +346,20 @@ export default function OrdersPage() {
                 ))}
               </TabsList>
             </Tabs>
+            <div className="relative mt-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search menu items..." 
+                className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
-                    {menuItems
-                      .filter(item => item.category === activeCategory)
-                      .map(item => (
+                    {filteredMenuItems.map(item => (
                         <Card key={item.id} className="overflow-hidden">
                           <button
                             className="w-full text-left"
