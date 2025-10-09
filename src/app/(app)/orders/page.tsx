@@ -189,12 +189,6 @@ export default function OrdersPage() {
   const total = subTotal + tax;
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
-  const isOrderDetailsComplete = () => {
-    if (orderType === 'Dine-In') return !!selectedTable;
-    if (orderType === 'Takeaway' || orderType === 'Delivery') return !!customerName && !!customerPhone;
-    return false;
-  };
-  
   const printContent = (content: string) => {
       const printWindow = window.open('', '', 'width=400,height=600');
       if (printWindow) {
