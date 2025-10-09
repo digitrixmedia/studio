@@ -1,7 +1,7 @@
 
 'use client';
 
-import { ArrowLeft, BarChart2, Book, Box, Building, CookingPot, LayoutDashboard, LayoutGrid, Settings, ShoppingBag, Table, User } from 'lucide-react';
+import { ArrowLeft, BarChart2, Book, Box, Building, CookingPot, LayoutDashboard, LayoutGrid, ShoppingBag, Table, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -39,8 +39,7 @@ const navItems: NavItem[] = [
   { href: '/menu', label: 'Menu', icon: Book, roles: ['Manager', 'Admin'] },
   { href: '/inventory', label: 'Inventory', icon: Box, roles: ['Manager', 'Admin'] },
   { href: '/reports', label: 'Reports', icon: BarChart2, roles: ['Manager', 'Admin'] },
-  { href: '/settings', label: 'Settings', icon: Settings, roles: ['Manager', 'Admin'] },
-  { href: '/profile', label: 'Profile', icon: User, roles: ['Manager', 'Cashier', 'Waiter', 'Admin', 'Kitchen'] },
+  { href: '/profile', label: 'Profile & Settings', icon: User, roles: ['Manager', 'Cashier', 'Waiter', 'Admin', 'Kitchen'] },
   // Franchise Admin specific routes
   { href: '/franchise/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['Admin'] },
   { href: '/franchise/reports', label: 'Reports', icon: BarChart2, roles: ['Admin'] },

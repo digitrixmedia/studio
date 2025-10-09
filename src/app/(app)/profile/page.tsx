@@ -14,8 +14,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { KeyRound, Mail, Save, User } from 'lucide-react';
+import { KeyRound, Mail, Save, User, ReceiptText, ArrowRight } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
+
+const settings = [
+    {
+        title: 'Billing System',
+        description: 'Configure auto accept, Duration, Cancel timings etc. of Online Orders.',
+        icon: ReceiptText,
+        href: '/settings/billing'
+    }
+]
 
 export default function ProfilePage() {
   const { currentUser } = useAppContext();
@@ -48,7 +59,7 @@ export default function ProfilePage() {
             <div>
               <CardTitle className="text-3xl">{name}</CardTitle>
               <CardDescription>
-                Manage your personal information and password.
+                Manage your personal information and application settings.
               </CardDescription>
             </div>
           </div>
@@ -95,6 +106,37 @@ export default function ProfilePage() {
             Save Changes
           </Button>
         </CardFooter>
+
+        <Separator className="my-6" />
+
+        <CardHeader>
+          <CardTitle>System Settings</CardTitle>
+          <CardDescription>Manage your cafe's settings and configurations.</CardDescription>
+        </CardHeader>
+        <CardContent>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {settings.map(setting => (
+                    <Link href={setting.href} key={setting.title}>
+                        <Card className="hover:border-primary transition-colors h-full flex flex-col">
+                            <CardHeader className="flex-1">
+                                <div className="flex items-start gap-4">
+                                    <div className="bg-primary/10 text-primary p-3 rounded-full">
+                                        <setting.icon className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-lg">{setting.title}</CardTitle>
+                                        <CardDescription>{setting.description}</CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <div className="p-4 pt-0 flex justify-end">
+                                <ArrowRight className="h-5 w-5 text-primary" />
+                            </div>
+                        </Card>
+                    </Link>
+                ))}
+            </div>
+        </CardContent>
       </Card>
     </div>
   );
