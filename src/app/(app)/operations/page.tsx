@@ -57,7 +57,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders as initialOrders, tables as initialTables, reservations as initialReservations, deliveryBoys as initialDeliveryBoys } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Table as TableType, DeliveryBoy, Reservation } from '@/lib/types';
-import { Calendar as CalendarIcon, CheckCircle, Circle, Clock, CookingPot, Edit, Eye, IndianRupee, Mail, MapPin, Motorcycle, Phone, PlusCircle, Search, Trash2, User, XCircle, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, Check, CheckCircle, Circle, Clock, CookingPot, Edit, Eye, IndianRupee, Mail, MapPin, Motorcycle, Phone, PlusCircle, Search, Trash2, User, Utensils, XCircle, Package, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -66,6 +66,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Mock data for new sections
 const initialCustomers = Array.from(new Set(initialOrders.map(o => o.customerName).filter(Boolean))).map((name, i) => ({
@@ -134,6 +135,11 @@ export default function OperationsPage() {
         runningKots: orders.filter(o => ['New', 'Preparing'].includes(o.status)).length,
         readyKots: orders.filter(o => o.status === 'Ready').length,
     }
+
+    const liveOrders = orders.filter(o => ['New', 'Preparing'].includes(o.status));
+    const liveDineIn = liveOrders.filter(o => o.type === 'Dine-In');
+    const liveTakeaway = liveOrders.filter(o => o.type === 'Takeaway');
+    const liveDelivery = liveOrders.filter(o => o.type === 'Delivery');
     
     const openNewReservationSheet = () => {
         setEditingReservation(null);
@@ -487,7 +493,7 @@ export default function OperationsPage() {
       </TabsContent>
 
       <TabsContent value="live-view">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
@@ -531,6 +537,77 @@ export default function OperationsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{liveViewStats.readyKots}</div>
+                </CardContent>
+            </Card>
+        </div>
+        <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <Card className='flex flex-col h-full'>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><Utensils/> Live Dine-In Orders</CardTitle>
+                </CardHeader>
+                <CardContent className='flex-1'>
+                    <ScrollArea className='h-[400px]'>
+                        <div className='space-y-4'>
+                            {liveDineIn.map(order => (
+                                <Card key={order.id} className='p-3'>
+                                    <div className='flex justify-between items-center font-bold'>
+                                        <span>#{order.orderNumber} ({tables.find(t=>t.id === order.tableId)?.name})</span>
+                                        <Badge>{order.status}</Badge>
+                                    </div>
+                                    <ul className='text-sm mt-2 list-disc list-inside'>
+                                        {order.items.map(item => <li key={item.id}>{item.quantity}x {item.name}</li>)}
+                                    </ul>
+                                </Card>
+                            ))}
+                            {liveDineIn.length === 0 && <p className='text-muted-foreground text-center'>No live dine-in orders.</p>}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+             <Card className='flex flex-col h-full'>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><Package/> Live Takeaway Orders</CardTitle>
+                </CardHeader>
+                <CardContent className='flex-1'>
+                     <ScrollArea className='h-[400px]'>
+                        <div className='space-y-4'>
+                            {liveTakeaway.map(order => (
+                                <Card key={order.id} className='p-3'>
+                                    <div className='flex justify-between items-center font-bold'>
+                                        <span>#{order.orderNumber} ({order.customerName})</span>
+                                        <Badge>{order.status}</Badge>
+                                    </div>
+                                     <ul className='text-sm mt-2 list-disc list-inside'>
+                                        {order.items.map(item => <li key={item.id}>{item.quantity}x {item.name}</li>)}
+                                    </ul>
+                                </Card>
+                            ))}
+                            {liveTakeaway.length === 0 && <p className='text-muted-foreground text-center'>No live takeaway orders.</p>}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+             <Card className='flex flex-col h-full'>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'><Truck/> Live Delivery Orders</CardTitle>
+                </CardHeader>
+                <CardContent className='flex-1'>
+                     <ScrollArea className='h-[400px]'>
+                        <div className='space-y-4'>
+                            {liveDelivery.map(order => (
+                                <Card key={order.id} className='p-3'>
+                                    <div className='flex justify-between items-center font-bold'>
+                                        <span>#{order.orderNumber} ({order.customerName})</span>
+                                        <Badge>{order.status}</Badge>
+                                    </div>
+                                     <ul className='text-sm mt-2 list-disc list-inside'>
+                                        {order.items.map(item => <li key={item.id}>{item.quantity}x {item.name}</li>)}
+                                    </ul>
+                                </Card>
+                            ))}
+                            {liveDelivery.length === 0 && <p className='text-muted-foreground text-center'>No live delivery orders.</p>}
+                        </div>
+                    </ScrollArea>
                 </CardContent>
             </Card>
         </div>
@@ -871,5 +948,7 @@ export default function OperationsPage() {
     </>
   );
 }
+
+    
 
     
