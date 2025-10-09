@@ -321,10 +321,15 @@ export default function OrdersPage() {
     }, 500);
   };
 
-  const filteredMenuItems = menuItems.filter(item => 
-    item.category === activeCategory &&
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = item.category === activeCategory;
+
+    if (searchQuery) {
+      return matchesSearch;
+    }
+    return matchesCategory;
+  });
 
   return (
     <div className="grid h-[calc(100vh-8rem)] grid-cols-1 gap-4 lg:grid-cols-3">
