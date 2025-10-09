@@ -31,16 +31,26 @@ export default function ConnectedServicesSettingsPage() {
     const [outOfStockAction, setOutOfStockAction] = useState('Hide items');
     const [useRealTimeStock, setUseRealTimeStock] = useState(false);
 
+    // State for Day End Settings
+    const [enableManualDayEnd, setEnableManualDayEnd] = useState(false);
+    const [preventDayEndOnActiveTable, setPreventDayEndOnActiveTable] = useState(false);
+    const [preventDayEndOnUnsynced, setPreventDayEndOnUnsynced] = useState(false);
+    const [restrictEditAfterDayEnd, setRestrictEditAfterDayEnd] = useState(false);
+
     const handleSaveChanges = () => {
         toast({
             title: "Settings Saved",
-            description: "Your inventory settings have been updated.",
+            description: "Your connected services settings have been updated.",
         });
         console.log({
             enableAutoConsumption,
             resetStockOnDayStart,
             outOfStockAction,
             useRealTimeStock,
+            enableManualDayEnd,
+            preventDayEndOnActiveTable,
+            preventDayEndOnUnsynced,
+            restrictEditAfterDayEnd
         });
     };
 
@@ -48,7 +58,7 @@ export default function ConnectedServicesSettingsPage() {
         <SettingsPageLayout navItems={navItems}>
             {(activeTab) => (
                 <>
-                {activeTab === 'inventory' ? (
+                {activeTab === 'inventory' && (
                      <Card>
                         <CardHeader>
                             <CardTitle>Inventory Settings</CardTitle>
@@ -90,7 +100,49 @@ export default function ConnectedServicesSettingsPage() {
                             <Button onClick={handleSaveChanges}>Save Changes</Button>
                         </CardFooter>
                     </Card>
-                ) : (
+                )}
+                {activeTab === 'day-end' && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Day End Settings</CardTitle>
+                            <CardDescription>The following settings helps in configures enabling Day End module in billing screen</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                             <div className="flex items-start space-x-2">
+                                <Checkbox id="manual-day-end" checked={enableManualDayEnd} onCheckedChange={(checked) => setEnableManualDayEnd(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="manual-day-end" className="text-gray-400">Enable Manual Day End</Label>
+                                    <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                             <div className="flex items-start space-x-2">
+                                <Checkbox id="prevent-active-table" checked={preventDayEndOnActiveTable} onCheckedChange={(checked) => setPreventDayEndOnActiveTable(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="prevent-active-table" className="text-gray-400">Don't allow Day End if there is any active table on Table View Screen.</Label>
+                                    <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                            <div className="flex items-start space-x-2">
+                                <Checkbox id="prevent-unsynced" checked={preventDayEndOnUnsynced} onCheckedChange={(checked) => setPreventDayEndOnUnsynced(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="prevent-unsynced" className="text-gray-400">Don't allow Day End if there is any un-sync orders data</Label>
+                                    <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                             <div className="flex items-start space-x-2">
+                                <Checkbox id="restrict-editing" checked={restrictEditAfterDayEnd} onCheckedChange={(checked) => setRestrictEditAfterDayEnd(!!checked)} disabled />
+                                <div className="grid gap-1.5 leading-none">
+                                    <Label htmlFor="restrict-editing" className="text-gray-400">Restrict editing the order once the manual day end operation has been completed</Label>
+                                    <p className="text-xs text-muted-foreground">This setting is only available in cloud login.</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'inventory' && activeTab !== 'day-end' && (
                     <Card>
                         <CardHeader>
                             <CardTitle>
