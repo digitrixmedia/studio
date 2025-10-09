@@ -42,6 +42,12 @@ export default function CalculationsSettingsPage() {
     const [taxOnContainerCharge, setTaxOnContainerCharge] = useState(false);
     const [specificAmountCondition, setSpecificAmountCondition] = useState('None');
     const [specificAmount, setSpecificAmount] = useState('0');
+    // Delivery Charge state
+    const [showDeliveryCharge, setShowDeliveryCharge] = useState(true);
+    const [defaultDeliveryCharge, setDefaultDeliveryCharge] = useState('0');
+    const [taxOnDeliveryCharge, setTaxOnDeliveryCharge] = useState(false);
+    const [deliveryAmountCondition, setDeliveryAmountCondition] = useState('None');
+    const [deliverySpecificAmount, setDeliverySpecificAmount] = useState('0');
 
 
     const handleSaveChanges = () => {
@@ -63,6 +69,11 @@ export default function CalculationsSettingsPage() {
             taxOnContainerCharge,
             specificAmountCondition,
             specificAmount,
+            showDeliveryCharge,
+            defaultDeliveryCharge,
+            taxOnDeliveryCharge,
+            deliveryAmountCondition,
+            deliverySpecificAmount,
         });
     };
 
@@ -258,7 +269,61 @@ export default function CalculationsSettingsPage() {
                             </CardFooter>
                         </Card>
                     )}
-                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && (
+                    {activeTab === 'delivery-charge' && (
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Delivery Charge</CardTitle>
+                                <CardDescription>The following settings describes the settings related to the delivery charge in the billing screen.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                <div className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="show-delivery-charge" checked={showDeliveryCharge} onCheckedChange={(checked) => setShowDeliveryCharge(!!checked)} />
+                                        <Label htmlFor="show-delivery-charge">Show Delivery Charge On Billing Screen</Label>
+                                    </div>
+                                     <p className="text-xs text-muted-foreground ml-6">This setting would describe what would the delivery charge would be displayed as.</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                    <Label htmlFor="default-delivery-charge" className="md:text-right">Default Delivery Charge (Only for Delivery) *:</Label>
+                                    <Input id="default-delivery-charge" value={defaultDeliveryCharge} onChange={e => setDefaultDeliveryCharge(e.target.value)} className="md:col-span-2 w-full md:w-1/2" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                    <div className="flex items-center space-x-2 md:col-start-2">
+                                        <Checkbox id="tax-on-delivery" checked={taxOnDeliveryCharge} onCheckedChange={checked => setTaxOnDeliveryCharge(!!checked)} />
+                                        <Label htmlFor="tax-on-delivery">Calculate tax on Delivery Charge.</Label>
+                                    </div>
+                                </div>
+                                <Separator />
+                                <RadioGroup value={deliveryAmountCondition} onValueChange={setDeliveryAmountCondition}>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-4">
+                                        <Label className="md:text-right pt-2">Set a specific amount to calculate :</Label>
+                                        <div className="md:col-span-2 flex items-center gap-x-6 gap-y-2">
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Greater Than" id="dc-greater" />
+                                                <Label htmlFor="dc-greater">Greater Than</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="Less Than" id="dc-less" />
+                                                <Label htmlFor="dc-less">Less Than</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="None" id="dc-none" />
+                                                <Label htmlFor="dc-none">None</Label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </RadioGroup>
+                                 <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                    <Label htmlFor="delivery-specific-amount" className="md:text-right">Amount :</Label>
+                                    <Input id="delivery-specific-amount" value={deliverySpecificAmount} onChange={e => setDeliverySpecificAmount(e.target.value)} className="md:col-span-2 w-full md:w-1/2" disabled={deliveryAmountCondition === 'None'} />
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
+                    {activeTab !== 'round-off' && activeTab !== 'service-charge' && activeTab !== 'container-charge' && activeTab !== 'delivery-charge' && (
                          <Card>
                             <CardHeader>
                                 <CardTitle>
