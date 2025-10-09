@@ -386,6 +386,10 @@ export default function OrdersPage() {
     return item.category === activeCategory;
   });
 
+  const filteredHeldOrders = heldOrders.filter(order =>
+    order.customer.name.toLowerCase().includes(billSearchQuery.toLowerCase())
+  );
+
   if (!activeOrder) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -757,7 +761,7 @@ export default function OrdersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {heldOrders.length > 0 ? heldOrders.map(order => (
+                            {filteredHeldOrders.length > 0 ? filteredHeldOrders.map(order => (
                                 <TableRow key={order.id}>
                                     <TableCell>{order.customer.name || 'N/A'}</TableCell>
                                     <TableCell><Badge variant="outline">{order.orderType}</Badge></TableCell>
@@ -775,7 +779,7 @@ export default function OrdersPage() {
                             )) : (
                                 <TableRow>
                                     <TableCell colSpan={5} className="h-24 text-center">
-                                        No orders are currently on hold.
+                                        No orders match your search.
                                     </TableCell>
                                 </TableRow>
                             )}
