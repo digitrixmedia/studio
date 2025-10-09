@@ -154,6 +154,7 @@ export interface DeliveryBoy {
 // App-specific type for orders being built in the POS
 export interface AppOrder {
   id: string;
+  orderNumber: string;
   items: OrderItem[];
   customer: {
     name: string;

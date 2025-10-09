@@ -47,6 +47,7 @@ export default function OrdersPage() {
     updateOrder,
     holdOrder,
     resumeOrder,
+    createNewOrder,
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -198,15 +199,6 @@ export default function OrdersPage() {
     setSetting('isComplimentary', false);
     setIsPaymentDialogOpen(false);
   }
-
-  const createNewOrder = (): AppOrder => ({
-      id: `order-${Date.now()}`,
-      items: [],
-      customer: { name: '', phone: '' },
-      orderType: settings.defaultOrderType,
-      tableId: '',
-      discount: 0,
-    });
   
   const handleSendToKitchen = () => {
     if (!activeOrder || activeOrder.items.length === 0) {
@@ -294,7 +286,7 @@ export default function OrdersPage() {
             <p>${printSettings.address}</p>
             ${printSettings.customDetails ? `<p>${printSettings.customDetails}</p>` : ''}
             <p>Ph: ${printSettings.phone}</p>
-            <p>Order: #${Math.floor(Math.random() * 1000)} | ${new Date().toLocaleString()}</p>
+            <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
             <p>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : `${activeOrder.orderType} - ${activeOrder.customer.name || 'Customer'}`}</p>
           </div>
           ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
@@ -338,7 +330,7 @@ export default function OrdersPage() {
             <h2>KOT</h2>
           </div>
           <div class="info">
-            <span>Order: #${Math.floor(Math.random() * 1000)}</span>
+            <span>Order: #${activeOrder.orderNumber}</span>
             <span>${new Date().toLocaleTimeString()}</span>
           </div>
           <div class="info">
@@ -387,7 +379,8 @@ export default function OrdersPage() {
   });
 
   const filteredHeldOrders = heldOrders.filter(order =>
-    order.customer.name.toLowerCase().includes(billSearchQuery.toLowerCase())
+    order.customer.name.toLowerCase().includes(billSearchQuery.toLowerCase()) ||
+    order.orderNumber.toString().includes(billSearchQuery)
   );
 
   if (!activeOrder) {
@@ -753,6 +746,7 @@ export default function OrdersPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Order #</TableHead>
                                 <TableHead>Customer</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead>Items</TableHead>
@@ -763,6 +757,7 @@ export default function OrdersPage() {
                         <TableBody>
                             {filteredHeldOrders.length > 0 ? filteredHeldOrders.map(order => (
                                 <TableRow key={order.id}>
+                                    <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
                                     <TableCell>{order.customer.name || 'N/A'}</TableCell>
                                     <TableCell><Badge variant="outline">{order.orderType}</Badge></TableCell>
                                     <TableCell>{order.items.length}</TableCell>
@@ -778,7 +773,7 @@ export default function OrdersPage() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         No orders match your search.
                                     </TableCell>
                                 </TableRow>

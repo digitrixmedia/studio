@@ -1,24 +1,12 @@
 
 'use client';
 
-import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType } from '@/lib/types';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder } from '@/lib/types';
 import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
-
-export type AppOrder = {
-  id: string;
-  items: OrderItem[];
-  customer: {
-    name: string;
-    phone: string;
-  };
-  orderType: OrderType;
-  tableId: string;
-  discount: number;
-}
 
 interface AppContextType {
   currentUser: User | null;
@@ -44,12 +32,16 @@ interface AppContextType {
   logout: () => void;
   selectOutlet: (outlet: FranchiseOutlet) => void;
   clearSelectedOutlet: () => void;
+  createNewOrder: () => AppOrder;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+let orderCounter = 1;
+
 const createNewOrder = (): AppOrder => ({
   id: `order-${Date.now()}`,
+  orderNumber: `${1000 + orderCounter++}`,
   items: [],
   customer: { name: '', phone: '' },
   orderType: 'Dine-In',
@@ -252,7 +244,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     removeOrder(orderId);
     toast({
       title: "Order Held",
-      description: `Order for ${orderToHold.customer.name || 'a customer'} has been put on hold.`,
+      description: `Order #${orderToHold.orderNumber} for ${orderToHold.customer.name || 'a customer'} has been put on hold.`,
     });
   };
 
@@ -265,13 +257,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setActiveOrderId(orderToResume.id);
     toast({
       title: "Order Resumed",
-      description: `Order for ${orderToResume.customer.name || 'a customer'} is now active.`,
+      description: `Order #${orderToResume.orderNumber} for ${orderToResume.customer.name || 'a customer'} is now active.`,
     });
   };
 
   const loadOrder = (order: Order) => {
     const newAppOrder: AppOrder = {
         id: `order-${Date.now()}`,
+        orderNumber: order.orderNumber,
         items: order.items,
         customer: {
             name: order.customerName || '',
@@ -320,7 +313,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     holdOrder,
     resumeOrder,
     getOrderByTable,
-    loadOrder
+    loadOrder,
+    createNewOrder,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
