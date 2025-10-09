@@ -40,6 +40,10 @@ export default function BillingSystemSettingsPage() {
     // State for Display settings
     const [billingScreenRefreshCount, setBillingScreenRefreshCount] = useState('0');
 
+    // State for Security Setting
+    const [managerPassword, setManagerPassword] = useState('');
+    const [idleTime, setIdleTime] = useState('0');
+
     const handleSaveChanges = () => {
         toast({
             title: "Settings Saved",
@@ -59,6 +63,8 @@ export default function BillingSystemSettingsPage() {
             paymentRequestSyncTime,
             checkPaymentRequestSyncTime,
             billingScreenRefreshCount,
+            managerPassword,
+            idleTime,
         });
     };
 
@@ -245,7 +251,33 @@ export default function BillingSystemSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
-                {activeTab !== 'order-sync' && activeTab !== 'payment-sync' && activeTab !== 'display' && (
+                {activeTab === 'security' && (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Security Setting</CardTitle>
+                            <CardDescription>The following settings help in determining the settings related to security of the application.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                <Label htmlFor="manager-password">Default Manager<br/>Password for Desktop<br/>Use :</Label>
+                                <div className="md:col-span-2">
+                                    <Input id="manager-password" type="password" value={managerPassword} onChange={e => setManagerPassword(e.target.value)} className="w-full md:w-1/2" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+                                <Label htmlFor="idle-time">User Idle time for Logout</Label>
+                                <div className="md:col-span-2 flex items-center gap-2">
+                                    <Input id="idle-time" type="number" value={idleTime} onChange={e => setIdleTime(e.target.value)} className="w-24" />
+                                    <span>Min</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                         <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+                )}
+                {activeTab !== 'order-sync' && activeTab !== 'payment-sync' && activeTab !== 'display' && activeTab !== 'security' && (
                      <Card>
                         <CardHeader>
                             <CardTitle>
@@ -265,3 +297,5 @@ export default function BillingSystemSettingsPage() {
         </SettingsPageLayout>
     );
 }
+
+    
