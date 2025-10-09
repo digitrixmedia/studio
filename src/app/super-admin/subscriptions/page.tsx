@@ -53,8 +53,10 @@ import type { Subscription, SubscriptionStatus } from '@/lib/types';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
-const initialNewSubState = {
+
+const initialFormState = {
   franchiseName: '',
   outletName: '',
   adminName: '',
@@ -67,35 +69,89 @@ const initialNewSubState = {
 export default function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [newSubscription, setNewSubscription] = useState(initialNewSubState);
+  const [editingSub, setEditingSub] = useState<Subscription | null>(null);
+  const [formData, setFormData] = useState(initialFormState);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
-    setNewSubscription(prev => ({ ...prev, [id]: value }));
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+  
+  const openNewDialog = () => {
+    setEditingSub(null);
+    setFormData(initialFormState);
+    setIsDialogOpen(true);
+  }
+
+  const openEditDialog = (sub: Subscription) => {
+    setEditingSub(sub);
+    setFormData({
+      franchiseName: sub.franchiseName,
+      outletName: sub.outletName,
+      adminName: sub.adminName || '',
+      adminEmail: sub.adminEmail,
+      adminPassword: '', // Don't pre-fill password
+      startDate: format(sub.startDate, 'yyyy-MM-dd'),
+      endDate: format(sub.endDate, 'yyyy-MM-dd'),
+    });
+    setIsDialogOpen(true);
   };
 
-  const handleCreateSubscription = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newSub: Subscription = {
-      id: `sub-${Date.now()}`,
-      franchiseName: newSubscription.franchiseName,
-      outletName: newSubscription.outletName,
-      adminName: newSubscription.adminName,
-      adminEmail: newSubscription.adminEmail,
-      startDate: new Date(newSubscription.startDate),
-      endDate: new Date(newSubscription.endDate),
-      status: 'Active',
-      storageUsedMB: 0,
-    };
-    setSubscriptions(prev => [newSub, ...prev]);
-    toast({
-      title: "Subscription Created",
-      description: `${newSubscription.outletName} for ${newSubscription.franchiseName} has been created.`,
-    });
-    setNewSubscription(initialNewSubState);
+
+    if(editingSub) {
+      // Update existing subscription
+      setSubscriptions(subscriptions.map(sub => 
+        sub.id === editingSub.id 
+          ? {
+              ...sub,
+              franchiseName: formData.franchiseName,
+              outletName: formData.outletName,
+              adminName: formData.adminName,
+              adminEmail: formData.adminEmail,
+              startDate: new Date(formData.startDate),
+              endDate: new Date(formData.endDate),
+            } 
+          : sub
+      ));
+      toast({
+        title: "Subscription Updated",
+        description: `Details for ${formData.outletName} have been updated.`,
+      });
+
+    } else {
+       // Create new subscription
+       const newSub: Subscription = {
+        id: `sub-${Date.now()}`,
+        franchiseName: formData.franchiseName,
+        outletName: formData.outletName,
+        adminName: formData.adminName,
+        adminEmail: formData.adminEmail,
+        startDate: new Date(formData.startDate),
+        endDate: new Date(formData.endDate),
+        status: 'Active',
+        storageUsedMB: 0,
+      };
+      setSubscriptions(prev => [newSub, ...prev]);
+      toast({
+        title: "Subscription Created",
+        description: `${formData.outletName} for ${formData.franchiseName} has been created.`,
+      });
+    }
+
     setIsDialogOpen(false);
   };
+  
+  const handleDeleteSubscription = (subId: string) => {
+    setSubscriptions(subscriptions.filter(sub => sub.id !== subId));
+    toast({
+        title: "Subscription Deleted",
+        description: "The subscription has been permanently removed.",
+        variant: "destructive"
+    });
+  }
   
   const getStatusVariant = (status: SubscriptionStatus) => {
     switch (status) {
@@ -138,50 +194,50 @@ export default function SubscriptionsPage() {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={openNewDialog}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Subscription
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handleCreateSubscription}>
+              <form onSubmit={handleFormSubmit}>
                 <DialogHeader>
-                  <DialogTitle>Add New Subscription</DialogTitle>
+                  <DialogTitle>{editingSub ? 'Edit' : 'Add New'} Subscription</DialogTitle>
                   <DialogDescription>
-                    Fill in the details for the new outlet.
+                    Fill in the details for the outlet.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="franchiseName" className="text-right">Franchise</Label>
-                    <Input id="franchiseName" value={newSubscription.franchiseName} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="franchiseName" value={formData.franchiseName} onChange={handleInputChange} className="col-span-3" required/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="outletName" className="text-right">Outlet</Label>
-                    <Input id="outletName" value={newSubscription.outletName} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="outletName" value={formData.outletName} onChange={handleInputChange} className="col-span-3" required/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="adminName" className="text-right">Admin Name</Label>
-                    <Input id="adminName" value={newSubscription.adminName} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="adminName" value={formData.adminName} onChange={handleInputChange} className="col-span-3" required/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="adminEmail" className="text-right">Admin Email</Label>
-                    <Input id="adminEmail" type="email" value={newSubscription.adminEmail} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="adminEmail" type="email" value={formData.adminEmail} onChange={handleInputChange} className="col-span-3" required/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="adminPassword" className="text-right">Password</Label>
-                    <Input id="adminPassword" type="password" value={newSubscription.adminPassword} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="adminPassword" type="password" placeholder={editingSub ? 'Unchanged' : '••••••••'} value={formData.adminPassword} onChange={handleInputChange} className="col-span-3" required={!editingSub}/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="startDate" className="text-right">Start Date</Label>
-                    <Input id="startDate" type="date" value={newSubscription.startDate} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="startDate" type="date" value={formData.startDate} onChange={handleInputChange} className="col-span-3" required/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="endDate" className="text-right">End Date</Label>
-                    <Input id="endDate" type="date" value={newSubscription.endDate} onChange={handleInputChange} className="col-span-3" required/>
+                    <Input id="endDate" type="date" value={formData.endDate} onChange={handleInputChange} className="col-span-3" required/>
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit">Create Subscription</Button>
+                  <Button type="submit">{editingSub ? 'Save Changes' : 'Create Subscription'}</Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -229,7 +285,7 @@ export default function SubscriptionsPage() {
                           />
                         </TableCell>
                         <TableCell className="flex gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(sub)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -242,12 +298,12 @@ export default function SubscriptionsPage() {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the subscription and all its data.
+                                        This action cannot be undone. This will permanently delete the subscription for {sub.outletName} and all its data.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => handleDeleteSubscription(sub.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -264,5 +320,3 @@ export default function SubscriptionsPage() {
     </Card>
   );
 }
-
-    
