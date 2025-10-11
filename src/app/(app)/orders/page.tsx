@@ -454,7 +454,7 @@ export default function OrdersPage() {
             <div class="header">
               <h2>${settings.printCafeName}</h2>
               <p>${settings.printAddress}</p>
-              ${settings.printCustomDetails ? `<p>${settings.printCustomDetails}</p>` : ''}
+              ${settings.printCustomDetails ? `<p>${settings.printCustomDetails.replace(/\n/g, '<br>')}</p>` : ''}
               <p>Ph: ${settings.printPhone}</p>
               <div class="customer-details">
                 <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
@@ -1141,3 +1141,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+
