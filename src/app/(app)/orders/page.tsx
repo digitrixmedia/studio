@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon } from '@/lib/types';
-import { Check, CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag, Mail, ShoppingBag } from 'lucide-react';
+import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, ShoppingBag, Tag, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -67,17 +67,6 @@ export default function OrdersPage() {
   const [billSearchQuery, setBillSearchQuery] = useState('');
   const [manualTaxRate, setManualTaxRate] = useState<number | null>(null);
 
-
-  const FoodTypeIndicator = ({ type }: { type: MenuItem['foodType'] }) => {
-    if (!type) return null;
-    const color = type === 'Veg' ? 'border-green-500' : 'border-red-500';
-    const bgColor = type === 'Veg' ? 'bg-green-500' : 'bg-red-500';
-    return (
-      <div className={`absolute top-1 right-1 border ${color} p-0.5 rounded-full`}>
-        <div className={`h-1.5 w-1.5 rounded-full ${bgColor}`}></div>
-      </div>
-    );
-  };
   
   const updateActiveOrder = (items: OrderItem[]) => {
     if (activeOrderId) {
@@ -343,191 +332,182 @@ export default function OrdersPage() {
       }
   };
 
- const handlePrintBill = () => {
-  if (!activeOrder) return;
-
-  const printSettings = {
-    cafeName: 'ZappyyPOS',
-    address: '123 Coffee Lane, Bengaluru',
-    customDetails: 'GSTIN: 29ABCDE1234F1Z5',
-    phone: '9876543210',
-    footerMessage: 'Thank you for your visit!',
-  };
-
-  const billHtml = `
-    <html>
-      <head>
-        <title>Customer Bill</title>
-        <style>
-          /* Optimize for thermal printer */
-          @page { 
-            size: 80mm auto; 
-            margin: 0;
-          }
-
-          html, body {
-            width: 80mm;
-            margin: 0;
-            padding: 0;
-            font-family: 'Arial', 'Source Code Pro', monospace;
-            font-size: 12px; /* Increased font size for clarity */
-            line-height: 1.3;
-            color: #000;
-          }
-
-          * { box-sizing: border-box; }
-
-          .container {
-            padding: 4mm;
-          }
-
-          .header {
-            text-align: center;
-            border-bottom: 1px dashed #000;
-            padding-bottom: 4px;
-            margin-bottom: 4px;
-          }
-
-          .header h2 {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 2px;
-          }
-
-          .header p {
-            font-size: 11px;
-            line-height: 1.2;
-          }
-
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-
-          th, td {
-            padding: 2px 0;
-            font-size: 12px;
-          }
-
-          th {
-            text-align: left;
-            border-bottom: 1px solid #000;
-          }
-
-          td.qty {
-            width: 10%;
-            text-align: center;
-          }
-
-          td.price {
-            width: 25%;
-            text-align: right;
-          }
-
-          .notes {
-            font-size: 11px;
-            font-style: italic;
-            padding-left: 10px;
-          }
-
-          .total {
-            border-top: 1px dashed #000;
-            margin-top: 6px;
-            padding-top: 6px;
-            font-size: 13px;
-          }
-
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 2px;
-          }
-
-          .total-row.bold {
-            font-weight: bold;
-            font-size: 14px;
-            border-top: 1px solid #000;
-            margin-top: 4px;
-            padding-top: 4px;
-          }
-
-          .center {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 11px;
-          }
-
-          .complimentary-tag {
-            font-weight: bold;
-            font-size: 14px;
-            text-align: center;
-            margin: 6px 0;
-          }
-
-          /* Remove blank space after print */
-          @media print {
-            body {
-              -webkit-print-color-adjust: exact;
+  const handlePrintBill = () => {
+    if (!activeOrder) return;
+  
+    const billHtml = `
+      <html>
+        <head>
+          <title>Customer Bill</title>
+          <style>
+            /* Optimize for thermal printer */
+            @page { 
+              size: 80mm auto; 
               margin: 0;
             }
-            html {
+  
+            html, body {
+              width: 80mm;
               margin: 0;
+              padding: 0;
+              font-family: 'Arial', 'Source Code Pro', monospace;
+              font-size: 12px; /* Increased font size for clarity */
+              line-height: 1.3;
+              color: #000;
             }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h2>${printSettings.cafeName}</h2>
-            <p>${printSettings.address}</p>
-            ${printSettings.customDetails ? `<p>${printSettings.customDetails}</p>` : ''}
-            <p>Ph: ${printSettings.phone}</p>
-            <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
-            <p>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : `${activeOrder.orderType} - ${activeOrder.customer.name || 'Customer'}`}</p>
-          </div>
-
-          ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
-
-          <table>
-            <thead>
-              <tr>
-                <th class="qty">Qty</th>
-                <th>Item</th>
-                <th class="price">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${activeOrder.items.map(item => `
+  
+            * { box-sizing: border-box; }
+  
+            .container {
+              padding: 4mm;
+            }
+  
+            .header {
+              text-align: center;
+              border-bottom: 1px dashed #000;
+              padding-bottom: 4px;
+              margin-bottom: 4px;
+            }
+  
+            .header h2 {
+              font-size: 16px;
+              font-weight: bold;
+              margin-bottom: 2px;
+            }
+  
+            .header p {
+              font-size: 11px;
+              line-height: 1.2;
+            }
+  
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+  
+            th, td {
+              padding: 2px 0;
+              font-size: 12px;
+            }
+  
+            th {
+              text-align: left;
+              border-bottom: 1px solid #000;
+            }
+  
+            td.qty {
+              width: 10%;
+              text-align: center;
+            }
+  
+            td.price {
+              width: 25%;
+              text-align: right;
+            }
+  
+            .notes {
+              font-size: 11px;
+              font-style: italic;
+              padding-left: 10px;
+            }
+  
+            .total {
+              border-top: 1px dashed #000;
+              margin-top: 6px;
+              padding-top: 6px;
+              font-size: 13px;
+            }
+  
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 2px;
+            }
+  
+            .total-row.bold {
+              font-weight: bold;
+              font-size: 14px;
+              border-top: 1px solid #000;
+              margin-top: 4px;
+              padding-top: 4px;
+            }
+  
+            .center {
+              text-align: center;
+              margin-top: 10px;
+              font-size: 11px;
+            }
+  
+            .complimentary-tag {
+              font-weight: bold;
+              font-size: 14px;
+              text-align: center;
+              margin: 6px 0;
+            }
+  
+            /* Remove blank space after print */
+            @media print {
+              body {
+                -webkit-print-color-adjust: exact;
+                margin: 0;
+              }
+              html {
+                margin: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h2>${settings.printCafeName}</h2>
+              <p>${settings.printAddress}</p>
+              ${settings.printCustomDetails ? `<p>${settings.printCustomDetails}</p>` : ''}
+              <p>Ph: ${settings.printPhone}</p>
+              <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
+              <p>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : `${activeOrder.orderType} - ${activeOrder.customer.name || 'Customer'}`}</p>
+            </div>
+  
+            ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
+  
+            <table>
+              <thead>
                 <tr>
-                  <td class="qty">${item.quantity}</td>
-                  <td>${item.name}</td>
-                  <td class="price">₹${item.totalPrice.toFixed(2)}</td>
+                  <th class="qty">Qty</th>
+                  <th>Item</th>
+                  <th class="price">Total</th>
                 </tr>
-                ${item.notes ? `<tr><td colspan="3"><div class="notes">- ${item.notes}</div></td></tr>` : ''}
-              `).join('')}
-            </tbody>
-          </table>
-
-          <div class="total">
-            <div class="total-row"><span>Subtotal</span><span>₹${subTotal.toFixed(2)}</span></div>
-            ${bogoDiscount > 0 ? `<div class="total-row"><span>BOGO Discount</span><span>- ₹${bogoDiscount.toFixed(2)}</span></div>` : ''}
-            ${discountAmount > 0 ? `<div class="total-row"><span>Discount</span><span>- ₹${discountAmount.toFixed(2)}</span></div>` : ''}
-            ${tax > 0 ? `<div class="total-row"><span>GST (${manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span><span>₹${tax.toFixed(2)}</span></div>` : ''}
-            <div class="total-row bold"><span>Total</span><span>₹${total.toFixed(2)}</span></div>
+              </thead>
+              <tbody>
+                ${activeOrder.items.map(item => `
+                  <tr>
+                    <td class="qty">${item.quantity}</td>
+                    <td>${item.name}</td>
+                    <td class="price">₹${item.totalPrice.toFixed(2)}</td>
+                  </tr>
+                  ${item.notes ? `<tr><td colspan="3"><div class="notes">- ${item.notes}</div></td></tr>` : ''}
+                `).join('')}
+              </tbody>
+            </table>
+  
+            <div class="total">
+              <div class="total-row"><span>Subtotal</span><span>₹${subTotal.toFixed(2)}</span></div>
+              ${bogoDiscount > 0 ? `<div class="total-row"><span>BOGO Discount</span><span>- ₹${bogoDiscount.toFixed(2)}</span></div>` : ''}
+              ${discountAmount > 0 ? `<div class="total-row"><span>Discount</span><span>- ₹${discountAmount.toFixed(2)}</span></div>` : ''}
+              ${tax > 0 ? `<div class="total-row"><span>GST (${manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span><span>₹${tax.toFixed(2)}</span></div>` : ''}
+              <div class="total-row bold"><span>Total</span><span>₹${total.toFixed(2)}</span></div>
+            </div>
+  
+            <div class="center">
+              <p>${settings.printFooterMessage}</p>
+            </div>
           </div>
-
-          <div class="center">
-            <p>${printSettings.footerMessage}</p>
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
-
-  printContent(billHtml);
-};
-
+        </body>
+      </html>
+    `;
+  
+    printContent(billHtml);
+  };
   
   const handlePrintKOT = () => {
     if (!activeOrder) return;

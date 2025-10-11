@@ -112,6 +112,11 @@ export interface AppSettings {
   invoiceSuffix: string;
 
   // Print Settings
+  printCafeName: string;
+  printAddress: string;
+  printCustomDetails: string;
+  printPhone: string;
+  printFooterMessage: string;
   showOrderBarcode: boolean;
   printKotOnPrintBill: boolean;
   printOnlyModifiedKot: boolean;
@@ -267,6 +272,11 @@ const defaultSettings: AppSettings = {
   invoicePrefix: '{yy}/ABC',
   invoiceNumberLength: '2',
   invoiceSuffix: '',
+  printCafeName: 'ZappyyPOS',
+  printAddress: '123 Coffee Lane, Bengaluru',
+  printCustomDetails: 'GSTIN: 29ABCDE1234F1Z5',
+  printPhone: '9876543210',
+  printFooterMessage: 'Thank you for your visit!',
   showOrderBarcode: false,
   printKotOnPrintBill: true,
   printOnlyModifiedKot: true,

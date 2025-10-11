@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -8,8 +9,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useSettings } from "@/contexts/SettingsContext";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const navItems = [
+    { name: 'Print Layout', id: 'print-layout' },
     { name: 'Both', id: 'both' },
     { name: 'KOT Print', id: 'kot-print' },
     { name: 'Bill Print', id: 'bill-print' },
@@ -26,6 +30,41 @@ export default function PrintSettingsPage() {
         <SettingsPageLayout navItems={navItems}>
             {(activeTab) => (
                 <>
+                     {activeTab === 'print-layout' && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Print Layout Settings</CardTitle>
+                                <CardDescription>
+                                Customize the information that appears on your printed customer receipts.
+                                </CardDescription>
+                            </CardHeader>
+                             <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="printCafeName">Cafe Name</Label>
+                                    <Input id="printCafeName" value={settings.printCafeName} onChange={e => setSetting('printCafeName', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="printAddress">Address</Label>
+                                    <Input id="printAddress" value={settings.printAddress} onChange={e => setSetting('printAddress', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="printCustomDetails">Custom Details</Label>
+                                    <Input id="printCustomDetails" value={settings.printCustomDetails} onChange={e => setSetting('printCustomDetails', e.target.value)} placeholder="e.g., GSTIN, Wi-Fi Password"/>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="printPhone">Phone</Label>
+                                    <Input id="printPhone" value={settings.printPhone} onChange={e => setSetting('printPhone', e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="printFooterMessage">Footer Message</Label>
+                                    <Textarea id="printFooterMessage" value={settings.printFooterMessage} onChange={e => setSetting('printFooterMessage', e.target.value)} placeholder="e.g. Thank you!" />
+                                </div>
+                            </CardContent>
+                            <CardFooter>
+                                <Button onClick={handleSaveChanges}>Save Layout</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
                     {activeTab === 'both' && (
                         <Card>
                             <CardHeader>
