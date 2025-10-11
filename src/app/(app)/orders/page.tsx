@@ -222,8 +222,23 @@ export default function OrdersPage() {
       const itemAddonsTotal = (item.addons || []).reduce((addonAcc, addon) => addonAcc + addon.price, 0);
       return acc + (itemAddonsTotal * item.quantity);
   }, 0) : 0;
+
+  const bogoDiscount = useMemo(() => {
+    if (!settings.applyBogoAutomatically || !activeOrder) return 0;
+
+    return activeOrder.items.reduce((totalDiscount, item) => {
+        if (item.quantity >= 2) {
+            const freeItemsCount = Math.floor(item.quantity / 2);
+            return totalDiscount + (freeItemsCount * item.price);
+        }
+        return totalDiscount;
+    }, 0);
+  }, [activeOrder, settings.applyBogoAutomatically]);
   
-  const discountableAmount = settings.ignoreAddonPrice ? subTotal - addonsTotal : subTotal;
+  let discountableAmount = subTotal - bogoDiscount;
+  if (settings.ignoreAddonPrice) {
+      discountableAmount -= addonsTotal;
+  }
   
   let calculatedDiscount = 0;
   if (settings.discountType === 'percentage') {
@@ -247,18 +262,19 @@ export default function OrdersPage() {
 
   let tax = 0;
   let total = 0;
+  const totalBeforeTaxAndDiscount = subTotal - bogoDiscount;
 
   if (settings.calculateBackwardTax) {
     // Prices are tax-inclusive
-    total = subTotal - discountAmount;
+    total = totalBeforeTaxAndDiscount - discountAmount;
     const taxRate = settings.taxAmount / 100;
     const preTaxTotal = total / (1 + taxRate);
     tax = total - preTaxTotal;
   } else {
     // Prices are tax-exclusive
-    const totalBeforeTax = settings.calculateTaxBeforeDiscount ? subTotal : subTotal - discountAmount;
-    tax = totalBeforeTax * (settings.taxAmount / 100);
-    total = subTotal - discountAmount + tax;
+    const taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
+    tax = taxableAmount * (settings.taxAmount / 100);
+    total = totalBeforeTaxAndDiscount - discountAmount + tax;
   }
   
   if (settings.isComplimentary) {
@@ -333,6 +349,7 @@ export default function OrdersPage() {
           </div>
           <div class="total">
             <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
+            ${bogoDiscount > 0 ? `<div class="item"><span class="name">BOGO Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${bogoDiscount.toFixed(2)}</span></span></div>` : ''}
             ${discountAmount > 0 ? `<div class="item"><span class="name">Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${discountAmount.toFixed(2)}</span></span></div>` : ''}
             ${tax > 0 ? `<div class="item"><span class="name">GST (${settings.taxAmount}%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>` : ''}
             <div class="item"><span class="name"><b>Total</b></span><span class="price"><b><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${total.toFixed(2)}</span></b></span></div>
@@ -678,6 +695,12 @@ export default function OrdersPage() {
                                       {subTotal.toFixed(2)}
                                   </span>
                                 </div>
+                                {bogoDiscount > 0 && !settings.isComplimentary && (
+                                    <div className="flex justify-between text-destructive">
+                                    <span>BOGO Discount</span>
+                                    <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{bogoDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
                                 {discountAmount > 0 && !settings.isComplimentary && (
                                     <div className="flex justify-between text-destructive">
                                     <span>Discount ({settings.discountValue}{settings.discountType === 'percentage' ? '%' : ''})</span>
@@ -856,7 +879,13 @@ export default function OrdersPage() {
                                     <span>Subtotal</span>
                                     <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{subTotal.toFixed(2)}</span>
                                </div>
-                               {discountAmount > 0 && !settings.isComplimentary && (
+                                {bogoDiscount > 0 && !settings.isComplimentary && (
+                                    <div className="flex justify-between text-destructive">
+                                    <span>BOGO Discount</span>
+                                    <span className='flex items-center'>- <IndianRupee className="h-3.5 w-3.5 mr-1" />{bogoDiscount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {discountAmount > 0 && !settings.isComplimentary && (
                                 <div className="flex justify-between text-destructive">
                                     <span>Discount</span>
                                     <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{discountAmount.toFixed(2)}</span>
@@ -928,5 +957,6 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
