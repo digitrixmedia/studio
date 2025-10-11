@@ -421,6 +421,7 @@ export default function OrdersPage() {
               display: block;
               margin-top: 10px; 
               font-size: 12px; 
+              text-align: center;
             }
           </style>
         </head>
@@ -1142,6 +1143,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
