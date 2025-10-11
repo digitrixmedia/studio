@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -86,7 +85,7 @@ export default function OrdersPage() {
   const addToCart = (item: MenuItem) => {
     if (!activeOrder) return;
 
-    if (item.variations && item.variations.length > 0 || settings.showItemDiscountBox) {
+    if ((item.variations && item.variations.length > 0) || settings.showItemDiscountBox) {
       setCustomizationItem(item);
     } else {
        const uniqueCartId = `${item.id}-base-${Date.now()}`;
@@ -277,25 +276,25 @@ export default function OrdersPage() {
 
   const discountAmount = Math.min(discountableAmount, calculatedDiscount);
 
-  let tax = 0;
-  let total = 0;
   const totalBeforeTaxAndDiscount = subTotal - bogoDiscount;
 
-  if (settings.calculateBackwardTax) {
-    total = totalBeforeTaxAndDiscount - discountAmount;
-    const taxRate = settings.taxAmount / 100;
-    const preTaxTotal = total / (1 + taxRate);
-    tax = total - preTaxTotal;
-  } else {
-    const taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
-    tax = taxableAmount * (settings.taxAmount / 100);
-    total = totalBeforeTaxAndDiscount - discountAmount + tax;
-  }
-  
+  const tax = useMemo(() => {
+    let taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
+    if (settings.calculateBackwardTax) {
+      const total = totalBeforeTaxAndDiscount - discountAmount;
+      const taxRate = settings.taxAmount / 100;
+      return total - (total / (1 + taxRate));
+    }
+    return taxableAmount * (settings.taxAmount / 100);
+  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount]);
+
+
+  let total = totalBeforeTaxAndDiscount - discountAmount + tax;
+
   if (settings.isComplimentary) {
       total = 0;
       if (settings.disableTaxOnComplimentary) {
-          tax = 0;
+          // tax variable will still hold the calculated tax, but total is 0
       }
   }
 
@@ -859,15 +858,13 @@ export default function OrdersPage() {
                                     <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{discountAmount.toFixed(2)}</span>
                                     </div>
                                 )}
-                                {tax > 0 && (
                                 <div className="flex justify-between">
                                 <span>GST ({settings.taxAmount}%)</span>
-                                <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
+                                <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}>
                                     <IndianRupee className="h-4 w-4 mr-1" />
                                     {tax.toFixed(2)}
                                 </span>
                                 </div>
-                                )}
                                 <div className="flex justify-between font-bold text-lg">
                                 <span>Total</span>
                                 <span className='flex items-center'>
@@ -1046,7 +1043,7 @@ export default function OrdersPage() {
                                 {tax > 0 && (
                                 <div className="flex justify-between">
                                     <span>GST ({settings.taxAmount}%)</span>
-                                    <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
+                                    <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
                                </div>
                                )}
                            </div>
@@ -1109,5 +1106,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-    
