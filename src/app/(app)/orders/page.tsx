@@ -348,28 +348,32 @@ export default function OrdersPage() {
             body {
               font-family: Arial, sans-serif;
               color: #000;
-              width: 78mm;
-              padding: 1mm;
-              box-sizing: border-box;
+              width: 76mm;
+              padding: 0;
+              margin: 0 auto;
             }
             * { 
-              margin: 0; 
-              padding: 0; 
               box-sizing: border-box; 
             }
             .container { 
               display: block;
+              padding: 2mm;
             }
             .header { 
               display: block;
               text-align: center;
               margin-bottom: 5px;
-              font-weight: bold; 
-              font-size: 1.2rem;
+            }
+            .header h2 {
+                font-weight: bold; 
+                font-size: 1.4rem;
+                margin-bottom: 2px;
             }
             .header p { 
               font-size: 12px; 
-              line-height: 1.2; 
+              line-height: 1.2;
+              font-weight: bold;
+              margin: 0;
             }
             
             .hr { 
@@ -1138,6 +1142,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
