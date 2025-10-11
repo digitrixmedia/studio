@@ -265,6 +265,8 @@ export default function OrdersPage() {
   }
   
   if (settings.specialDiscountReasonMandatory && calculatedDiscount > 0) {
+      // In a real app, you'd check for a reason. For now, we block it.
+      // This part of the logic is prepared for a future UI addition.
       toast({
           variant: "destructive",
           title: "Discount Reason Required",
@@ -1107,3 +1109,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+    
