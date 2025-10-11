@@ -65,7 +65,7 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [billSearchQuery, setBillSearchQuery] = useState('');
-  const [manualTax, setManualTax] = useState<number | null>(null);
+  const [manualTaxRate, setManualTaxRate] = useState<number | null>(null);
 
 
   const FoodTypeIndicator = ({ type }: { type: MenuItem['foodType'] }) => {
@@ -219,7 +219,7 @@ export default function OrdersPage() {
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
     setIsPaymentDialogOpen(false);
-    setManualTax(null);
+    setManualTaxRate(null);
   }
   
   const handleSendToKitchen = () => {
@@ -246,14 +246,31 @@ export default function OrdersPage() {
 
   const bogoDiscount = useMemo(() => {
     if (!activeOrder) return 0;
-    return activeOrder.items.reduce((totalDiscount, item) => {
+    
+    // Manual BOGO calculation
+    const manualBogoDiscount = activeOrder.items.reduce((totalDiscount, item) => {
       if (item.isBogo && item.quantity >= 2) {
         const freeItemsCount = Math.floor(item.quantity / 2);
         return totalDiscount + freeItemsCount * item.price;
       }
       return totalDiscount;
     }, 0);
-  }, [activeOrder]);
+    
+    if (manualBogoDiscount > 0) return manualBogoDiscount;
+
+    // Automatic BOGO calculation
+    if (settings.applyBogoAutomatically) {
+      return activeOrder.items.reduce((totalDiscount, item) => {
+        if (item.quantity >= 2) {
+          const freeItemsCount = Math.floor(item.quantity / 2);
+          return totalDiscount + freeItemsCount * item.price;
+        }
+        return totalDiscount;
+      }, 0);
+    }
+    
+    return 0;
+  }, [activeOrder, settings.applyBogoAutomatically]);
   
   let discountableAmount = subTotal - bogoDiscount;
   if (settings.ignoreAddonPrice) {
@@ -283,16 +300,18 @@ export default function OrdersPage() {
   const totalBeforeTaxAndDiscount = subTotal - bogoDiscount;
 
   const tax = useMemo(() => {
-    if (manualTax !== null) return manualTax;
-    if (settings.taxAmount <= 0) return 0;
-    let taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
+    const taxRate = manualTaxRate !== null ? manualTaxRate : settings.taxAmount;
+    if (taxRate <= 0) return 0;
+
+    const taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
+    
     if (settings.calculateBackwardTax) {
       const total = totalBeforeTaxAndDiscount - discountAmount;
-      const taxRate = settings.taxAmount / 100;
-      return total - (total / (1 + taxRate));
+      return total - (total / (1 + (taxRate / 100)));
     }
-    return taxableAmount * (settings.taxAmount / 100);
-  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount, manualTax]);
+    
+    return taxableAmount * (taxRate / 100);
+  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount, manualTaxRate]);
 
 
   let total = totalBeforeTaxAndDiscount - discountAmount + tax;
@@ -325,15 +344,15 @@ export default function OrdersPage() {
   };
 
  const handlePrintBill = () => {
-    if (!activeOrder) return;
+  if (!activeOrder) return;
 
-    const printSettings = {
-        cafeName: 'ZappyyPOS',
-        address: '123 Coffee Lane, Bengaluru',
-        customDetails: 'GSTIN: 29ABCDE1234F1Z5',
-        phone: '9876543210',
-        footerMessage: 'Thank you for your visit!',
-    };
+  const printSettings = {
+    cafeName: 'ZappyyPOS',
+    address: '123 Coffee Lane, Bengaluru',
+    customDetails: 'GSTIN: 29ABCDE1234F1Z5',
+    phone: '9876543210',
+    footerMessage: 'Thank you for your visit!',
+  };
 
   const billHtml = `
     <html>
@@ -494,7 +513,7 @@ export default function OrdersPage() {
             <div class="total-row"><span>Subtotal</span><span>₹${subTotal.toFixed(2)}</span></div>
             ${bogoDiscount > 0 ? `<div class="total-row"><span>BOGO Discount</span><span>- ₹${bogoDiscount.toFixed(2)}</span></div>` : ''}
             ${discountAmount > 0 ? `<div class="total-row"><span>Discount</span><span>- ₹${discountAmount.toFixed(2)}</span></div>` : ''}
-            ${tax > 0 ? `<div class="total-row"><span>GST (${settings.taxAmount}%)</span><span>₹${tax.toFixed(2)}</span></div>` : ''}
+            ${tax > 0 ? `<div class="total-row"><span>GST (${manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span><span>₹${tax.toFixed(2)}</span></div>` : ''}
             <div class="total-row bold"><span>Total</span><span>₹${total.toFixed(2)}</span></div>
           </div>
 
@@ -594,7 +613,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (activeOrder && activeOrder.items.length === 0) {
-      setManualTax(null);
+      setManualTaxRate(null);
     }
   }, [activeOrder]);
 
@@ -643,7 +662,6 @@ export default function OrdersPage() {
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
                     {filteredMenuItems.map(item => (
                         <Card key={item.id} className="overflow-hidden relative shadow-md hover:shadow-xl transition-shadow duration-200 hover:-translate-y-1">
-                           <FoodTypeIndicator type={item.foodType} />
                           <button
                             className="w-full text-left p-2"
                             onClick={() => addToCart(item)}
@@ -874,7 +892,7 @@ export default function OrdersPage() {
                                   <Popover>
                                     <PopoverTrigger asChild>
                                       <div className="flex items-center gap-2 cursor-pointer">
-                                        <span>GST {manualTax === null && `(${settings.taxAmount}%)`}</span>
+                                        <span>GST ({manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span>
                                         <Tag className="h-4 w-4 text-muted-foreground" />
                                       </div>
                                     </PopoverTrigger>
@@ -883,17 +901,17 @@ export default function OrdersPage() {
                                         <div className="space-y-2">
                                           <h4 className="font-medium leading-none">Manual Tax</h4>
                                           <p className="text-sm text-muted-foreground">
-                                            Enter a fixed tax amount to override the percentage.
+                                            Enter a tax rate to override the default.
                                           </p>
                                         </div>
                                         <div className="grid gap-2">
-                                          <Label htmlFor="manual-tax">Tax Amount (₹)</Label>
+                                          <Label htmlFor="manual-tax">Tax Rate (%)</Label>
                                           <Input
                                             id="manual-tax"
                                             type="number"
-                                            value={manualTax ?? ""}
-                                            onChange={(e) => setManualTax(e.target.value === '' ? null : Number(e.target.value))}
-                                            placeholder="e.g., 25.50"
+                                            value={manualTaxRate ?? ""}
+                                            onChange={(e) => setManualTaxRate(e.target.value === '' ? null : Number(e.target.value))}
+                                            placeholder="e.g., 18"
                                           />
                                         </div>
                                       </div>
@@ -1081,7 +1099,7 @@ export default function OrdersPage() {
                                )}
                                 {tax > 0 && (
                                 <div className="flex justify-between">
-                                    <span>GST ({settings.taxAmount}%)</span>
+                                    <span>GST ({manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span>
                                     <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
                                </div>
                                )}
@@ -1145,5 +1163,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-    
