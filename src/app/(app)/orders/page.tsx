@@ -180,6 +180,14 @@ export default function OrdersPage() {
     const updatedItems = activeOrder.items.filter(item => item.id !== itemId);
     updateActiveOrder(updatedItems);
   };
+
+  const toggleBogoForItem = (itemId: string, isBogo: boolean) => {
+    if (!activeOrder) return;
+    const updatedItems = activeOrder.items.map(item =>
+      item.id === itemId ? { ...item, isBogo } : item
+    );
+    updateActiveOrder(updatedItems);
+  };
   
   const resetCurrentOrder = () => {
     if (!activeOrderId) return;
@@ -224,16 +232,15 @@ export default function OrdersPage() {
   }, 0) : 0;
 
   const bogoDiscount = useMemo(() => {
-    if (!settings.applyBogoAutomatically || !activeOrder) return 0;
-
+    if (!activeOrder) return 0;
     return activeOrder.items.reduce((totalDiscount, item) => {
-        if (item.quantity >= 2) {
-            const freeItemsCount = Math.floor(item.quantity / 2);
-            return totalDiscount + (freeItemsCount * item.price);
-        }
-        return totalDiscount;
+      if (item.isBogo && item.quantity >= 2) {
+        const freeItemsCount = Math.floor(item.quantity / 2);
+        return totalDiscount + freeItemsCount * item.price;
+      }
+      return totalDiscount;
     }, 0);
-  }, [activeOrder, settings.applyBogoAutomatically]);
+  }, [activeOrder]);
   
   let discountableAmount = subTotal - bogoDiscount;
   if (settings.ignoreAddonPrice) {
@@ -248,13 +255,11 @@ export default function OrdersPage() {
   }
   
   if (settings.specialDiscountReasonMandatory && calculatedDiscount > 0) {
-      // In a real app, you'd check for a reason. For now, we simulate this by blocking.
       toast({
           variant: "destructive",
           title: "Discount Reason Required",
           description: "Please provide a reason for applying a special discount.",
       });
-      // Reset discount to prevent application
       calculatedDiscount = 0;
   }
 
@@ -265,13 +270,11 @@ export default function OrdersPage() {
   const totalBeforeTaxAndDiscount = subTotal - bogoDiscount;
 
   if (settings.calculateBackwardTax) {
-    // Prices are tax-inclusive
     total = totalBeforeTaxAndDiscount - discountAmount;
     const taxRate = settings.taxAmount / 100;
     const preTaxTotal = total / (1 + taxRate);
     tax = total - preTaxTotal;
   } else {
-    // Prices are tax-exclusive
     const taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
     tax = taxableAmount * (settings.taxAmount / 100);
     total = totalBeforeTaxAndDiscount - discountAmount + tax;
@@ -598,14 +601,24 @@ export default function OrdersPage() {
                         <div className="space-y-2">
                             {activeOrder.items.map(item => (
                             <div key={item.id} className="flex items-start">
-                                <button className='flex-1 text-left' onClick={() => openNoteEditor(item)}>
-                                    <p className="font-semibold text-sm">{item.name}</p>
-                                    <p className="text-sm text-muted-foreground flex items-center">
-                                        <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                        {item.price.toFixed(2)}
-                                    </p>
+                                <div className='flex-1 text-left'>
+                                    <button onClick={() => openNoteEditor(item)}>
+                                        <p className="font-semibold text-sm">{item.name}</p>
+                                    </button>
+                                     <div className="flex items-center gap-2">
+                                        <p className="text-sm text-muted-foreground flex items-center">
+                                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                            {item.price.toFixed(2)}
+                                        </p>
+                                        {item.quantity >= 2 && (
+                                            <div className="flex items-center space-x-1">
+                                                <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
+                                                <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
+                                            </div>
+                                        )}
+                                     </div>
                                     {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
-                                </button>
+                                </div>
                                 <div className="flex items-center gap-1 sm:gap-2">
                                 <Button
                                     variant="ghost"
@@ -957,6 +970,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 

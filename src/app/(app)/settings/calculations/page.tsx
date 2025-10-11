@@ -320,13 +320,6 @@ export default function CalculationsSettingsPage() {
                                     <Label htmlFor="show-item-discount">Show Item/Category wise discount box while adding an item</Label>
                                 </div>
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="apply-bogo" checked={settings.applyBogoAutomatically} onCheckedChange={checked => setSetting('applyBogoAutomatically', !!checked)} />
-                                    <div>
-                                        <Label htmlFor="apply-bogo">Apply Bogo Automatically</Label>
-                                        <p className="text-xs text-muted-foreground">This setting enables Bogo discount without pressing a button in billing screen.</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start space-x-2">
                                     <Checkbox id="ignore-addon-price" checked={settings.ignoreAddonPrice} onCheckedChange={checked => setSetting('ignoreAddonPrice', !!checked)} />
                                     <Label htmlFor="ignore-addon-price">Ignore add-on price while calculating discount (works for all types for discount)</Label>
                                 </div>

@@ -53,6 +53,7 @@ export interface OrderItem {
   addons?: MenuItemAddon[];
   notes?: string;
   totalPrice: number;
+  isBogo?: boolean;
 }
 
 export type OrderType = 'Dine-In' | 'Takeaway' | 'Delivery';
