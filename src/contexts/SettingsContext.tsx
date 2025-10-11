@@ -151,7 +151,7 @@ export interface AppSettings {
   is24x7: boolean;
   syncPacketSize: string;
   defaultOrderLimit: string;
-  autoSyncTime: string;
+autoSyncTime: string;
   pendingOrderSyncTime: string;
   captainOrderSyncTime: string;
   minutesToEdit: string;

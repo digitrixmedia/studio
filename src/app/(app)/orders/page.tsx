@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { tables } from '@/lib/data';
-import type { MenuItem, OrderItem, OrderType, AppOrder } from '@/lib/types';
+import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon } from '@/lib/types';
 import { Check, CheckCircle, IndianRupee, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Truck, User, Utensils, X, MessageSquarePlus, Tag, Mail, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
@@ -86,7 +86,7 @@ export default function OrdersPage() {
   const addToCart = (item: MenuItem) => {
     if (!activeOrder) return;
 
-    if (item.variations && item.variations.length > 0) {
+    if (item.variations && item.variations.length > 0 || settings.showItemDiscountBox) {
       setCustomizationItem(item);
     } else {
        const uniqueCartId = `${item.id}-base-${Date.now()}`;
@@ -218,18 +218,55 @@ export default function OrdersPage() {
 
   const subTotal = activeOrder ? activeOrder.items.reduce((acc, item) => acc + item.totalPrice, 0) : 0;
   
+  const addonsTotal = activeOrder ? activeOrder.items.reduce((acc, item) => {
+      const itemAddonsTotal = (item.addons || []).reduce((addonAcc, addon) => addonAcc + addon.price, 0);
+      return acc + (itemAddonsTotal * item.quantity);
+  }, 0) : 0;
+  
+  const discountableAmount = settings.ignoreAddonPrice ? subTotal - addonsTotal : subTotal;
+  
   let calculatedDiscount = 0;
   if (settings.discountType === 'percentage') {
-    calculatedDiscount = subTotal * (settings.discountValue / 100);
+    calculatedDiscount = discountableAmount * (settings.discountValue / 100);
   } else {
     calculatedDiscount = settings.discountValue;
   }
-  const discountAmount = Math.min(subTotal, calculatedDiscount);
+  
+  if (settings.specialDiscountReasonMandatory && calculatedDiscount > 0) {
+      // In a real app, you'd check for a reason. For now, we simulate this by blocking.
+      toast({
+          variant: "destructive",
+          title: "Discount Reason Required",
+          description: "Please provide a reason for applying a special discount.",
+      });
+      // Reset discount to prevent application
+      calculatedDiscount = 0;
+  }
 
-  const totalBeforeTax = settings.calculateTaxBeforeDiscount ? subTotal : subTotal - discountAmount;
-  const tax = settings.isComplimentary && settings.disableTaxOnComplimentary ? 0 : totalBeforeTax * (settings.taxAmount / 100);
-  const discountedSubtotal = subTotal - discountAmount;
-  const total = settings.isComplimentary ? 0 : discountedSubtotal + tax;
+  const discountAmount = Math.min(discountableAmount, calculatedDiscount);
+
+  let tax = 0;
+  let total = 0;
+
+  if (settings.calculateBackwardTax) {
+    // Prices are tax-inclusive
+    total = subTotal - discountAmount;
+    const taxRate = settings.taxAmount / 100;
+    const preTaxTotal = total / (1 + taxRate);
+    tax = total - preTaxTotal;
+  } else {
+    // Prices are tax-exclusive
+    const totalBeforeTax = settings.calculateTaxBeforeDiscount ? subTotal : subTotal - discountAmount;
+    tax = totalBeforeTax * (settings.taxAmount / 100);
+    total = subTotal - discountAmount + tax;
+  }
+  
+  if (settings.isComplimentary) {
+      total = 0;
+      if (settings.disableTaxOnComplimentary) {
+          tax = 0;
+      }
+  }
 
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
   
@@ -891,4 +928,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
