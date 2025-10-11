@@ -207,7 +207,6 @@ export default function OrdersPage() {
     setSetting('discountValue', 0);
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
-    setIsPaymentDialogOpen(false);
     setManualTaxRate(null);
   }
   
@@ -369,19 +368,20 @@ export default function OrdersPage() {
             }
   
             .header h2 {
-              font-size: 16px;
+              font-size: 18px;
               font-weight: bold;
               margin-bottom: 2px;
             }
   
             .header p {
-              font-size: 11px;
+              font-size: 13px;
               line-height: 1.1;
               font-weight: bold;
             }
             
             .header .customer-details p {
                 font-weight: normal;
+                font-size: 12px;
             }
 
             table {
@@ -399,8 +399,9 @@ export default function OrdersPage() {
               border-bottom: 1px solid #000;
             }
   
-            td.qty { width: 15%; text-align: center; }
-            th.price, td.price { width: 25%; text-align: right; }
+            th.item, td.item { width: 40%; text-align: left; }
+            th.qty, td.qty { width: 15%; text-align: center; }
+            th.price, td.price { width: 20%; text-align: right; }
             th.amount, td.amount { width: 25%; text-align: right; }
   
             .notes {
@@ -469,7 +470,7 @@ export default function OrdersPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Item</th>
+                  <th class="item">Item</th>
                   <th class="qty">Qty</th>
                   <th class="price">Price</th>
                   <th class="amount">Amount</th>
@@ -478,7 +479,7 @@ export default function OrdersPage() {
               <tbody>
                 ${activeOrder.items.map(item => `
                   <tr>
-                    <td>${item.name}</td>
+                    <td class="item">${item.name}</td>
                     <td class="qty">${item.quantity}</td>
                     <td class="price">₹${item.price.toFixed(2)}</td>
                     <td class="amount">₹${item.totalPrice.toFixed(2)}</td>
@@ -1141,5 +1142,6 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
