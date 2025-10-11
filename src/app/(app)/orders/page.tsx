@@ -346,7 +346,7 @@ export default function OrdersPage() {
               margin: 0;
             }
             body {
-              font-family: 'Source Code Pro', monospace;
+              font-family: Arial, sans-serif;
               color: #000;
               width: 80mm;
               padding: 3mm;
@@ -354,9 +354,8 @@ export default function OrdersPage() {
             }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             .container { text-align: center; }
-            .header { margin-bottom: 5px; }
-            .header h2 { font-size: 16px; font-weight: bold; }
-            .header p { font-size: 12px; line-height: 1.2; font-weight: bold; }
+            .header { margin-bottom: 5px; font-weight: bold; font-size: 1.1rem; }
+            .header p { font-size: 12px; line-height: 1.2; }
             
             .hr { border-top: 1px dashed #000; margin: 5px 0; }
             
@@ -367,7 +366,7 @@ export default function OrdersPage() {
             
             table { width: 100%; border-collapse: collapse; font-size: 12px; }
             th, td { padding: 1px 0; }
-            th { text-align: left; border-bottom: 1px solid #000; }
+            th { text-align: left; border-bottom: 1px solid #000; font-weight: bold; }
             
             .col-no { width: 8%; }
             .col-item { width: 42%; }
@@ -391,11 +390,13 @@ export default function OrdersPage() {
               <h2>${settings.printCafeName}</h2>
               <p>${settings.printAddress.replace(/\n/g, '<br>')}</p>
               ${settings.printCustomDetails ? `<p>${settings.printCustomDetails.replace(/\n/g, '<br>')}</p>` : ''}
+              <p>Ph: ${settings.printPhone}</p>
             </div>
             
             <div class="hr"></div>
             <div class="customer-details">
-              Name: ${activeOrder.customer.name || 'N/A'} (M: ${activeOrder.customer.phone || 'N/A'})
+              Name: ${activeOrder.customer.name || 'N/A'}<br>
+              Phone: ${activeOrder.customer.phone || 'N/A'}
             </div>
             <div class="hr"></div>
 
@@ -1101,6 +1102,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
