@@ -352,15 +352,43 @@ export default function OrdersPage() {
               padding: 1mm;
               box-sizing: border-box;
             }
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            .container { text-align: center; }
-            .header { margin-bottom: 5px; font-weight: bold; font-size: 1.1rem; }
-            .header p { font-size: 12px; line-height: 1.2; }
+            * { 
+              margin: 0; 
+              padding: 0; 
+              box-sizing: border-box; 
+            }
+            .container { 
+              display: block;
+            }
+            .header { 
+              display: block;
+              text-align: center;
+              margin-bottom: 5px;
+              font-weight: bold; 
+              font-size: 1.2rem;
+            }
+            .header p { 
+              font-size: 12px; 
+              line-height: 1.2; 
+            }
             
-            .hr { border-top: 1px dashed #000; margin: 5px 0; }
+            .hr { 
+              border-top: 1px dashed #000; 
+              margin: 5px 0; 
+            }
             
-            .customer-details { text-align: left; margin-bottom: 5px; font-size: 12px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; margin-bottom: 5px; }
+            .customer-details { 
+              display: block;
+              text-align: left; 
+              margin-bottom: 5px; 
+              font-size: 12px; 
+            }
+            .info-grid { 
+              display: grid; 
+              grid-template-columns: 1fr 1fr; 
+              font-size: 12px; 
+              margin-bottom: 5px; 
+            }
             .info-grid div { text-align: left; }
             .info-grid div:nth-child(even) { text-align: right; }
             
@@ -377,11 +405,19 @@ export default function OrdersPage() {
             .item-variation { font-size: 11px; padding-left: 15px; }
             .notes { font-size: 11px; font-style: italic; padding-left: 15px; }
             
-            .totals { margin-top: 5px; font-size: 12px; }
+            .totals { 
+              display: block;
+              margin-top: 5px; 
+              font-size: 12px; 
+            }
             .totals .row { display: flex; justify-content: space-between; }
             .totals .grand-total { font-size: 16px; font-weight: bold; margin-top: 5px; }
             
-            .footer { margin-top: 10px; font-size: 12px; }
+            .footer { 
+              display: block;
+              margin-top: 10px; 
+              font-size: 12px; 
+            }
           </style>
         </head>
         <body>
@@ -1102,6 +1138,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
