@@ -340,7 +340,6 @@ export default function OrdersPage() {
         <head>
           <title>Customer Bill</title>
           <style>
-            /* Optimize for thermal printer */
             @page { 
               size: 80mm auto; 
               margin: 0;
@@ -351,8 +350,8 @@ export default function OrdersPage() {
               margin: 0;
               padding: 0;
               font-family: 'Arial', 'Source Code Pro', monospace;
-              font-size: 12px; /* Increased font size for clarity */
-              line-height: 1.3;
+              font-size: 12px;
+              line-height: 1.2;
               color: #000;
             }
   
@@ -377,9 +376,14 @@ export default function OrdersPage() {
   
             .header p {
               font-size: 11px;
-              line-height: 1.2;
+              line-height: 1.1;
+              font-weight: bold;
             }
-  
+            
+            .header .customer-details p {
+                font-weight: normal;
+            }
+
             table {
               width: 100%;
               border-collapse: collapse;
@@ -395,15 +399,9 @@ export default function OrdersPage() {
               border-bottom: 1px solid #000;
             }
   
-            td.qty {
-              width: 10%;
-              text-align: center;
-            }
-  
-            td.price {
-              width: 25%;
-              text-align: right;
-            }
+            td.qty { width: 15%; text-align: center; }
+            td.price { width: 25%; text-align: right; }
+            td.amount { width: 25%; text-align: right; }
   
             .notes {
               font-size: 11px;
@@ -445,15 +443,9 @@ export default function OrdersPage() {
               margin: 6px 0;
             }
   
-            /* Remove blank space after print */
             @media print {
-              body {
-                -webkit-print-color-adjust: exact;
-                margin: 0;
-              }
-              html {
-                margin: 0;
-              }
+              body { -webkit-print-color-adjust: exact; margin: 0; }
+              html { margin: 0; }
             }
           </style>
         </head>
@@ -464,8 +456,12 @@ export default function OrdersPage() {
               <p>${settings.printAddress}</p>
               ${settings.printCustomDetails ? `<p>${settings.printCustomDetails}</p>` : ''}
               <p>Ph: ${settings.printPhone}</p>
-              <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
-              <p>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : `${activeOrder.orderType} - ${activeOrder.customer.name || 'Customer'}`}</p>
+              <div class="customer-details">
+                <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
+                <p>Table: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'N/A' : activeOrder.orderType}</p>
+                ${activeOrder.customer.name ? `<p>Cust: ${activeOrder.customer.name}</p>` : ''}
+                ${activeOrder.customer.phone ? `<p>Mob: ${activeOrder.customer.phone}</p>` : ''}
+              </div>
             </div>
   
             ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
@@ -473,19 +469,21 @@ export default function OrdersPage() {
             <table>
               <thead>
                 <tr>
-                  <th class="qty">Qty</th>
                   <th>Item</th>
-                  <th class="price">Total</th>
+                  <th class="qty">Qty</th>
+                  <th class="price">Price</th>
+                  <th class="amount">Amount</th>
                 </tr>
               </thead>
               <tbody>
                 ${activeOrder.items.map(item => `
                   <tr>
-                    <td class="qty">${item.quantity}</td>
                     <td>${item.name}</td>
-                    <td class="price">₹${item.totalPrice.toFixed(2)}</td>
+                    <td class="qty">${item.quantity}</td>
+                    <td class="price">₹${item.price.toFixed(2)}</td>
+                    <td class="amount">₹${item.totalPrice.toFixed(2)}</td>
                   </tr>
-                  ${item.notes ? `<tr><td colspan="3"><div class="notes">- ${item.notes}</div></td></tr>` : ''}
+                  ${item.notes ? `<tr><td colspan="4"><div class="notes">- ${item.notes}</div></td></tr>` : ''}
                 `).join('')}
               </tbody>
             </table>
