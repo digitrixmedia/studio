@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder } from '@/lib/types';
@@ -37,11 +38,11 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-let orderCounter = 1;
+let orderCounter = 41;
 
 const createNewOrder = (): AppOrder => ({
   id: `order-${Date.now()}`,
-  orderNumber: `${1000 + orderCounter++}`,
+  orderNumber: `${orderCounter++}`,
   items: [],
   customer: { name: '', phone: '' },
   orderType: 'Dine-In',

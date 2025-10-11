@@ -49,6 +49,7 @@ export default function OrdersPage() {
     holdOrder,
     resumeOrder,
     getOrderByTable,
+    currentUser,
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -334,6 +335,7 @@ export default function OrdersPage() {
   const handlePrintBill = () => {
     if (!activeOrder) return;
   
+    const now = new Date();
     const billHtml = `
       <html>
         <head>
@@ -343,168 +345,125 @@ export default function OrdersPage() {
               size: 80mm auto; 
               margin: 0;
             }
-  
-            html, body {
-              width: 80mm;
-              margin: 0;
-              padding: 0;
-              font-family: 'Arial', 'Source Code Pro', monospace;
-              font-size: 12px;
-              line-height: 1.2;
+            body {
+              font-family: 'Source Code Pro', monospace;
               color: #000;
+              width: 80mm;
+              padding: 3mm;
+              box-sizing: border-box;
             }
-  
-            * { box-sizing: border-box; }
-  
-            .container {
-              padding: 4mm;
-            }
-  
-            .header {
-              text-align: center;
-              border-bottom: 1px dashed #000;
-              padding-bottom: 4px;
-              margin-bottom: 4px;
-            }
-  
-            .header h2 {
-              font-size: 18px;
-              font-weight: bold;
-              margin-bottom: 2px;
-            }
-  
-            .header p {
-              font-size: 13px;
-              line-height: 1.1;
-              font-weight: bold;
-            }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            .container { text-align: center; }
+            .header { margin-bottom: 5px; }
+            .header h2 { font-size: 16px; font-weight: bold; }
+            .header p { font-size: 12px; line-height: 1.2; font-weight: bold; }
             
-            .header .customer-details p {
-                font-weight: normal;
-                font-size: 12px;
-            }
-
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-  
-            th, td {
-              padding: 2px 0;
-              font-size: 12px;
-            }
-  
-            th {
-              text-align: left;
-              border-bottom: 1px solid #000;
-            }
-  
-            th.item, td.item { width: 40%; text-align: left; }
-            th.qty, td.qty { width: 15%; text-align: center; }
-            th.price, td.price { width: 20%; text-align: right; }
-            th.amount, td.amount { width: 25%; text-align: right; }
-  
-            .notes {
-              font-size: 11px;
-              font-style: italic;
-              padding-left: 10px;
-            }
-  
-            .total {
-              border-top: 1px dashed #000;
-              margin-top: 6px;
-              padding-top: 6px;
-              font-size: 13px;
-            }
-  
-            .total-row {
-              display: flex;
-              justify-content: space-between;
-              margin-bottom: 2px;
-            }
-  
-            .total-row.bold {
-              font-weight: bold;
-              font-size: 14px;
-              border-top: 1px solid #000;
-              margin-top: 4px;
-              padding-top: 4px;
-            }
-  
-            .center {
-              text-align: center;
-              margin-top: 10px;
-              font-size: 11px;
-            }
-  
-            .complimentary-tag {
-              font-weight: bold;
-              font-size: 14px;
-              text-align: center;
-              margin: 6px 0;
-            }
-  
-            @media print {
-              body { -webkit-print-color-adjust: exact; margin: 0; }
-              html { margin: 0; }
-            }
+            .hr { border-top: 1px dashed #000; margin: 5px 0; }
+            
+            .customer-details { text-align: left; margin-bottom: 5px; font-size: 12px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; margin-bottom: 5px; }
+            .info-grid div { text-align: left; }
+            .info-grid div:nth-child(even) { text-align: right; }
+            
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { padding: 1px 0; }
+            th { text-align: left; border-bottom: 1px solid #000; }
+            
+            .col-no { width: 8%; }
+            .col-item { width: 42%; }
+            .col-qty { width: 10%; text-align: center; }
+            .col-price { width: 20%; text-align: right; }
+            .col-amount { width: 20%; text-align: right; }
+            
+            .item-variation { font-size: 11px; padding-left: 15px; }
+            .notes { font-size: 11px; font-style: italic; padding-left: 15px; }
+            
+            .totals { margin-top: 5px; font-size: 12px; }
+            .totals .row { display: flex; justify-content: space-between; }
+            .totals .grand-total { font-size: 16px; font-weight: bold; margin-top: 5px; }
+            
+            .footer { margin-top: 10px; font-size: 12px; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
               <h2>${settings.printCafeName}</h2>
-              <p>${settings.printAddress}</p>
+              <p>${settings.printAddress.replace(/\n/g, '<br>')}</p>
               ${settings.printCustomDetails ? `<p>${settings.printCustomDetails.replace(/\n/g, '<br>')}</p>` : ''}
-              <p>Ph: ${settings.printPhone}</p>
-              <div class="customer-details">
-                <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
-                <p>Table: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'N/A' : activeOrder.orderType}</p>
-                ${activeOrder.customer.name ? `<p>${activeOrder.customer.name}</p>` : ''}
-                ${activeOrder.customer.phone ? `<p>${activeOrder.customer.phone}</p>` : ''}
-              </div>
             </div>
-  
-            ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
-  
+            
+            <div class="hr"></div>
+            <div class="customer-details">
+              Name: ${activeOrder.customer.name || 'N/A'} (M: ${activeOrder.customer.phone || 'N/A'})
+            </div>
+            <div class="hr"></div>
+
+            <div class="info-grid">
+              <div>Date: ${now.toLocaleDateString()}</div>
+              <div>${activeOrder.orderType}: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Self' : 'Self'}</div>
+              <div>Time: ${now.toLocaleTimeString()}</div>
+              <div>Bill No.: ${activeOrder.orderNumber}</div>
+              <div>Cashier: ${currentUser?.name.split(' ')[0] || 'Biller'}</div>
+            </div>
+
+            <div class="hr"></div>
+
             <table>
               <thead>
                 <tr>
-                  <th class="item">Item</th>
-                  <th class="qty">Qty</th>
-                  <th class="price">Price</th>
-                  <th class="amount">Amount</th>
+                  <th class="col-no">No.</th>
+                  <th class="col-item">Item</th>
+                  <th class="col-qty">Qty</th>
+                  <th class="col-price">Price</th>
+                  <th class="col-amount">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                ${activeOrder.items.map(item => `
+                ${activeOrder.items.map((item, index) => `
                   <tr>
-                    <td class="item">${item.name}</td>
-                    <td class="qty">${item.quantity}</td>
-                    <td class="price">₹${item.price.toFixed(2)}</td>
-                    <td class="amount">₹${item.totalPrice.toFixed(2)}</td>
+                    <td>${index + 1}</td>
+                    <td class="col-item">${item.name.replace(/\s\(.*\)/, '')}</td>
+                    <td class="col-qty">${item.quantity}</td>
+                    <td class="col-price">${item.price.toFixed(2)}</td>
+                    <td class="col-amount">${item.totalPrice.toFixed(2)}</td>
                   </tr>
-                  ${item.notes ? `<tr><td colspan="4"><div class="notes">- ${item.notes}</div></td></tr>` : ''}
+                  ${item.variation && item.variation.name !== 'Regular' ? `<tr><td></td><td colspan="4" class="item-variation">(${item.variation.name})</td></tr>` : ''}
+                  ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}
                 `).join('')}
               </tbody>
             </table>
-  
-            <div class="total">
-              <div class="total-row"><span>Subtotal</span><span>₹${subTotal.toFixed(2)}</span></div>
-              ${bogoDiscount > 0 ? `<div class="total-row"><span>BOGO Discount</span><span>- ₹${bogoDiscount.toFixed(2)}</span></div>` : ''}
-              ${discountAmount > 0 ? `<div class="total-row"><span>Discount</span><span>- ₹${discountAmount.toFixed(2)}</span></div>` : ''}
-              ${tax > 0 ? `<div class="total-row"><span>GST (${manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span><span>₹${tax.toFixed(2)}</span></div>` : ''}
-              <div class="total-row bold"><span>Total</span><span>₹${total.toFixed(2)}</span></div>
+            
+            <div class="hr"></div>
+
+            <div class="totals">
+               <div class="row">
+                  <span>Total Qty: ${activeOrder.items.reduce((sum, item) => sum + item.quantity, 0)}</span>
+                  <span>Sub Total: ${subTotal.toFixed(2)}</span>
+               </div>
+               ${bogoDiscount > 0 ? `<div class="row"><span>BOGO Discount</span><span>- ${bogoDiscount.toFixed(2)}</span></div>` : ''}
+               ${discountAmount > 0 ? `<div class="row"><span>Discount</span><span>- ${discountAmount.toFixed(2)}</span></div>` : ''}
+               ${tax > 0 ? `<div class="row"><span>GST (${manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span><span>${tax.toFixed(2)}</span></div>` : ''}
             </div>
-  
-            <div class="center">
+
+            <div class="hr"></div>
+            
+            <div class="totals">
+              <div class="row grand-total">
+                <span>Grand Total</span>
+                <span>₹${total.toFixed(2)}</span>
+              </div>
+            </div>
+            
+             <div class="hr"></div>
+
+            <div class="footer">
               <p>${settings.printFooterMessage}</p>
             </div>
           </div>
         </body>
       </html>
     `;
-  
     printContent(billHtml);
   };
   
@@ -1142,6 +1101,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
