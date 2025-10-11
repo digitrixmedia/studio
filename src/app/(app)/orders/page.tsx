@@ -400,8 +400,8 @@ export default function OrdersPage() {
             }
   
             td.qty { width: 15%; text-align: center; }
-            td.price { width: 25%; text-align: right; }
-            td.amount { width: 25%; text-align: right; }
+            th.price, td.price { width: 25%; text-align: right; }
+            th.amount, td.amount { width: 25%; text-align: right; }
   
             .notes {
               font-size: 11px;
@@ -459,8 +459,8 @@ export default function OrdersPage() {
               <div class="customer-details">
                 <p>Order: #${activeOrder.orderNumber} | ${new Date().toLocaleString()}</p>
                 <p>Table: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'N/A' : activeOrder.orderType}</p>
-                ${activeOrder.customer.name ? `<p>Cust: ${activeOrder.customer.name}</p>` : ''}
-                ${activeOrder.customer.phone ? `<p>Mob: ${activeOrder.customer.phone}</p>` : ''}
+                ${activeOrder.customer.name ? `<p>${activeOrder.customer.name}</p>` : ''}
+                ${activeOrder.customer.phone ? `<p>${activeOrder.customer.phone}</p>` : ''}
               </div>
             </div>
   
@@ -1141,4 +1141,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
