@@ -49,7 +49,7 @@ export default function PrintSettingsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="printCustomDetails">Custom Details</Label>
-                                    <Input id="printCustomDetails" value={settings.printCustomDetails} onChange={e => setSetting('printCustomDetails', e.target.value)} placeholder="e.g., GSTIN, Wi-Fi Password"/>
+                                    <Textarea id="printCustomDetails" value={settings.printCustomDetails} onChange={e => setSetting('printCustomDetails', e.target.value)} placeholder="e.g., GSTIN, Wi-Fi Password"/>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="printPhone">Phone</Label>
@@ -57,7 +57,7 @@ export default function PrintSettingsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="printFooterMessage">Footer Message</Label>
-                                    <Textarea id="printFooterMessage" value={settings.printFooterMessage} onChange={e => setSetting('printFooterMessage', e.target.value)} placeholder="e.g. Thank you!" />
+                                    <Textarea id="printFooterMessage" value={settings.printFooterMessage} onChange={e => setSetting('printFooterMessage', e.target.value)} placeholder="e.g. Thank you for your visit!" />
                                 </div>
                             </CardContent>
                             <CardFooter>
