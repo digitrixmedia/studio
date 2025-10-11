@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -165,13 +166,17 @@ export default function FranchiseDashboardPage() {
                         <TableRow key={outlet.id}>
                             <TableCell className='font-medium'>{outlet.name}</TableCell>
                             <TableCell><Badge variant={outlet.status === 'Active' ? 'default' : 'destructive'}>{outlet.status}</Badge></TableCell>
-                            <TableCell className='flex items-center'>
-                                <IndianRupee className="h-4 w-4 mr-1" />
-                                {(outlet.todaySales || 0).toLocaleString('en-IN')}
+                            <TableCell>
+                                <div className='flex items-center'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {(outlet.todaySales || 0).toLocaleString('en-IN')}
+                                </div>
                             </TableCell>
-                            <TableCell className='flex items-center'>
-                                <IndianRupee className="h-4 w-4 mr-1" />
-                                {(outlet.totalSales || 0).toLocaleString('en-IN')}
+                            <TableCell>
+                                <div className='flex items-center'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {(outlet.totalSales || 0).toLocaleString('en-IN')}
+                                </div>
                             </TableCell>
                             <TableCell>{outlet.ordersToday || 0}</TableCell>
                             <TableCell>{outlet.managerName}</TableCell>

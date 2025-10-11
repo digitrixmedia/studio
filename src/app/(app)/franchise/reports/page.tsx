@@ -260,14 +260,18 @@ export default function FranchiseReportsPage() {
                             return (
                                 <TableRow key={outlet.id}>
                                     <TableCell className='font-medium'>{outlet.name}</TableCell>
-                                    <TableCell className='text-right flex items-center justify-end'>
-                                        <IndianRupee className="h-4 w-4 mr-1" />
-                                        {outlet.totalSales?.toLocaleString('en-IN') || '0'}
+                                    <TableCell className='text-right'>
+                                        <div className='flex items-center justify-end'>
+                                            <IndianRupee className="h-4 w-4 mr-1" />
+                                            {outlet.totalSales?.toLocaleString('en-IN') || '0'}
+                                        </div>
                                     </TableCell>
                                     <TableCell className='text-right'>{Math.round(outletOrders).toLocaleString('en-IN')}</TableCell>
-                                    <TableCell className='text-right flex items-center justify-end'>
-                                        <IndianRupee className="h-4 w-4 mr-1" />
-                                        {outletAOV.toFixed(2)}
+                                    <TableCell className='text-right'>
+                                        <div className='flex items-center justify-end'>
+                                            <IndianRupee className="h-4 w-4 mr-1" />
+                                            {outletAOV.toFixed(2)}
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             )
