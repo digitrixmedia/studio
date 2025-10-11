@@ -48,7 +48,7 @@ import { orders as initialOrders } from '@/lib/data';
 import type { Order, OrderStatus, OrderType } from '@/lib/types';
 import { Eye, IndianRupee, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, isToday } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -63,9 +63,10 @@ export default function OperationsPage() {
 
 
     const filteredOrders = orders.filter(order => {
+        const isFromToday = isToday(order.createdAt);
         const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
         const typeMatch = orderTypeFilter === 'All' || order.type === orderTypeFilter;
-        return statusMatch && typeMatch;
+        return isFromToday && statusMatch && typeMatch;
     });
     
     const handleCancelOrder = (orderId: string) => {
@@ -80,7 +81,7 @@ export default function OperationsPage() {
             <div className="flex justify-between items-center">
             <div>
                 <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>A log of all recent orders placed in the system.</CardDescription>
+                <CardDescription>A log of all orders placed today.</CardDescription>
             </div>
             <div className="flex gap-2">
                 <Select value={orderStatusFilter} onValueChange={(val) => setOrderStatusFilter(val as any)}>
@@ -115,7 +116,7 @@ export default function OperationsPage() {
                     <TableHead>Customer</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Total</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className='text-right'>Actions</TableHead>
                 </TableRow>
@@ -130,11 +131,11 @@ export default function OperationsPage() {
                         </TableCell>
                         <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
                         <TableCell><Badge>{order.status}</Badge></TableCell>
-                        <TableCell className='flex items-center'>
+                        <TableCell className='text-right flex items-center justify-end'>
                             <IndianRupee className="h-4 w-4 mr-1" />
                             {order.total.toFixed(2)}
                         </TableCell>
-                        <TableCell>{format(order.createdAt, 'PPp')}</TableCell>
+                        <TableCell>{format(order.createdAt, 'p')}</TableCell>
                         <TableCell className='text-right'>
                             <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
                                 <AlertDialog>
