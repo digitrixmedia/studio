@@ -622,27 +622,20 @@ export default function OrdersPage() {
                         <Card key={item.id} className="overflow-hidden relative">
                            <FoodTypeIndicator type={item.foodType} />
                           <button
-                            className="w-full text-left"
+                            className="w-full text-left p-2"
                             onClick={() => addToCart(item)}
                             disabled={!item.isAvailable}
                           >
-                            <div className="relative aspect-video">
-                                {settings.displayItemImages && <Image src={item.imageUrl} alt={item.name} fill objectFit="cover" data-ai-hint={item.imageHint}/>}
-                                {!settings.displayItemImages && <div className="aspect-video bg-muted flex items-center justify-center"><Utensils className="w-8 h-8 text-muted-foreground"/></div>}
-
-                                {!item.isAvailable && (
-                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                                        <span className="text-white font-bold">Unavailable</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="p-2">
-                              <h3 className="font-semibold truncate text-sm sm:text-base">{item.name}</h3>
-                              <p className="text-sm flex items-center">
-                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                {item.price.toFixed(2)}
-                              </p>
-                            </div>
+                             {!item.isAvailable && (
+                                <div className="absolute inset-0 bg-white/80 dark:bg-black/80 flex items-center justify-center">
+                                    <span className="font-bold text-destructive">Unavailable</span>
+                                </div>
+                            )}
+                            <h3 className="font-semibold truncate text-sm sm:text-base">{item.name}</h3>
+                            <p className="text-sm flex items-center">
+                              <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                              {item.price.toFixed(2)}
+                            </p>
                           </button>
                         </Card>
                       ))}
