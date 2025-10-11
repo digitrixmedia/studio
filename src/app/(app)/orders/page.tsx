@@ -322,19 +322,30 @@ export default function OrdersPage() {
         <head>
           <title>Customer Bill</title>
           <style>
-            body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
-            h2, p { margin: 0; padding: 0; }
-            .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
-            .header h2 { font-size: 20px; font-weight: bold; }
-            .header p { font-size: 13px; }
-            .summary { margin-bottom: 12px; }
-            .item { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; }
-            .item .name { flex: 1; text-align: left; margin-right: 8px; }
-            .item .price { width: 80px; text-align: right; }
-            .total { border-top: 2px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 14px; }
-            .center { text-align: center; margin-top: 16px; font-size: 13px; }
-            .notes { font-size: 12px; font-style: italic; padding-left: 10px; }
-            .complimentary-tag { font-weight: bold; font-size: 16px; text-align: center; margin-bottom: 8px; }
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Source Code Pro', monospace; 
+              color: #000; 
+              width: 80mm; /* Approx 302px */
+              padding: 2mm;
+              box-sizing: border-box;
+            }
+            * { margin: 0; padding: 0; }
+            .header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+            .header h2 { font-size: 1.2rem; font-weight: bold; }
+            .header p { font-size: 0.8rem; line-height: 1.2; }
+            .summary { margin-bottom: 8px; }
+            .item-table { width: 100%; border-collapse: collapse; }
+            .item-table th, .item-table td { font-size: 0.8rem; padding: 2px 0; }
+            .item-table th { text-align: left; border-bottom: 1px solid #000; }
+            .item-table .qty { width: 10%; text-align: center; }
+            .item-table .price { width: 25%; text-align: right; }
+            .total { border-top: 1px dashed #000; padding-top: 6px; margin-top: 8px; font-size: 0.85rem; }
+            .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+            .center { text-align: center; margin-top: 10px; font-size: 0.8rem; }
+            .notes { font-size: 0.75rem; font-style: italic; padding-left: 10px; }
+            .complimentary-tag { font-weight: bold; font-size: 1.1rem; text-align: center; margin-bottom: 8px; }
+            .rupee-symbol { font-family: sans-serif; }
           </style>
         </head>
         <body>
@@ -348,14 +359,32 @@ export default function OrdersPage() {
           </div>
           ${settings.isComplimentary ? '<div class="complimentary-tag">** COMPLIMENTARY **</div>' : ''}
           <div class="summary">
-            ${activeOrder.items.map(item => `<div class="item"><span class="name">${item.quantity}x ${item.name}</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${item.totalPrice.toFixed(2)}</span></span></div>${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}`).join('')}
+            <table class="item-table">
+              <thead>
+                <tr>
+                  <th class="qty">Qty</th>
+                  <th>Item</th>
+                  <th class="price">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activeOrder.items.map(item => `
+                  <tr>
+                    <td class="qty">${item.quantity}</td>
+                    <td>${item.name}</td>
+                    <td class="price"><span class="rupee-symbol">₹</span>${item.totalPrice.toFixed(2)}</td>
+                  </tr>
+                  ${item.notes ? `<tr><td colspan="3"><div class="notes">- ${item.notes}</div></td></tr>` : ''}
+                `).join('')}
+              </tbody>
+            </table>
           </div>
           <div class="total">
-            <div class="item"><span class="name">Subtotal</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${subTotal.toFixed(2)}</span></span></div>
-            ${bogoDiscount > 0 ? `<div class="item"><span class="name">BOGO Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${bogoDiscount.toFixed(2)}</span></span></div>` : ''}
-            ${discountAmount > 0 ? `<div class="item"><span class="name">Discount</span><span class="price">- <span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${discountAmount.toFixed(2)}</span></span></div>` : ''}
-            ${tax > 0 ? `<div class="item"><span class="name">GST (${settings.taxAmount}%)</span><span class="price"><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${tax.toFixed(2)}</span></span></div>` : ''}
-            <div class="item"><span class="name"><b>Total</b></span><span class="price"><b><span class="flex items-center"><span class="h-4 w-4 mr-1"></span>${total.toFixed(2)}</span></b></span></div>
+            <div class="total-row"><span>Subtotal</span><span><span class="rupee-symbol">₹</span>${subTotal.toFixed(2)}</span></div>
+            ${bogoDiscount > 0 ? `<div class="total-row"><span>BOGO Discount</span><span>- <span class="rupee-symbol">₹</span>${bogoDiscount.toFixed(2)}</span></div>` : ''}
+            ${discountAmount > 0 ? `<div class="total-row"><span>Discount</span><span>- <span class="rupee-symbol">₹</span>${discountAmount.toFixed(2)}</span></div>` : ''}
+            ${tax > 0 ? `<div class="total-row"><span>GST (${settings.taxAmount}%)</span><span><span class="rupee-symbol">₹</span>${tax.toFixed(2)}</span></div>` : ''}
+            <div class="total-row" style="font-weight: bold; font-size: 1rem; border-top: 1px solid #000; padding-top: 4px; margin-top: 4px;"><span>Total</span><span><span class="rupee-symbol">₹</span>${total.toFixed(2)}</span></div>
           </div>
           <div class="center">
             <p>${printSettings.footerMessage}</p>
@@ -373,14 +402,21 @@ export default function OrdersPage() {
         <head>
           <title>KOT</title>
           <style>
-            body { font-family: 'Source Code Pro', monospace; padding: 16px; color: #000; width: 300px; }
-            h2, p { margin: 0; padding: 0; }
-            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
-            .header h2 { font-size: 24px; font-weight: bold; }
-            .info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; font-weight: bold; }
-            .item { margin-bottom: 8px; font-size: 16px; }
+            @page { size: 80mm auto; margin: 0; }
+            body { 
+              font-family: 'Source Code Pro', monospace; 
+              color: #000; 
+              width: 80mm;
+              padding: 2mm;
+              box-sizing: border-box;
+            }
+            * { margin: 0; padding: 0; }
+            .header { text-align: center; padding-bottom: 8px; margin-bottom: 8px; }
+            .header h2 { font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 4px; }
+            .info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; font-weight: bold; }
+            .item { margin-bottom: 6px; font-size: 1rem; }
             .item .name { font-weight: bold; }
-            .item .notes { padding-left: 16px; font-size: 14px; font-style: italic; }
+            .item .notes { padding-left: 16px; font-size: 0.85rem; font-style: italic; }
           </style>
         </head>
         <body>
@@ -970,7 +1006,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-
-
-
