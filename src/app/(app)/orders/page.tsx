@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -64,6 +65,8 @@ export default function OrdersPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [billSearchQuery, setBillSearchQuery] = useState('');
+  const [manualTax, setManualTax] = useState<number | null>(null);
+
 
   const FoodTypeIndicator = ({ type }: { type: MenuItem['foodType'] }) => {
     if (!type) return null;
@@ -216,6 +219,7 @@ export default function OrdersPage() {
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
     setIsPaymentDialogOpen(false);
+    setManualTax(null);
   }
   
   const handleSendToKitchen = () => {
@@ -279,6 +283,8 @@ export default function OrdersPage() {
   const totalBeforeTaxAndDiscount = subTotal - bogoDiscount;
 
   const tax = useMemo(() => {
+    if (manualTax !== null) return manualTax;
+    if (settings.taxAmount <= 0) return 0;
     let taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
     if (settings.calculateBackwardTax) {
       const total = totalBeforeTaxAndDiscount - discountAmount;
@@ -286,7 +292,7 @@ export default function OrdersPage() {
       return total - (total / (1 + taxRate));
     }
     return taxableAmount * (settings.taxAmount / 100);
-  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount]);
+  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount, manualTax]);
 
 
   let total = totalBeforeTaxAndDiscount - discountAmount + tax;
@@ -319,15 +325,15 @@ export default function OrdersPage() {
   };
 
  const handlePrintBill = () => {
-  if (!activeOrder) return;
+    if (!activeOrder) return;
 
-  const printSettings = {
-    cafeName: 'ZappyyPOS',
-    address: '123 Coffee Lane, Bengaluru',
-    customDetails: 'GSTIN: 29ABCDE1234F1Z5',
-    phone: '9876543210',
-    footerMessage: 'Thank you for your visit!',
-  };
+    const printSettings = {
+        cafeName: 'ZappyyPOS',
+        address: '123 Coffee Lane, Bengaluru',
+        customDetails: 'GSTIN: 29ABCDE1234F1Z5',
+        phone: '9876543210',
+        footerMessage: 'Thank you for your visit!',
+    };
 
   const billHtml = `
     <html>
@@ -585,6 +591,12 @@ export default function OrdersPage() {
     order.customer.name.toLowerCase().includes(billSearchQuery.toLowerCase()) ||
     order.orderNumber.toString().includes(billSearchQuery)
   );
+
+  useEffect(() => {
+    if (activeOrder && activeOrder.items.length === 0) {
+      setManualTax(null);
+    }
+  }, [activeOrder]);
 
   if (!activeOrder) {
     return (
@@ -858,8 +870,35 @@ export default function OrdersPage() {
                                     <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{discountAmount.toFixed(2)}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between">
-                                <span>GST ({settings.taxAmount}%)</span>
+                                 <div className="flex justify-between">
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <div className="flex items-center gap-2 cursor-pointer">
+                                        <span>GST {manualTax === null && `(${settings.taxAmount}%)`}</span>
+                                        <Tag className="h-4 w-4 text-muted-foreground" />
+                                      </div>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-64">
+                                      <div className="grid gap-4">
+                                        <div className="space-y-2">
+                                          <h4 className="font-medium leading-none">Manual Tax</h4>
+                                          <p className="text-sm text-muted-foreground">
+                                            Enter a fixed tax amount to override the percentage.
+                                          </p>
+                                        </div>
+                                        <div className="grid gap-2">
+                                          <Label htmlFor="manual-tax">Tax Amount (₹)</Label>
+                                          <Input
+                                            id="manual-tax"
+                                            type="number"
+                                            value={manualTax ?? ""}
+                                            onChange={(e) => setManualTax(e.target.value === '' ? null : Number(e.target.value))}
+                                            placeholder="e.g., 25.50"
+                                          />
+                                        </div>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
                                 <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}>
                                     <IndianRupee className="h-4 w-4 mr-1" />
                                     {tax.toFixed(2)}
@@ -1106,3 +1145,5 @@ export default function OrdersPage() {
     </div>
   );
 }
+
+    
