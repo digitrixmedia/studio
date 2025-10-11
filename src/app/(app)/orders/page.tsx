@@ -48,7 +48,7 @@ export default function OrdersPage() {
     updateOrder,
     holdOrder,
     resumeOrder,
-    createNewOrder,
+    getOrderByTable,
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -189,6 +189,16 @@ export default function OrdersPage() {
     updateActiveOrder(updatedItems);
   };
   
+  const createNewOrder = (): AppOrder => ({
+    id: `order-${Date.now()}`,
+    orderNumber: `${1000 + orderCounter++}`,
+    items: [],
+    customer: { name: '', phone: '' },
+    orderType: 'Dine-In',
+    tableId: '',
+    discount: 0,
+  });
+
   const resetCurrentOrder = () => {
     if (!activeOrderId) return;
     
@@ -307,7 +317,7 @@ export default function OrdersPage() {
       }
   };
 
-  const handlePrintBill = () => {
+ const handlePrintBill = () => {
   if (!activeOrder) return;
 
   const printSettings = {
@@ -619,7 +629,7 @@ export default function OrdersPage() {
                 <ScrollArea className="h-full">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
                     {filteredMenuItems.map(item => (
-                        <Card key={item.id} className="overflow-hidden relative">
+                        <Card key={item.id} className="overflow-hidden relative shadow-md hover:shadow-xl transition-shadow duration-200 hover:-translate-y-1">
                            <FoodTypeIndicator type={item.foodType} />
                           <button
                             className="w-full text-left p-2"
