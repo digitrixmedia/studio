@@ -92,8 +92,8 @@ export default function SubscriptionsPage() {
       adminName: sub.adminName || '',
       adminEmail: sub.adminEmail,
       adminPassword: '', // Don't pre-fill password
-      startDate: format(sub.startDate, 'yyyy-MM-dd'),
-      endDate: format(sub.endDate, 'yyyy-MM-dd'),
+      startDate: format(new Date(sub.startDate), 'yyyy-MM-dd'),
+      endDate: format(new Date(sub.endDate), 'yyyy-MM-dd'),
     });
     setIsDialogOpen(true);
   };
@@ -164,11 +164,27 @@ export default function SubscriptionsPage() {
   };
 
   const toggleSubscriptionStatus = (subId: string, currentStatus: SubscriptionStatus) => {
-    const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
-    setSubscriptions(subscriptions.map(sub => sub.id === subId ? { ...sub, status: newStatus } : sub));
+    setSubscriptions(subscriptions.map(sub => {
+      if (sub.id === subId) {
+        let newStatus: SubscriptionStatus = 'Active';
+        if (currentStatus === 'Active') {
+          newStatus = 'Suspended';
+        } else if (currentStatus === 'Suspended' || currentStatus === 'Inactive') {
+          // If expired, activating it should make it active, not expired again.
+          if (new Date(sub.endDate) < new Date()) {
+             newStatus = 'Active';
+          } else {
+            newStatus = 'Active';
+          }
+        }
+        return { ...sub, status: newStatus };
+      }
+      return sub;
+    }));
+    const sub = subscriptions.find(s => s.id === subId);
     toast({
       title: 'Subscription Updated',
-      description: `Subscription has been ${newStatus === 'Active' ? 'activated' : 'suspended'}.`,
+      description: `Subscription for ${sub?.outletName} has been updated.`,
     });
   }
 
@@ -267,21 +283,24 @@ export default function SubscriptionsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {subs.map(sub => (
-                      <TableRow key={sub.id} className={cn(sub.status === 'Expired' && 'bg-red-500/10')}>
+                    {subs.map(sub => {
+                      const isExpired = new Date(sub.endDate) < new Date();
+                      const status = isExpired ? 'Expired' : sub.status;
+                      
+                      return (
+                      <TableRow key={sub.id} className={cn(status === 'Expired' && 'bg-red-500/10')}>
                         <TableCell className="font-medium">{sub.outletName}</TableCell>
-                        <TableCell>{sub.endDate.toLocaleDateString()}</TableCell>
+                        <TableCell>{format(new Date(sub.endDate), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(sub.status)}>
-                            {sub.status}
+                          <Badge variant={getStatusVariant(status)}>
+                            {status}
                           </Badge>
                         </TableCell>
                         <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
                         <TableCell>
                           <Switch
-                            checked={sub.status === 'Active'}
-                            onCheckedChange={() => toggleSubscriptionStatus(sub.id, sub.status)}
-                            disabled={sub.status === 'Expired' || sub.status === 'Inactive'}
+                            checked={status === 'Active'}
+                            onCheckedChange={() => toggleSubscriptionStatus(sub.id, status)}
                           />
                         </TableCell>
                         <TableCell className="flex gap-2">
@@ -309,7 +328,7 @@ export default function SubscriptionsPage() {
                           </AlertDialog>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )})}
                   </TableBody>
                 </Table>
               </AccordionContent>
