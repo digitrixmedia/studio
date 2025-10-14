@@ -521,7 +521,7 @@ export default function OrdersPage() {
               font-family: Arial, sans-serif; 
               color: #000; 
               width: 80mm;
-              padding: 2mm;
+              padding: 0;
               box-sizing: border-box;
             }
             * { margin: 0; padding: 0; }
@@ -1143,6 +1143,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
