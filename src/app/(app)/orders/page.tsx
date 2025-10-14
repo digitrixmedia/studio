@@ -346,14 +346,17 @@ export default function OrdersPage() {
               margin: 0;
             }
             body {
-              font-family: Arial, sans-serif;
+              font-family: 'Arial', 'Source Code Pro', monospace;
               color: #000;
               width: 76mm;
               padding: 0;
               margin: 0 auto;
+              -webkit-print-color-adjust: exact;
             }
             * { 
               box-sizing: border-box; 
+              margin: 0;
+              padding: 0;
             }
             .container { 
               display: block;
@@ -511,46 +514,106 @@ export default function OrdersPage() {
   
   const handlePrintKOT = () => {
     if (!activeOrder) return;
+     const now = new Date();
      const kotHtml = `
       <html>
         <head>
           <title>KOT</title>
           <style>
-            @page { size: 80mm auto; margin: 0; }
-            body { 
-              font-family: Arial, sans-serif; 
-              color: #000; 
-              width: 80mm;
-              padding: 0;
-              box-sizing: border-box;
+            @page { 
+              size: 80mm auto; 
+              margin: 0;
             }
-            * { margin: 0; padding: 0; }
-            .header { text-align: center; padding-bottom: 8px; margin-bottom: 8px; }
-            .header h2 { font-size: 1.5rem; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 4px; }
-            .info { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; font-weight: bold; }
-            .item { margin-bottom: 6px; font-size: 1rem; }
-            .item .name { font-weight: bold; }
-            .item .notes { padding-left: 16px; font-size: 0.85rem; font-style: italic; }
+            body {
+              font-family: 'Arial', 'Source Code Pro', monospace;
+              color: #000;
+              width: 76mm;
+              padding: 0;
+              margin: 0 auto;
+              -webkit-print-color-adjust: exact;
+            }
+            * { 
+              box-sizing: border-box; 
+              margin: 0;
+              padding: 0;
+            }
+            .container { 
+              display: block;
+              padding: 2mm;
+            }
+            .header { 
+              display: block;
+              text-align: center;
+              margin-bottom: 5px;
+            }
+            .header h2 {
+                font-weight: bold; 
+                font-size: 1.5rem;
+                margin-bottom: 4px;
+                border-bottom: 1px dashed #000;
+                padding-bottom: 4px;
+            }
+            .hr { 
+              border-top: 1px dashed #000; 
+              margin: 5px 0; 
+            }
+            .info-grid { 
+              display: grid; 
+              grid-template-columns: 1fr 1fr; 
+              font-size: 12px; 
+              font-weight: bold;
+              margin-bottom: 5px; 
+            }
+            .info-grid div { text-align: left; }
+            .info-grid div:nth-child(even) { text-align: right; }
+            
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { padding: 2px 0; vertical-align: top;}
+            th { text-align: left; border-bottom: 1px solid #000; font-weight: bold; }
+            
+            .col-qty { width: 15%; text-align: center; font-size: 1.1rem; font-weight: bold; }
+            .col-item { width: 85%; }
+
+            .item-name { font-weight: bold; font-size: 1rem; }
+            .item-variation { font-size: 11px; padding-left: 10px; }
+            .notes { font-size: 11px; font-style: italic; padding-left: 10px; white-space: normal; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h2>KOT</h2>
-          </div>
-          <div class="info">
-            <span>Order: #${activeOrder.orderNumber}</span>
-            <span>${new Date().toLocaleTimeString()}</span>
-          </div>
-          <div class="info">
-             <span>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : activeOrder.orderType}</span>
-          </div>
-          <div class="items">
-            ${activeOrder.items.map(item => `
-              <div class="item">
-                <div class="name">${item.quantity} x ${item.name}</div>
-                ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
-              </div>
-            `).join('')}
+          <div class="container">
+            <div class="header">
+              <h2>KITCHEN ORDER TICKET</h2>
+            </div>
+            
+            <div class="info-grid">
+              <div>Order: #${activeOrder.orderNumber}</div>
+              <div>${now.toLocaleTimeString()}</div>
+              <div>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : activeOrder.orderType}</div>
+              <div>Cashier: ${currentUser?.name.split(' ')[0] || 'Biller'}</div>
+            </div>
+
+            <div class="hr"></div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-qty">QTY</th>
+                  <th class="col-item">ITEM</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${activeOrder.items.map((item) => `
+                  <tr>
+                    <td class="col-qty">${item.quantity}x</td>
+                    <td class="col-item">
+                      <div class="item-name">${item.name.replace(/\s\(.*\)/, '')}</div>
+                      ${item.variation && item.variation.name !== 'Regular' ? `<div class="item-variation">(${item.variation.name})</div>` : ''}
+                      ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         </body>
       </html>
@@ -1143,6 +1206,7 @@ export default function OrdersPage() {
     </div>
   );
 }
+
 
 
 
