@@ -211,23 +211,25 @@ export default function SuperAdminReportsPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Franchise</TableHead>
-                        <TableHead>Total Outlets</TableHead>
-                        <TableHead>Total Sales</TableHead>
-                        <TableHead>Total Storage (GB)</TableHead>
-                        <TableHead>Last Active</TableHead>
+                        <TableHead className='text-right'>Total Outlets</TableHead>
+                        <TableHead className='text-right'>Total Sales</TableHead>
+                        <TableHead className='text-right'>Total Storage (GB)</TableHead>
+                        <TableHead className='text-right'>Last Active</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {filteredFranchises.map(f => (
                         <TableRow key={f.id} onClick={() => handleFranchiseClick(f.name)} className="cursor-pointer">
                             <TableCell className='font-medium'>{f.name}</TableCell>
-                            <TableCell>{f.totalOutlets}</TableCell>
-                            <TableCell className='flex items-center'>
-                                <IndianRupee className="h-4 w-4 mr-1" />
-                                {f.totalSales.toLocaleString('en-IN')}
+                            <TableCell className='text-right'>{f.totalOutlets}</TableCell>
+                            <TableCell className='text-right'>
+                                <div className='flex items-center justify-end'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {f.totalSales.toLocaleString('en-IN')}
+                                </div>
                             </TableCell>
-                            <TableCell>{f.totalStorage.toFixed(2)} GB</TableCell>
-                            <TableCell>{new Date(f.lastActive).toLocaleDateString()}</TableCell>
+                            <TableCell className='text-right'>{f.totalStorage.toFixed(2)} GB</TableCell>
+                            <TableCell className='text-right'>{new Date(f.lastActive).toLocaleDateString()}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -260,10 +262,10 @@ export default function SuperAdminReportsPage() {
                         <TableRow>
                             <TableHead>Outlet Name</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>End Date</TableHead>
-                            <TableHead>Storage</TableHead>
-                            <TableHead>Total Reads</TableHead>
-                            <TableHead>Total Writes</TableHead>
+                            <TableHead className='text-right'>End Date</TableHead>
+                            <TableHead className='text-right'>Storage</TableHead>
+                            <TableHead className='text-right'>Total Reads</TableHead>
+                            <TableHead className='text-right'>Total Writes</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -277,10 +279,20 @@ export default function SuperAdminReportsPage() {
                                 <TableRow key={sub.id}>
                                     <TableCell className="font-medium">{sub.outletName}</TableCell>
                                     <TableCell><Badge variant={getStatusVariant(status)}>{status}</Badge></TableCell>
-                                    <TableCell>{format(new Date(sub.endDate), 'dd MMM, yyyy')}</TableCell>
-                                    <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
-                                    <TableCell className='flex items-center gap-1'><FileText className="h-4 w-4 text-muted-foreground" /> {(sub.totalReads / 1000).toFixed(1)}k</TableCell>
-                                    <TableCell className='flex items-center gap-1'><Database className="h-4 w-4 text-muted-foreground" /> {(sub.totalWrites / 1000).toFixed(1)}k</TableCell>
+                                    <TableCell className='text-right'>{format(new Date(sub.endDate), 'dd MMM, yyyy')}</TableCell>
+                                    <TableCell className='text-right'>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
+                                    <TableCell className='text-right'>
+                                        <div className='flex items-center justify-end gap-1'>
+                                            <FileText className="h-4 w-4 text-muted-foreground" /> 
+                                            {(sub.totalReads / 1000).toFixed(1)}k
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className='text-right'>
+                                        <div className='flex items-center justify-end gap-1'>
+                                            <Database className="h-4 w-4 text-muted-foreground" />
+                                            {(sub.totalWrites / 1000).toFixed(1)}k
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             )
                         })}
@@ -290,5 +302,7 @@ export default function SuperAdminReportsPage() {
         </Card>
     </div>
   );
+
+    
 
     
