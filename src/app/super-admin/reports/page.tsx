@@ -34,6 +34,31 @@ export default function SuperAdminReportsPage() {
   const handleFranchiseClick = (franchiseName: string) => {
     router.push(`/super-admin/subscriptions?franchise=${encodeURIComponent(franchiseName)}`);
   };
+
+  const handleExport = () => {
+    const headers = ['Franchise', 'Total Outlets', 'Total Sales', 'Total Storage (GB)', 'Last Active'];
+    const rows = topFranchisesBySales.map(f => 
+      [
+        f.name,
+        f.totalOutlets,
+        f.totalSales,
+        f.totalStorage.toFixed(2),
+        f.lastActive.toLocaleDateString()
+      ].join(',')
+    );
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(',') + "\n" 
+      + rows.join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "franchise_summary_report.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   
   return (
     <div className="flex flex-col gap-8">
@@ -42,7 +67,7 @@ export default function SuperAdminReportsPage() {
           <h1 className="text-2xl font-bold">Detailed Analytics</h1>
           <p className="text-muted-foreground">In-depth reports on franchises and subscriptions.</p>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" onClick={handleExport}>
           <Download className="mr-2 h-4 w-4" />
           Export All Data (CSV)
         </Button>
