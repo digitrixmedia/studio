@@ -1,6 +1,6 @@
 
 
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy } from '@/lib/types';
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog } from '@/lib/types';
 import { addDays } from 'date-fns';
 
 export const users: User[] = [
@@ -378,3 +378,11 @@ export const franchiseData = {
         ordersToday: Math.floor((salesPerOutletData.find(s => s.name === o.name)?.today || 0) / (Math.random() * 400 + 300)),
     }))
 }
+
+export const auditLogs: AuditLog[] = [
+    { id: 'log-1', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Login', target: 'System', status: 'Success', ipAddress: '103.22.45.1', timestamp: new Date() },
+    { id: 'log-2', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Subscription Created', target: 'Daily Grind - Outlet 3', status: 'Success', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+    { id: 'log-3', user: { name: 'Alia Admin', role: 'Admin' }, action: 'Login', target: 'The Coffee House', status: 'Success', ipAddress: '192.168.1.10', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) },
+    { id: 'log-4', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Subscription Suspended', target: 'Mocha Magic - Outlet 2', status: 'Warning', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    { id: 'log-5', user: { name: 'Unknown', role: 'Manager' }, action: 'Failed Login', target: 'System', status: 'Failure', ipAddress: '203.11.10.5', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+];

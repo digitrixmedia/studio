@@ -122,6 +122,22 @@ export interface Subscription {
   totalWrites: number;
 }
 
+export type AuditLogAction = 'Login' | 'Logout' | 'Failed Login' | 'Subscription Created' | 'Subscription Suspended' | 'Subscription Deleted';
+export type AuditLogStatus = 'Success' | 'Failure' | 'Warning';
+
+export interface AuditLog {
+    id: string;
+    user: {
+        name: string;
+        role: Role;
+    };
+    action: AuditLogAction;
+    target: string; // E.g., "Subscription: Brew & Bake - Outlet 2" or "System"
+    status: AuditLogStatus;
+    ipAddress: string;
+    timestamp: Date;
+}
+
 
 // Franchise Admin Types
 export interface FranchiseOutlet {

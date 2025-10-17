@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -36,7 +37,7 @@ const systemSettings = [
         title: 'Security & Audits',
         description: 'Review system-wide access logs and security policies.',
         icon: ShieldAlert,
-        href: '#' // Placeholder for future page
+        href: '/super-admin/security'
     },
 ];
 
