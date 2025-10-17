@@ -13,13 +13,26 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Users, Utensils, Circle, CheckCircle, IndianRupee } from 'lucide-react';
+import { Users, Utensils, Circle, CheckCircle, IndianRupee, PlusCircle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const statusConfig: { [key in TableStatus]: { color: string; icon: React.ElementType } } = {
   Vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
@@ -36,6 +49,9 @@ export default function TablesPage() {
     setActiveOrderId
   } = useAppContext();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [isAddTableOpen, setIsAddTableOpen] = useState(false);
+  const [newTableName, setNewTableName] = useState('');
+  const [newTableCapacity, setNewTableCapacity] = useState('4');
   const router = useRouter();
   const { toast } = useToast();
 
@@ -97,17 +113,60 @@ export default function TablesPage() {
     }
   }
 
+  const handleAddTable = () => {
+    if (!newTableName || !newTableCapacity) {
+        toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Please provide a name and capacity for the table."
+        });
+        return;
+    }
+    const newTable: Table = {
+        id: `table-${Date.now()}`,
+        name: newTableName,
+        capacity: parseInt(newTableCapacity, 10),
+        status: 'Vacant',
+    };
+    setTables(prev => [...prev, newTable]);
+    toast({
+        title: "Table Added",
+        description: `${newTableName} has been added to your layout.`
+    });
+    setIsAddTableOpen(false);
+    setNewTableName('');
+    setNewTableCapacity('4');
+  };
+
+  const handleDeleteTable = () => {
+    if (selectedTable) {
+        setTables(prev => prev.filter(t => t.id !== selectedTable.id));
+        toast({
+            title: "Table Removed",
+            description: `${selectedTable.name} has been removed from your layout.`,
+            variant: "destructive"
+        });
+        setSelectedTable(null);
+    }
+  }
+
+
   return (
     <div>
       <div className="mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-bold">Table Layout</h2>
-        <div className="flex items-center gap-4">
-          {Object.entries(statusConfig).map(([status, { color, icon: Icon }]) => (
-            <div key={status} className="flex items-center gap-2 text-sm">
-              <Icon className={cn('h-4 w-4', color.replace('border-', 'text-').replace(' bg-green-500/10',''))} />
-              <span>{status}</span>
+        <div className='flex items-center gap-4'>
+            <div className="hidden sm:flex items-center gap-4">
+            {Object.entries(statusConfig).map(([status, { color, icon: Icon }]) => (
+                <div key={status} className="flex items-center gap-2 text-sm">
+                <Icon className={cn('h-4 w-4', color.replace('border-', 'text-').replace(' bg-green-500/10',''))} />
+                <span>{status}</span>
+                </div>
+            ))}
             </div>
-          ))}
+            <Button onClick={() => setIsAddTableOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Table
+            </Button>
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -158,7 +217,28 @@ export default function TablesPage() {
           </DialogHeader>
           <div className="py-4 space-y-2">
             {selectedTable?.status === 'Vacant' && (
-              <Button className="w-full" onClick={handleStartNewOrder}>Start New Order</Button>
+              <>
+                <Button className="w-full" onClick={handleStartNewOrder}>Start New Order</Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button className="w-full" variant="destructive">
+                      <Trash2 className="mr-2 h-4 w-4" /> Delete Table
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete {selectedTable.name}. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteTable} className='bg-destructive hover:bg-destructive/90'>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
             {selectedTable?.status === 'Occupied' && (
               <>
@@ -174,6 +254,31 @@ export default function TablesPage() {
             )}
           </div>
         </DialogContent>
+      </Dialog>
+
+       <Dialog open={isAddTableOpen} onOpenChange={setIsAddTableOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Add New Table</DialogTitle>
+                    <DialogDescription>
+                        Enter the details for the new table.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="table-name" className="text-right">Name</Label>
+                        <Input id="table-name" value={newTableName} onChange={e => setNewTableName(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="table-capacity" className="text-right">Capacity</Label>
+                        <Input id="table-capacity" type="number" value={newTableCapacity} onChange={e => setNewTableCapacity(e.target.value)} className="col-span-3" />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAddTableOpen(false)}>Cancel</Button>
+                    <Button onClick={handleAddTable}>Add Table</Button>
+                </DialogFooter>
+            </DialogContent>
       </Dialog>
     </div>
   );
