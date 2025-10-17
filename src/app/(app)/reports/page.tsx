@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Order } from '@/lib/types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
 const chartConfig = {
@@ -125,6 +125,34 @@ export default function ReportsPage() {
   };
   
   const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
+  
+  const handleExportDayDetails = () => {
+    if (!selectedDay) return;
+
+    const headers = ['Order #', 'Time', 'Customer', 'Type', 'Cashier', 'Total'];
+    const rows = selectedDay.orders.map(order => 
+        [
+            order.orderNumber,
+            format(order.createdAt, 'p'),
+            order.customerName || 'N/A',
+            order.type,
+            getUserName(order.createdBy),
+            order.total.toFixed(2)
+        ].join(',')
+    );
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(',') + "\n" 
+      + rows.join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `sales_details_${selectedDay.date}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
 
   return (
@@ -439,6 +467,13 @@ export default function ReportsPage() {
               </TableBody>
             </Table>
           </div>
+           <DialogFooter>
+                <Button variant="outline" onClick={handleExportDayDetails}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                </Button>
+                <Button onClick={() => setSelectedDay(null)}>Close</Button>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
