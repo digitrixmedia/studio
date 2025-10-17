@@ -19,6 +19,7 @@ import { Users, Utensils, Circle, CheckCircle, IndianRupee } from 'lucide-react'
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/contexts/AppContext';
+import { useToast } from '@/hooks/use-toast';
 
 const statusConfig: { [key in TableStatus]: { color: string; icon: React.ElementType } } = {
   Vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
@@ -27,21 +28,25 @@ const statusConfig: { [key in TableStatus]: { color: string; icon: React.Element
 };
 
 export default function TablesPage() {
-  const [tables, setTables] = useState<Table[]>(initialTables);
+  const { 
+    tables, 
+    setTables, 
+    startOrderForTable, 
+    getOrderByTable,
+    setActiveOrderId
+  } = useAppContext();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const router = useRouter();
-  const { loadOrder, setActiveOrderId, getOrderByTable } = useAppContext();
+  const { toast } = useToast();
+
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
   };
 
-  const startNewOrder = () => {
+  const handleStartNewOrder = () => {
     if (selectedTable) {
-      // Find an empty order or create a new one to assign the table to.
-      // This part of the logic might need to be more robust.
-      // For now, let's just assume we can navigate and the context handles the order.
-      router.push('/orders');
+      startOrderForTable(selectedTable.id);
       setSelectedTable(null);
     }
   };
@@ -52,15 +57,44 @@ export default function TablesPage() {
       if (order) {
         setActiveOrderId(order.id);
         router.push('/orders');
+      } else {
+        // This case might happen if an order was cleared but table status wasn't updated
+        // For robustness, we can start a new order.
+        handleStartNewOrder();
       }
       setSelectedTable(null);
     }
   }
 
-  const generateBill = () => {
-    // Bill generation logic
-    console.log("Generating bill for table: ", selectedTable?.name);
-    setSelectedTable(null);
+  const handleGenerateBill = () => {
+    if (selectedTable) {
+      setTables(prevTables => 
+        prevTables.map(t => 
+          t.id === selectedTable.id ? { ...t, status: 'Billing' } : t
+        )
+      );
+      toast({
+        title: "Bill Generated",
+        description: `${selectedTable.name} is now in billing status.`,
+      });
+      setSelectedTable(null);
+    }
+  }
+  
+  const handleMarkAsPaid = () => {
+    if (selectedTable) {
+      setTables(prevTables => 
+        prevTables.map(t => 
+          t.id === selectedTable.id ? { ...t, status: 'Vacant', currentOrderId: undefined } : t
+        )
+      );
+       // Here you would also likely remove the order from the active orders list
+      toast({
+        title: "Table Vacated",
+        description: `${selectedTable.name} is now available.`,
+      });
+      setSelectedTable(null);
+    }
   }
 
   return (
@@ -100,10 +134,12 @@ export default function TablesPage() {
                   <Users className="h-4 w-4" />
                   <span>{table.capacity} Seats</span>
                 </div>
-                {orderTotal !== null && (
+                {orderForTable && table.status !== 'Vacant' && (
                    <div className="mt-2 text-xs">
-                     <p className='flex items-center'>Total: <IndianRupee className="h-3 w-3 mx-1" />{orderTotal.toFixed(2)}</p>
-                     {/* We may need to add order status to our AppOrder type to show it here */}
+                     <p>Order: #{orderForTable.orderNumber}</p>
+                     {orderTotal !== null && (
+                       <p className='flex items-center'>Total: <IndianRupee className="h-3 w-3 mx-1" />{orderTotal.toFixed(2)}</p>
+                     )}
                    </div>
                 )}
               </CardContent>
@@ -117,24 +153,24 @@ export default function TablesPage() {
           <DialogHeader>
             <DialogTitle>Table: {selectedTable?.name}</DialogTitle>
             <DialogDescription>
-              Status: {selectedTable?.status}
+              Capacity: {selectedTable?.capacity} | Status: <span className='font-bold'>{selectedTable?.status}</span>
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-4 space-y-2">
             {selectedTable?.status === 'Vacant' && (
-              <Button className="w-full" onClick={startNewOrder}>Start New Order</Button>
+              <Button className="w-full" onClick={handleStartNewOrder}>Start New Order</Button>
             )}
             {selectedTable?.status === 'Occupied' && (
-              <div className="space-y-2">
+              <>
                  <Button className="w-full" variant="outline" onClick={viewOrder}>View / Add to Order</Button>
-                 <Button className="w-full" onClick={generateBill}>Generate Bill</Button>
-              </div>
+                 <Button className="w-full" onClick={handleGenerateBill}>Generate Bill</Button>
+              </>
             )}
              {selectedTable?.status === 'Billing' && (
-              <div className="space-y-2">
+              <>
                  <Button className="w-full" variant="outline" onClick={viewOrder}>View Order</Button>
-                 <Button className="w-full" disabled>Payment in Process</Button>
-              </div>
+                 <Button className="w-full" onClick={handleMarkAsPaid}>Mark as Paid & Vacate</Button>
+              </>
             )}
           </div>
         </DialogContent>
