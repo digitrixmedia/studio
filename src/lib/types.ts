@@ -152,13 +152,15 @@ export interface FranchiseOutlet {
 
 
 // Operations Types
+export type ReservationStatus = 'Confirmed' | 'Pending' | 'Arrived' | 'Cancelled';
+
 export interface Reservation {
     id: string;
     name: string;
     phone: string;
     guests: number;
     time: Date;
-    status: 'Confirmed' | 'Pending' | 'Arrived' | 'Cancelled';
+    status: ReservationStatus;
     tableId?: string;
 }
 

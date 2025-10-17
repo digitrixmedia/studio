@@ -48,7 +48,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders as initialOrders, reservations as initialReservations, deliveryBoys as initialDeliveryBoys } from '@/lib/data';
-import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy } from '@/lib/types';
+import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus } from '@/lib/types';
 import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { format, setHours, setMinutes } from 'date-fns';
@@ -196,6 +196,28 @@ export default function OperationsPage() {
         'New': orders.filter(o => o.status === 'New'),
         'Preparing': orders.filter(o => o.status === 'Preparing'),
         'Ready': orders.filter(o => o.status === 'Ready'),
+    };
+    
+    const handleUpdateReservationStatus = (reservationId: string, newStatus: ReservationStatus) => {
+        setReservations(prev => prev.map(res => res.id === reservationId ? { ...res, status: newStatus } : res));
+        const reservationName = reservations.find(r => r.id === reservationId)?.name;
+        toast({
+            title: "Reservation Updated",
+            description: `Reservation for ${reservationName} has been marked as ${newStatus}.`
+        });
+    };
+
+    const getReservationAction = (reservation: Reservation) => {
+        switch (reservation.status) {
+            case 'Pending':
+                return <Button variant="outline" size="sm" onClick={() => handleUpdateReservationStatus(reservation.id, 'Confirmed')}>Confirm</Button>;
+            case 'Confirmed':
+                return <Button variant="outline" size="sm" onClick={() => handleUpdateReservationStatus(reservation.id, 'Arrived')}>Mark as Arrived</Button>;
+            case 'Arrived':
+                 return <Button variant="outline" size="sm" disabled>Seated</Button>;
+            default:
+                return null;
+        }
     };
 
   return (
@@ -429,7 +451,7 @@ export default function OperationsPage() {
                                         <TableCell>{format(res.time, 'PPp')}</TableCell>
                                         <TableCell><Badge>{res.status}</Badge></TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="outline" size="sm">Confirm</Button>
+                                            {getReservationAction(res)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -655,4 +677,3 @@ export default function OperationsPage() {
     </>
   );
 }
-
