@@ -30,7 +30,7 @@ const systemSettings = [
         title: 'System Defaults',
         description: 'Configure global settings for new tenant onboarding.',
         icon: Settings,
-        href: '#' // Placeholder for future page
+        href: '/super-admin/settings/display'
     },
     {
         title: 'Security & Audits',
