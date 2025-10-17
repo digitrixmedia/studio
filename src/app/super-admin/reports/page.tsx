@@ -16,9 +16,15 @@ import {
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
 import { topFranchisesBySales, monthlyNewSubscriptions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Download, IndianRupee } from 'lucide-react';
+import { Download, IndianRupee, Calendar as CalendarIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRouter } from 'next/navigation';
+import { useState, useMemo } from 'react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { DateRange } from 'react-day-picker';
+import { addDays, format, isWithinInterval } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const storageChartConfig = {
   storage: { label: 'Storage (GB)', color: 'hsl(var(--chart-1))' },
@@ -29,7 +35,22 @@ const subsChartConfig = {
 
 export default function SuperAdminReportsPage() {
   const router = useRouter();
-  const storageData = topFranchisesBySales.map(f => ({ name: f.name, storage: f.totalStorage }));
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
+
+  const filteredFranchises = useMemo(() => {
+    if (!date || !date.from) return topFranchisesBySales;
+    
+    // if only 'from' is selected, check from that date onwards. if both, check within interval.
+    const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
+    
+    return topFranchisesBySales.filter(f => isWithinInterval(f.lastActive, interval));
+
+  }, [date]);
+
+  const storageData = filteredFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
   
   const handleFranchiseClick = (franchiseName: string) => {
     router.push(`/super-admin/subscriptions?franchise=${encodeURIComponent(franchiseName)}`);
@@ -37,7 +58,7 @@ export default function SuperAdminReportsPage() {
 
   const handleExport = () => {
     const headers = ['Franchise', 'Total Outlets', 'Total Sales', 'Total Storage (GB)', 'Last Active'];
-    const rows = topFranchisesBySales.map(f => 
+    const rows = filteredFranchises.map(f => 
       [
         f.name,
         f.totalOutlets,
@@ -67,10 +88,48 @@ export default function SuperAdminReportsPage() {
           <h1 className="text-2xl font-bold">Detailed Analytics</h1>
           <p className="text-muted-foreground">In-depth reports on franchises and subscriptions.</p>
         </div>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="mr-2 h-4 w-4" />
-          Export All Data (CSV)
-        </Button>
+        <div className="flex items-center gap-2">
+           <Popover>
+              <PopoverTrigger asChild>
+              <Button
+                  id="date"
+                  variant={"outline"}
+                  className={cn(
+                  "w-[280px] justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                  )}
+              >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date?.from ? (
+                  date.to ? (
+                      <>
+                      {format(date.from, "LLL dd, y")} -{" "}
+                      {format(date.to, "LLL dd, y")}
+                      </>
+                  ) : (
+                      format(date.from, "LLL dd, y")
+                  )
+                  ) : (
+                  <span>Pick a date range</span>
+                  )}
+              </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={date?.from}
+                  selected={date}
+                  onSelect={setDate}
+                  numberOfMonths={2}
+              />
+              </PopoverContent>
+          </Popover>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export Data
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -125,7 +184,7 @@ export default function SuperAdminReportsPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {topFranchisesBySales.map(f => (
+                    {filteredFranchises.map(f => (
                         <TableRow key={f.id} onClick={() => handleFranchiseClick(f.name)} className="cursor-pointer">
                             <TableCell className='font-medium'>{f.name}</TableCell>
                             <TableCell>{f.totalOutlets}</TableCell>
