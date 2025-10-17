@@ -229,6 +229,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
   
   const getOrderByTable = (tableId: string) => {
+      const table = tables.find(t => t.id === tableId);
+      if (table && table.currentOrderId) {
+        return orders.find(o => o.id === table.currentOrderId);
+      }
       return orders.find(o => o.tableId === tableId && o.orderType === 'Dine-In');
   }
 
@@ -320,7 +324,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           setActiveOrderId(newOrder.id);
       }
       
-      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'Occupied' } : t));
+      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'Occupied', currentOrderId: newOrder.id } : t));
       
       router.push('/orders');
   };
