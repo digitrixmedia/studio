@@ -329,56 +329,6 @@ export const deliveryBoys: DeliveryBoy[] = [
     { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'Available' },
 ]
 
-// MOCKED FRANCHISE ADMIN DATA
-
-const franchiseOutlets = [
-    { id: 'outlet-1', name: 'Koramangala', status: 'Active', managerName: 'Manoj Kumar' },
-    { id: 'outlet-2', name: 'Indiranagar', status: 'Active', managerName: 'Priya Sharma' },
-    { id: 'outlet-3', name: 'HSR Layout', status: 'Inactive', managerName: 'Amit Singh' },
-    { id: 'outlet-4', name: 'Whitefield', status: 'Active', managerName: 'Sunita Reddy' },
-];
-
-const salesPerOutletData = franchiseOutlets.map(o => ({
-    name: o.name,
-    total: Math.floor(Math.random() * 200000) + 50000,
-    today: Math.floor(Math.random() * 15000) + 2000,
-}));
-
-const totalSales = salesPerOutletData.reduce((acc, o) => acc + o.total, 0);
-const todaySales = salesPerOutletData.reduce((acc, o) => acc + o.today, 0);
-const totalOrders = Math.floor(totalSales / (Math.random() * 500 + 300));
-const topPerformer = [...salesPerOutletData].sort((a,b) => b.today - a.today)[0];
-const lowPerformer = [...salesPerOutletData].sort((a,b) => a.today - b.today)[0];
-
-export const franchiseData = {
-    summary: {
-        totalSales,
-        todaySales,
-        totalOrders,
-        activeOutlets: franchiseOutlets.filter(o => o.status === 'Active').length,
-        inactiveOutlets: franchiseOutlets.filter(o => o.status !== 'Active').length,
-        topPerformer: { name: topPerformer.name, sales: topPerformer.today },
-        lowPerformer: { name: lowPerformer.name, sales: lowPerformer.today },
-        avgOrderValue: totalSales / totalOrders,
-    },
-    salesPerOutlet: salesPerOutletData,
-    salesTrend: [
-        { day: 'Mon', sales: Math.floor(Math.random() * 20000) + 5000 },
-        { day: 'Tue', sales: Math.floor(Math.random() * 20000) + 5000 },
-        { day: 'Wed', sales: Math.floor(Math.random() * 20000) + 5000 },
-        { day: 'Thu', sales: Math.floor(Math.random() * 20000) + 5000 },
-        { day: 'Fri', sales: Math.floor(Math.random() * 20000) + 5000 },
-        { day: 'Sat', sales: Math.floor(Math.random() * 20000) + 5000 },
-        { day: 'Sun', sales: Math.floor(Math.random() * 20000) + 5000 },
-    ],
-    outlets: franchiseOutlets.map(o => ({
-        ...o,
-        todaySales: salesPerOutletData.find(s => s.name === o.name)?.today,
-        totalSales: salesPerOutletData.find(s => s.name === o.name)?.total,
-        ordersToday: Math.floor((salesPerOutletData.find(s => s.name === o.name)?.today || 0) / (Math.random() * 400 + 300)),
-    }))
-}
-
 export const auditLogs: AuditLog[] = [
     { id: 'log-1', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Login', target: 'System', status: 'Success', ipAddress: '103.22.45.1', timestamp: new Date() },
     { id: 'log-2', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Subscription Created', target: 'Daily Grind - Outlet 3', status: 'Success', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
