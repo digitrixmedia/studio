@@ -23,7 +23,8 @@ import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingBag, BarChart3 } from 'lucide-react';
-import { franchiseData, orders, menuItems, menuCategories } from '@/lib/data';
+import { topFranchisesBySales, orders, menuItems, menuCategories, dailySalesData } from '@/lib/data';
+import type { FranchiseOutlet } from '@/lib/types';
 
 const chartConfig = {
   sales: { label: 'Sales', color: 'hsl(var(--primary))' },
@@ -31,7 +32,16 @@ const chartConfig = {
 };
 
 export default function FranchiseReportsPage() {
-  const { outlets } = franchiseData;
+  const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
+      id: f.id,
+      name: f.name,
+      status: 'Active', // This is simplified, would need more data in a real app
+      managerName: `Manager for ${f.name}`,
+      todaySales: f.totalSales / 30, // Mocked data
+      totalSales: f.totalSales,
+      ordersToday: f.totalOutlets * 15, // Mocked data
+    }));
+
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>(['all']);
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -6),
@@ -49,7 +59,7 @@ export default function FranchiseReportsPage() {
       avgOrderValue: filteredOutlets.length > 0 ? filteredOutlets.reduce((sum, o) => sum + (o.totalSales || 0), 0) / filteredOutlets.reduce((sum, o) => sum + ((o.totalSales || 0) / 450) , 0) : 0,
   }
 
-  const salesTrend = franchiseData.salesTrend.map(s => ({
+  const salesTrend = dailySalesData.map(s => ({
       ...s, 
       sales: s.sales * (selectedOutlets.length / outlets.length) * (Math.random() * 0.4 + 0.8) // Adjust data for demo
   }));

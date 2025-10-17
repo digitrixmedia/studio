@@ -12,7 +12,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'rec
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from 'lucide-react';
-import { franchiseData } from '@/lib/data';
+import { superAdminStats, topFranchisesBySales, dailySalesData } from '@/lib/data';
 import { useState } from 'react';
 import { ManageOutletDialog } from '@/components/franchise/ManageOutletDialog';
 import type { FranchiseOutlet } from '@/lib/types';
@@ -29,7 +29,36 @@ const trendChartConfig = {
 }
 
 export default function FranchiseDashboardPage() {
-    const { summary, salesPerOutlet, salesTrend, outlets } = franchiseData;
+    const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
+      id: f.id,
+      name: f.name,
+      status: 'Active', // This is simplified, would need more data in a real app
+      managerName: `Manager for ${f.name}`,
+      todaySales: f.totalSales / 30, // Mocked data
+      totalSales: f.totalSales,
+      ordersToday: f.totalOutlets * 15, // Mocked data
+    }));
+
+    const summary = {
+      totalSales: superAdminStats.totalSales,
+      todaySales: superAdminStats.totalSales / 30, // Mocked
+      totalOrders: superAdminStats.totalOrders,
+      activeOutlets: superAdminStats.activeOutlets,
+      inactiveOutlets: superAdminStats.totalSubscriptions - superAdminStats.activeOutlets,
+      topPerformer: { name: topFranchisesBySales[0].name, sales: topFranchisesBySales[0].totalSales / 30 },
+      lowPerformer: { name: topFranchisesBySales[topFranchisesBySales.length - 1].name, sales: topFranchisesBySales[topFranchisesBySales.length - 1].totalSales / 30 },
+      avgOrderValue: superAdminStats.totalOrders > 0 ? superAdminStats.totalSales / superAdminStats.totalOrders : 0,
+    };
+
+    const salesPerOutlet = topFranchisesBySales.map(f => ({
+        name: f.name,
+        total: f.totalSales,
+        today: f.totalSales / 30,
+    }));
+
+    const salesTrend = dailySalesData.map(d => ({ day: d.date, sales: d.sales * 5 }));
+
+
     const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
     const { selectOutlet } = useAppContext();
 
