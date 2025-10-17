@@ -18,6 +18,7 @@ import { topFranchisesBySales, monthlyNewSubscriptions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useRouter } from 'next/navigation';
 
 const storageChartConfig = {
   storage: { label: 'Storage (GB)', color: 'hsl(var(--chart-1))' },
@@ -27,7 +28,12 @@ const subsChartConfig = {
 };
 
 export default function SuperAdminReportsPage() {
+  const router = useRouter();
   const storageData = topFranchisesBySales.map(f => ({ name: f.name, storage: f.totalStorage }));
+  
+  const handleFranchiseClick = (franchiseName: string) => {
+    router.push(`/super-admin/subscriptions?franchise=${encodeURIComponent(franchiseName)}`);
+  };
   
   return (
     <div className="flex flex-col gap-8">
@@ -80,7 +86,7 @@ export default function SuperAdminReportsPage() {
       <Card>
         <CardHeader>
             <CardTitle>Franchise Summary</CardTitle>
-            <CardDescription>Overview of all franchises.</CardDescription>
+            <CardDescription>Overview of all franchises. Click a row to see details.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -95,7 +101,7 @@ export default function SuperAdminReportsPage() {
                 </TableHeader>
                 <TableBody>
                     {topFranchisesBySales.map(f => (
-                        <TableRow key={f.id}>
+                        <TableRow key={f.id} onClick={() => handleFranchiseClick(f.name)} className="cursor-pointer">
                             <TableCell className='font-medium'>{f.name}</TableCell>
                             <TableCell>{f.totalOutlets}</TableCell>
                             <TableCell className='flex items-center'>

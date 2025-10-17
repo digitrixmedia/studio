@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -54,6 +54,7 @@ import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useSearchParams } from 'next/navigation';
 
 
 const initialFormState = {
@@ -72,6 +73,8 @@ export default function SubscriptionsPage() {
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const defaultAccordionValue = searchParams.get('franchise') || undefined;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -145,10 +148,11 @@ export default function SubscriptionsPage() {
   };
   
   const handleDeleteSubscription = (subId: string) => {
+    const subToDelete = subscriptions.find(sub => sub.id === subId);
     setSubscriptions(subscriptions.filter(sub => sub.id !== subId));
     toast({
         title: "Subscription Deleted",
-        description: "The subscription has been permanently removed.",
+        description: `The subscription for ${subToDelete?.outletName} has been permanently removed.`,
         variant: "destructive"
     });
   }
@@ -170,12 +174,9 @@ export default function SubscriptionsPage() {
         if (currentStatus === 'Active') {
           newStatus = 'Suspended';
         } else if (currentStatus === 'Suspended' || currentStatus === 'Inactive') {
-          // If expired, activating it should make it active, not expired again.
-          if (new Date(sub.endDate) < new Date()) {
-             newStatus = 'Active';
-          } else {
-            newStatus = 'Active';
-          }
+          newStatus = 'Active';
+        } else if (currentStatus === 'Expired') {
+          newStatus = 'Active';
         }
         return { ...sub, status: newStatus };
       }
@@ -261,7 +262,7 @@ export default function SubscriptionsPage() {
         </div>
       </CardHeader>
       <CardContent>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion type="single" collapsible className="w-full" defaultValue={defaultAccordionValue}>
           {Object.entries(groupedSubscriptions).map(([franchiseName, subs]) => (
             <AccordionItem value={franchiseName} key={franchiseName}>
               <AccordionTrigger className="text-lg font-medium hover:no-underline">
@@ -285,7 +286,10 @@ export default function SubscriptionsPage() {
                   <TableBody>
                     {subs.map(sub => {
                       const isExpired = new Date(sub.endDate) < new Date();
-                      const status = isExpired ? 'Expired' : sub.status;
+                      let status = sub.status;
+                      if (isExpired && status !== 'Suspended') {
+                          status = 'Expired';
+                      }
                       
                       return (
                       <TableRow key={sub.id} className={cn(status === 'Expired' && 'bg-red-500/10')}>
