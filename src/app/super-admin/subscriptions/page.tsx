@@ -136,6 +136,8 @@ export default function SubscriptionsPage() {
         endDate: new Date(formData.endDate),
         status: 'Active',
         storageUsedMB: 0,
+        totalReads: 0,
+        totalWrites: 0,
       };
       setSubscriptions(prev => [newSub, ...prev]);
       toast({
@@ -173,9 +175,7 @@ export default function SubscriptionsPage() {
         let newStatus: SubscriptionStatus = 'Active';
         if (currentStatus === 'Active') {
           newStatus = 'Suspended';
-        } else if (currentStatus === 'Suspended' || currentStatus === 'Inactive') {
-          newStatus = 'Active';
-        } else if (currentStatus === 'Expired') {
+        } else if (currentStatus === 'Suspended' || currentStatus === 'Inactive' || currentStatus === 'Expired') {
           newStatus = 'Active';
         }
         return { ...sub, status: newStatus };
@@ -242,7 +242,7 @@ export default function SubscriptionsPage() {
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="adminPassword" className="text-right">Password</Label>
-                    <Input id="adminPassword" type="password" placeholder={editingSub ? 'Unchanged' : '••••••••'} value={formData.adminPassword} onChange={handleInputChange} className="col-span-3" required={!editingSub}/>
+                    <Input id="adminPassword" type="password" placeholder={editingSub ? 'Unchanged' : '••••••••'} value={formData.adminPassword} onChange={handleInputChange} required={!editingSub}/>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="startDate" className="text-right">Start Date</Label>

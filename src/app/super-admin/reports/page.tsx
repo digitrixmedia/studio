@@ -55,7 +55,7 @@ export default function SuperAdminReportsPage() {
     
     const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
     
-    return subscriptions.filter(s => isWithinInterval(s.endDate, interval));
+    return subscriptions.filter(s => isWithinInterval(new Date(s.endDate), interval));
   }, [date]);
 
   const storageData = filteredFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
@@ -65,17 +65,19 @@ export default function SuperAdminReportsPage() {
   };
 
   const handleExport = () => {
-    const headers = ['Franchise Name', 'Outlet Name', 'Status', 'Storage Used (MB)', 'Start Date', 'End Date', 'Admin Name', 'Admin Email'];
+    const headers = ['Franchise Name', 'Outlet Name', 'Status', 'Storage Used (MB)', 'Start Date', 'End Date', 'Admin Name', 'Admin Email', 'Total Reads', 'Total Writes'];
     const rows = filteredSubscriptions.map(s => 
       [
         s.franchiseName,
         s.outletName,
         s.status,
         s.storageUsedMB,
-        format(s.startDate, 'yyyy-MM-dd'),
-        format(s.endDate, 'yyyy-MM-dd'),
+        format(new Date(s.startDate), 'yyyy-MM-dd'),
+        format(new Date(s.endDate), 'yyyy-MM-dd'),
         s.adminName || '',
-        s.adminEmail
+        s.adminEmail,
+        s.totalReads,
+        s.totalWrites,
       ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',') // Handle commas and quotes
     );
 
@@ -204,7 +206,7 @@ export default function SuperAdminReportsPage() {
                                 {f.totalSales.toLocaleString('en-IN')}
                             </TableCell>
                             <TableCell>{f.totalStorage.toFixed(2)} GB</TableCell>
-                            <TableCell>{f.lastActive.toLocaleDateString()}</TableCell>
+                            <TableCell>{new Date(f.lastActive).toLocaleDateString()}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>

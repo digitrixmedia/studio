@@ -118,6 +118,8 @@ export interface Subscription {
   endDate: Date;
   status: SubscriptionStatus;
   storageUsedMB: number;
+  totalReads: number;
+  totalWrites: number;
 }
 
 

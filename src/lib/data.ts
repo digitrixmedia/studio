@@ -264,7 +264,9 @@ export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) =
         endDate,
         status,
         storageUsedMB: Math.floor(Math.random() * 5000),
-    };
+        totalReads: Math.floor(Math.random() * 1000000),
+        totalWrites: Math.floor(Math.random() * 500000),
+      };
 });
 
 // Ensure the main users have predictable subscription statuses
@@ -278,8 +280,8 @@ export const superAdminStats = {
     totalStorageUsedGB: (subscriptions.reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024).toFixed(2),
     totalSales: 12500000,
     totalOrders: 45000,
-    totalReads: 56000000,
-    totalWrites: 12000000,
+    totalReads: subscriptions.reduce((acc, s) => acc + s.totalReads, 0),
+    totalWrites: subscriptions.reduce((acc, s) => acc + s.totalWrites, 0),
 };
 
 export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => ({
