@@ -14,7 +14,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
-import { topFranchisesBySales, monthlyNewSubscriptions } from '@/lib/data';
+import { topFranchisesBySales, monthlyNewSubscriptions, subscriptions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -49,6 +49,14 @@ export default function SuperAdminReportsPage() {
     return topFranchisesBySales.filter(f => isWithinInterval(f.lastActive, interval));
 
   }, [date]);
+  
+  const filteredSubscriptions = useMemo(() => {
+    if (!date || !date.from) return subscriptions;
+    
+    const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
+    
+    return subscriptions.filter(s => isWithinInterval(s.endDate, interval));
+  }, [date]);
 
   const storageData = filteredFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
   
@@ -57,15 +65,18 @@ export default function SuperAdminReportsPage() {
   };
 
   const handleExport = () => {
-    const headers = ['Franchise', 'Total Outlets', 'Total Sales', 'Total Storage (GB)', 'Last Active'];
-    const rows = filteredFranchises.map(f => 
+    const headers = ['Franchise Name', 'Outlet Name', 'Status', 'Storage Used (MB)', 'Start Date', 'End Date', 'Admin Name', 'Admin Email'];
+    const rows = filteredSubscriptions.map(s => 
       [
-        f.name,
-        f.totalOutlets,
-        f.totalSales,
-        f.totalStorage.toFixed(2),
-        f.lastActive.toLocaleDateString()
-      ].join(',')
+        s.franchiseName,
+        s.outletName,
+        s.status,
+        s.storageUsedMB,
+        format(s.startDate, 'yyyy-MM-dd'),
+        format(s.endDate, 'yyyy-MM-dd'),
+        s.adminName || '',
+        s.adminEmail
+      ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',') // Handle commas and quotes
     );
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -75,7 +86,7 @@ export default function SuperAdminReportsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "franchise_summary_report.csv");
+    link.setAttribute("download", "detailed_subscriptions_report.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -127,7 +138,7 @@ export default function SuperAdminReportsPage() {
           </Popover>
           <Button variant="outline" onClick={handleExport}>
             <Download className="mr-2 h-4 w-4" />
-            Export Data
+            Export Detailed Report
           </Button>
         </div>
       </div>
