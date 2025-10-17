@@ -79,22 +79,24 @@ export default function FranchiseReportsPage() {
     const rows = filteredOutlets.map(outlet => {
       const outletOrders = (outlet.totalSales || 0) / 450;
       const outletAOV = outletOrders > 0 ? (outlet.totalSales || 0) / outletOrders : 0;
+      // Sanitize data for CSV
+      const sanitizedName = `"${outlet.name.replace(/"/g, '""')}"`;
       return [
-        outlet.name,
+        sanitizedName,
         outlet.totalSales || '0',
         Math.round(outletOrders),
         outletAOV.toFixed(2)
       ].join(',');
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(',') + "\n" 
-      + rows.join("\n");
-
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
     link.setAttribute("download", "outlet_breakdown_report.csv");
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
