@@ -14,51 +14,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
-import { KeyRound, Mail, Save, User, ReceiptText, ArrowRight, Monitor, Calculator, Share2, Printer, Users as UsersIcon } from 'lucide-react';
+import { KeyRound, Mail, Save, User, Building, Settings, ShieldAlert } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
-const settings = [
+const systemSettings = [
     {
-        title: 'Display',
-        description: 'Manage themes, screen layouts, and item display settings.',
-        icon: Monitor,
-        href: '/settings/display'
-    },
-    {
-        title: 'Calculations',
-        description: 'Configure taxes, discounts, rounding, and other calculations.',
-        icon: Calculator,
-        href: '/settings/calculations'
-    },
-     {
-        title: 'Connected Services',
-        description: 'Integrate with third-party services like payment gateways.',
-        icon: Share2,
-        href: '/settings/connected-services'
+        title: 'Tenant Management',
+        description: 'Create, manage, and suspend franchise subscriptions.',
+        icon: Building,
+        href: '/super-admin/subscriptions'
     },
     {
-        title: 'Print',
-        description: 'Manage KOT and bill printing formats and preferences.',
-        icon: Printer,
-        href: '/settings/print'
-    },
-     {
-        title: 'Customer',
-        description: 'Configure customer data fields and loyalty program settings.',
-        icon: UsersIcon,
-        href: '/settings/customer'
+        title: 'System Defaults',
+        description: 'Configure global settings for new tenant onboarding.',
+        icon: Settings,
+        href: '#' // Placeholder for future page
     },
     {
-        title: 'Billing System',
-        description: 'Configure auto accept, Duration, Cancel timings etc. of Online Orders.',
-        icon: ReceiptText,
-        href: '/settings/billing-system'
-    }
-]
+        title: 'Security & Audits',
+        description: 'Review system-wide access logs and security policies.',
+        icon: ShieldAlert,
+        href: '#' // Placeholder for future page
+    },
+];
 
-export default function ProfilePage() {
+export default function SuperAdminProfilePage() {
   const { currentUser } = useAppContext();
   const { toast } = useToast();
 
@@ -66,20 +48,10 @@ export default function ProfilePage() {
     return <p>Loading...</p>;
   }
 
-  // This page is not for Super Admins.
-  if (currentUser.role === 'Super Admin') {
-    return (
-        <div className="flex h-full w-full items-center justify-center">
-             <p>Access Denied. Please use the Super Admin profile page.</p>
-        </div>
-    );
-  }
-
   const { name, email, avatar } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
 
   const handleUpdateProfile = () => {
-    // In a real app, this would handle the update logic.
     toast({
       title: 'Profile Updated',
       description: 'Your profile information has been saved.',
@@ -98,7 +70,7 @@ export default function ProfilePage() {
             <div>
               <CardTitle className="text-3xl">{name}</CardTitle>
               <CardDescription>
-                Manage your personal information and application settings.
+                Manage your personal information and system-wide settings.
               </CardDescription>
             </div>
           </div>
@@ -150,15 +122,15 @@ export default function ProfilePage() {
 
         <CardHeader>
           <CardTitle>System Settings</CardTitle>
-          <CardDescription>Manage your cafe's settings and configurations.</CardDescription>
+          <CardDescription>Manage global configurations for the ZappyyPOS platform.</CardDescription>
         </CardHeader>
         <CardContent>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {settings.map(setting => (
+                {systemSettings.map(setting => (
                     <Link href={setting.href} key={setting.title} legacyBehavior>
                       <a className="block h-full">
-                        <Card className="hover:border-primary transition-colors h-full flex flex-col">
-                            <CardHeader className="flex-1">
+                        <Card className="hover:border-primary transition-colors h-full flex flex-col justify-between">
+                            <CardHeader>
                                 <div className="flex items-start gap-4">
                                     <div className="bg-primary/10 text-primary p-3 rounded-full">
                                         <setting.icon className="h-6 w-6" />
@@ -169,9 +141,6 @@ export default function ProfilePage() {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <div className="p-4 pt-0 flex justify-end">
-                                <ArrowRight className="h-5 w-5 text-primary" />
-                            </div>
                         </Card>
                       </a>
                     </Link>

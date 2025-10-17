@@ -1,7 +1,7 @@
 
 'use client';
 
-import { BarChart3, CreditCard, LayoutDashboard, ShieldCheck } from 'lucide-react';
+import { BarChart3, CreditCard, LayoutDashboard, ShieldCheck, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -30,6 +30,7 @@ const navItems: NavItem[] = [
   { href: '/super-admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/super-admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
   { href: '/super-admin/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/super-admin/profile', label: 'Profile', icon: User },
 ];
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
