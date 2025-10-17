@@ -138,7 +138,7 @@ export default function TablesPage() {
                    <div className="mt-2 text-xs">
                      <p>Order: #{orderForTable.orderNumber}</p>
                      {orderTotal !== null && (
-                       <p className='flex items-center'>Total: <IndianRupee className="h-3 w-3 mx-1" />{orderTotal.toFixed(2)}</p>
+                       <p className='flex items-center font-semibold'>Total: <IndianRupee className="h-3 w-3 mx-1" />{orderTotal.toFixed(2)}</p>
                      )}
                    </div>
                 )}
