@@ -43,18 +43,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders as initialOrders, reservations as initialReservations, deliveryBoys as initialDeliveryBoys } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar, PlusCircle, Bike } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike } from 'lucide-react';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, setHours, setMinutes } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type CustomerSummary = {
     phone: string;
@@ -62,6 +65,15 @@ type CustomerSummary = {
     totalOrders: number;
     totalSpent: number;
 }
+
+const initialReservationState = {
+    name: '',
+    phone: '',
+    guests: '2',
+    date: new Date(),
+    hour: '20',
+    minute: '00',
+};
 
 export default function OperationsPage() {
     const { toast } = useToast();
@@ -73,6 +85,8 @@ export default function OperationsPage() {
     const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'All'>('All');
     
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
+    const [isReservationOpen, setIsReservationOpen] = useState(false);
+    const [newReservation, setNewReservation] = useState(initialReservationState);
 
     const filteredOrders = orders.filter(order => {
         const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
@@ -84,6 +98,29 @@ export default function OperationsPage() {
         setOrders(orders.map(o => o.id === orderId ? {...o, status: 'Cancelled'} : o));
         toast({ title: 'Order Cancelled', description: `Order #${orders.find(o=>o.id === orderId)?.orderNumber} has been cancelled.` });
     };
+
+    const handleCreateReservation = () => {
+        if (!newReservation.name || !newReservation.phone) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Name and phone are required.'});
+            return;
+        }
+
+        const reservationTime = setMinutes(setHours(newReservation.date, parseInt(newReservation.hour)), parseInt(newReservation.minute));
+
+        const reservation: Reservation = {
+            id: `res-${Date.now()}`,
+            name: newReservation.name,
+            phone: newReservation.phone,
+            guests: parseInt(newReservation.guests),
+            time: reservationTime,
+            status: 'Confirmed'
+        };
+
+        setReservations(prev => [reservation, ...prev]);
+        toast({ title: 'Reservation Created', description: `Table reserved for ${newReservation.name}.` });
+        setIsReservationOpen(false);
+        setNewReservation(initialReservationState);
+    }
 
     const kots = orders.filter(o => o.status === 'New' || o.status === 'Preparing');
 
@@ -306,9 +343,14 @@ export default function OperationsPage() {
             </TabsContent>
             <TabsContent value="reservations">
                  <Card>
-                    <CardHeader>
-                        <CardTitle>Table Reservations</CardTitle>
-                        <CardDescription>Manage upcoming customer reservations.</CardDescription>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Table Reservations</CardTitle>
+                            <CardDescription>Manage upcoming customer reservations.</CardDescription>
+                        </div>
+                        <Button onClick={() => setIsReservationOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> New Reservation
+                        </Button>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -443,6 +485,64 @@ export default function OperationsPage() {
             </div>
              <DialogFooter>
                 <Button variant="outline" onClick={() => setViewOrder(null)}>Close</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    
+    {/* Dialog for creating a reservation */}
+    <Dialog open={isReservationOpen} onOpenChange={setIsReservationOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>New Table Reservation</DialogTitle>
+                <DialogDescription>
+                    Enter the customer's details to reserve a table.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="res-name" className="text-right">Name</Label>
+                    <Input id="res-name" value={newReservation.name} onChange={e => setNewReservation({...newReservation, name: e.target.value})} className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="res-phone" className="text-right">Phone</Label>
+                    <Input id="res-phone" value={newReservation.phone} onChange={e => setNewReservation({...newReservation, phone: e.target.value})} className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="res-guests" className="text-right">Guests</Label>
+                    <Input id="res-guests" type="number" value={newReservation.guests} onChange={e => setNewReservation({...newReservation, guests: e.target.value})} className="col-span-3" />
+                </div>
+                 <div className="grid grid-cols-4 items-center gap-4">
+                    <Label className="text-right">Date & Time</Label>
+                    <div className="col-span-3 flex items-center gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !newReservation.date && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {newReservation.date ? format(newReservation.date, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={newReservation.date} onSelect={date => setNewReservation({...newReservation, date: date || new Date()})} initialFocus/>
+                            </PopoverContent>
+                        </Popover>
+                        <Select value={newReservation.hour} onValueChange={hour => setNewReservation({...newReservation, hour})}>
+                            <SelectTrigger className="w-20"><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                {Array.from({length: 13}, (_, i) => i + 9).map(h => <SelectItem key={h} value={String(h).padStart(2,'0')}>{String(h).padStart(2,'0')}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Select value={newReservation.minute} onValueChange={minute => setNewReservation({...newReservation, minute})}>
+                             <SelectTrigger className="w-20"><SelectValue/></SelectTrigger>
+                             <SelectContent>
+                                {['00','15','30','45'].map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                             </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsReservationOpen(false)}>Cancel</Button>
+                <Button onClick={handleCreateReservation}>Create Reservation</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
