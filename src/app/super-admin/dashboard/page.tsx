@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,8 +11,10 @@ import {
 } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 
-import { superAdminStats, topFranchisesBySales, dailyActiveOutlets, subscriptionStatusDistribution } from '@/lib/data';
+import { superAdminStats as initialStats, topFranchisesBySales as initialFranchises, dailyActiveOutlets as initialActivity, subscriptionStatusDistribution as initialSubs } from '@/lib/data';
 import { BarChart3, Box, CreditCard, IndianRupee, RefreshCw, ShoppingBag, Users, Database, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 const subscriptionChartConfig = {
   active: { label: 'Active', color: 'hsl(var(--chart-1))' },
@@ -24,11 +27,31 @@ const activityChartConfig = {
 }
 
 export default function SuperAdminDashboardPage() {
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState(initialStats);
+  const [franchises, setFranchises] = useState(initialFranchises);
+  const [activity, setActivity] = useState(initialActivity);
+  const [subscriptions, setSubscriptions] = useState(initialSubs);
+
+  const handleRefresh = () => {
+    setLoading(true);
+    setTimeout(() => {
+      // Simulate data fetching and update
+      setStats(prev => ({ ...prev, totalOrders: prev.totalOrders + Math.floor(Math.random() * 100) }));
+      setFranchises(prev => prev.map(f => ({ ...f, totalSales: f.totalSales + Math.floor(Math.random() * 1000) })).sort((a, b) => b.totalSales - a.totalSales));
+      setActivity(prev => prev.map(a => ({ ...a, count: a.count + Math.floor(Math.random() * 3) - 1 })));
+      setLoading(false);
+    }, 1000);
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className='flex justify-between items-center'>
         <h1 className='text-2xl font-bold'>Super Admin Dashboard</h1>
-        <Button variant="outline"><RefreshCw className="mr-2 h-4 w-4" /> Refresh Stats</Button>
+        <Button variant="outline" onClick={handleRefresh} disabled={loading}>
+          <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+          {loading ? 'Refreshing...' : 'Refresh Stats'}
+        </Button>
       </div>
       {/* Stat Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
@@ -38,7 +61,7 @@ export default function SuperAdminDashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{superAdminStats.totalSubscriptions}</div>
+            <div className="text-2xl font-bold">{stats.totalSubscriptions}</div>
             <p className="text-xs text-muted-foreground">Active + Expired</p>
           </CardContent>
         </Card>
@@ -48,7 +71,7 @@ export default function SuperAdminDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{superAdminStats.activeOutlets}</div>
+            <div className="text-2xl font-bold">{stats.activeOutlets}</div>
             <p className="text-xs text-muted-foreground">Currently operational</p>
           </CardContent>
         </Card>
@@ -58,7 +81,7 @@ export default function SuperAdminDashboardPage() {
             <Box className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{superAdminStats.totalStorageUsedGB} GB</div>
+            <div className="text-2xl font-bold">{stats.totalStorageUsedGB} GB</div>
             <p className="text-xs text-muted-foreground">Across all tenants</p>
           </CardContent>
         </Card>
@@ -70,7 +93,7 @@ export default function SuperAdminDashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold flex items-center">
                 <IndianRupee className="h-6 w-6 mr-1" />
-                {(superAdminStats.totalSales / 100000).toFixed(2)}L
+                {(stats.totalSales / 100000).toFixed(2)}L
             </div>
             <p className="text-xs text-muted-foreground">From all outlets</p>
           </CardContent>
@@ -81,7 +104,7 @@ export default function SuperAdminDashboardPage() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{superAdminStats.totalOrders.toLocaleString('en-IN')}</div>
+            <div className="text-2xl font-bold">{stats.totalOrders.toLocaleString('en-IN')}</div>
             <p className="text-xs text-muted-foreground">From all outlets</p>
           </CardContent>
         </Card>
@@ -91,7 +114,7 @@ export default function SuperAdminDashboardPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(superAdminStats.totalReads / 1000000).toFixed(2)}M</div>
+            <div className="text-2xl font-bold">{(stats.totalReads / 1000000).toFixed(2)}M</div>
             <p className="text-xs text-muted-foreground">Firestore document reads</p>
           </CardContent>
         </Card>
@@ -101,7 +124,7 @@ export default function SuperAdminDashboardPage() {
             <Database className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(superAdminStats.totalWrites / 1000000).toFixed(2)}M</div>
+            <div className="text-2xl font-bold">{(stats.totalWrites / 1000000).toFixed(2)}M</div>
             <p className="text-xs text-muted-foreground">Firestore document writes</p>
           </CardContent>
         </Card>
@@ -122,7 +145,7 @@ export default function SuperAdminDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {topFranchisesBySales.slice(0, 5).map(f => (
+                {franchises.slice(0, 5).map(f => (
                   <TableRow key={f.id}>
                     <TableCell>{f.name}</TableCell>
                     <TableCell className="text-right flex items-center justify-end">
@@ -145,8 +168,8 @@ export default function SuperAdminDashboardPage() {
             <ChartContainer config={subscriptionChartConfig} className="min-h-[200px] w-full">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent nameKey="count" hideLabel />} />
-                <Pie data={subscriptionStatusDistribution} dataKey="count" nameKey="status" innerRadius={50}>
-                   {subscriptionStatusDistribution.map((entry) => (
+                <Pie data={subscriptions} dataKey="count" nameKey="status" innerRadius={50}>
+                   {subscriptions.map((entry) => (
                     <Cell key={entry.status} fill={`var(--color-${entry.status.toLowerCase()})`} />
                   ))}
                 </Pie>
@@ -161,7 +184,7 @@ export default function SuperAdminDashboardPage() {
           </CardHeader>
           <CardContent>
              <ChartContainer config={activityChartConfig} className="min-h-[200px] w-full">
-              <LineChart data={dailyActiveOutlets}>
+              <LineChart data={activity}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
                 <YAxis />
