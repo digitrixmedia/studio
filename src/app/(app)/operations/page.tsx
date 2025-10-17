@@ -49,7 +49,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders as initialOrders, reservations as initialReservations, deliveryBoys as initialDeliveryBoys } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -75,6 +75,11 @@ const initialReservationState = {
     minute: '00',
 };
 
+const initialDeliveryBoyState = {
+    name: '',
+    phone: '',
+};
+
 export default function OperationsPage() {
     const { toast } = useToast();
     const [orders, setOrders] = useState<Order[]>(initialOrders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
@@ -87,6 +92,9 @@ export default function OperationsPage() {
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
     const [isReservationOpen, setIsReservationOpen] = useState(false);
     const [newReservation, setNewReservation] = useState(initialReservationState);
+
+    const [isDeliveryBoyOpen, setIsDeliveryBoyOpen] = useState(false);
+    const [newDeliveryBoy, setNewDeliveryBoy] = useState(initialDeliveryBoyState);
 
     const filteredOrders = orders.filter(order => {
         const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
@@ -120,6 +128,35 @@ export default function OperationsPage() {
         toast({ title: 'Reservation Created', description: `Table reserved for ${newReservation.name}.` });
         setIsReservationOpen(false);
         setNewReservation(initialReservationState);
+    }
+    
+    const handleCreateDeliveryBoy = () => {
+        if (!newDeliveryBoy.name || !newDeliveryBoy.phone) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Name and phone are required.'});
+            return;
+        }
+        
+        const deliveryBoy: DeliveryBoy = {
+            id: `db-${Date.now()}`,
+            name: newDeliveryBoy.name,
+            phone: newDeliveryBoy.phone,
+            status: 'Available',
+        };
+
+        setDeliveryBoys(prev => [deliveryBoy, ...prev]);
+        toast({ title: 'Delivery Boy Added', description: `${newDeliveryBoy.name} is now available.` });
+        setIsDeliveryBoyOpen(false);
+        setNewDeliveryBoy(initialDeliveryBoyState);
+    }
+
+    const handleRemoveDeliveryBoy = (id: string) => {
+        const boyToRemove = deliveryBoys.find(b => b.id === id);
+        setDeliveryBoys(prev => prev.filter(b => b.id !== id));
+        toast({
+            title: 'Delivery Boy Removed',
+            description: `${boyToRemove?.name} has been removed from the list.`,
+            variant: "destructive"
+        });
     }
 
     const kots = orders.filter(o => o.status === 'New' || o.status === 'Preparing');
@@ -392,16 +429,44 @@ export default function OperationsPage() {
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <h3 className="font-semibold mb-2">Delivery Personnel</h3>
+                                <div className='flex justify-between items-center mb-2'>
+                                    <h3 className="font-semibold">Delivery Personnel</h3>
+                                    <Button size="sm" variant="outline" onClick={() => setIsDeliveryBoyOpen(true)}>
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Add
+                                    </Button>
+                                </div>
                                 <div className="space-y-4">
                                 {deliveryBoys.map(boy => (
                                     <Card key={boy.id}>
-                                        <CardHeader className="p-4 flex-row items-center justify-between">
+                                        <CardHeader className="p-4 flex-row items-start justify-between">
                                             <div>
                                                 <p className="font-semibold">{boy.name}</p>
                                                 <p className="text-sm text-muted-foreground">{boy.phone}</p>
                                             </div>
-                                            <Badge variant={boy.status === 'Available' ? 'default' : 'secondary'}>{boy.status}</Badge>
+                                            <div className='flex flex-col items-end gap-2'>
+                                                <Badge variant={boy.status === 'Available' ? 'default' : 'secondary'}>{boy.status}</Badge>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This will permanently remove {boy.name} from the delivery list.
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleRemoveDeliveryBoy(boy.id)}>
+                                                            Confirm
+                                                        </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </div>
                                         </CardHeader>
                                         {boy.status === 'On a delivery' && (
                                             <CardFooter className="p-4 pt-0">
@@ -546,6 +611,31 @@ export default function OperationsPage() {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    {/* Dialog for adding a delivery boy */}
+    <Dialog open={isDeliveryBoyOpen} onOpenChange={setIsDeliveryBoyOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Add Delivery Personnel</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="db-name" className="text-right">Name</Label>
+                    <Input id="db-name" value={newDeliveryBoy.name} onChange={e => setNewDeliveryBoy({...newDeliveryBoy, name: e.target.value})} className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="db-phone" className="text-right">Phone</Label>
+                    <Input id="db-phone" value={newDeliveryBoy.phone} onChange={e => setNewDeliveryBoy({...newDeliveryBoy, phone: e.target.value})} className="col-span-3" />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDeliveryBoyOpen(false)}>Cancel</Button>
+                <Button onClick={handleCreateDeliveryBoy}>Save Personnel</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </>
   );
 }
+
+    
