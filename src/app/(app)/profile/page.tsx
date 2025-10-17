@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -155,25 +156,23 @@ export default function ProfilePage() {
         <CardContent>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {settings.map(setting => (
-                    <Link href={setting.href} key={setting.title} legacyBehavior>
-                      <a className="block h-full">
-                        <Card className="hover:border-primary transition-colors h-full flex flex-col">
-                            <CardHeader className="flex-1">
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-primary/10 text-primary p-3 rounded-full">
-                                        <setting.icon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-lg">{setting.title}</CardTitle>
-                                        <CardDescription>{setting.description}</CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <div className="p-4 pt-0 flex justify-end">
-                                <ArrowRight className="h-5 w-5 text-primary" />
-                            </div>
-                        </Card>
-                      </a>
+                    <Link href={setting.href} key={setting.title} className="block h-full">
+                      <Card className="hover:border-primary transition-colors h-full flex flex-col">
+                          <CardHeader className="flex-1">
+                              <div className="flex items-start gap-4">
+                                  <div className="bg-primary/10 text-primary p-3 rounded-full">
+                                      <setting.icon className="h-6 w-6" />
+                                  </div>
+                                  <div>
+                                      <CardTitle className="text-lg">{setting.title}</CardTitle>
+                                      <CardDescription>{setting.description}</CardDescription>
+                                  </div>
+                              </div>
+                          </CardHeader>
+                          <div className="p-4 pt-0 flex justify-end">
+                              <ArrowRight className="h-5 w-5 text-primary" />
+                          </div>
+                      </Card>
                     </Link>
                 ))}
             </div>

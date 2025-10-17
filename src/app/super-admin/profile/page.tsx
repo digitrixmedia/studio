@@ -128,8 +128,7 @@ export default function SuperAdminProfilePage() {
         <CardContent>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {systemSettings.map(setting => (
-                    <Link href={setting.href} key={setting.title} legacyBehavior>
-                      <a className="block h-full">
+                    <Link href={setting.href} key={setting.title} className="block h-full">
                         <Card className="hover:border-primary transition-colors h-full flex flex-col justify-between">
                             <CardHeader>
                                 <div className="flex items-start gap-4">
@@ -143,7 +142,6 @@ export default function SuperAdminProfilePage() {
                                 </div>
                             </CardHeader>
                         </Card>
-                      </a>
                     </Link>
                 ))}
             </div>
