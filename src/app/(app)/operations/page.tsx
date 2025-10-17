@@ -159,6 +159,24 @@ export default function OperationsPage() {
         });
     }
 
+    const handleAssignRider = (orderId: string, deliveryBoyId: string) => {
+        const deliveryBoy = deliveryBoys.find(b => b.id === deliveryBoyId);
+        const order = orders.find(o => o.id === orderId);
+
+        if (!deliveryBoy || !order) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not assign rider.'});
+            return;
+        }
+
+        // Update delivery boy status
+        setDeliveryBoys(prev => prev.map(b => b.id === deliveryBoyId ? { ...b, status: 'On a delivery', currentOrder: `#${order.orderNumber}` } : b));
+        
+        // Update order status
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Out for Delivery' } : o));
+
+        toast({ title: 'Rider Assigned', description: `${deliveryBoy.name} has been assigned to order #${order.orderNumber}.` });
+    }
+
     const kots = orders.filter(o => o.status === 'New' || o.status === 'Preparing');
 
     const customerSummary = orders.reduce((acc, order) => {
@@ -488,7 +506,7 @@ export default function OperationsPage() {
                                                     <p className="font-bold">#{order.orderNumber}</p>
                                                     <p className="text-sm text-muted-foreground">{order.customerName}</p>
                                                 </div>
-                                                <Select>
+                                                <Select onValueChange={(deliveryBoyId) => handleAssignRider(order.id, deliveryBoyId)}>
                                                     <SelectTrigger className="w-[150px]">
                                                         <SelectValue placeholder="Assign Rider" />
                                                     </SelectTrigger>
@@ -638,4 +656,3 @@ export default function OperationsPage() {
   );
 }
 
-    
