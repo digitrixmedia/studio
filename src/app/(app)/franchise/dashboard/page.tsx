@@ -12,10 +12,10 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'rec
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from 'lucide-react';
-import { superAdminStats, topFranchisesBySales, dailySalesData } from '@/lib/data';
+import { superAdminStats, topFranchisesBySales, dailySalesData, subscriptions } from '@/lib/data';
 import { useState } from 'react';
 import { ManageOutletDialog } from '@/components/franchise/ManageOutletDialog';
-import type { FranchiseOutlet } from '@/lib/types';
+import type { FranchiseOutlet, SubscriptionStatus } from '@/lib/types';
 import { useAppContext } from '@/contexts/AppContext';
 
 
@@ -29,14 +29,16 @@ const trendChartConfig = {
 }
 
 export default function FranchiseDashboardPage() {
-    const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
-      id: f.id,
-      name: f.name,
-      status: 'active', // This is simplified, would need more data in a real app
-      managerName: `Manager for ${f.name}`,
-      todaySales: f.totalSales / 30, // Mocked data
-      totalSales: f.totalSales,
-      ordersToday: f.totalOutlets * 15, // Mocked data
+    const outlets: FranchiseOutlet[] = subscriptions
+      .filter(s => s.franchiseName === 'The Coffee House' || s.franchiseName === 'Brew & Bake' || s.franchiseName === 'Daily Grind') // Mocking for a single franchise admin
+      .map(sub => ({
+        id: sub.id,
+        name: sub.outletName,
+        status: sub.status,
+        managerName: sub.adminName || `Manager`,
+        todaySales: (sub.totalReads + sub.totalWrites) / 100, // Mocked data
+        totalSales: (sub.totalReads + sub.totalWrites) * 30 / 100, // Mocked data
+        ordersToday: Math.floor(((sub.totalReads + sub.totalWrites) / 100) / 450), // Mocked data
     }));
 
     const summary = {
@@ -61,6 +63,16 @@ export default function FranchiseDashboardPage() {
 
     const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
     const { selectOutlet } = useAppContext();
+
+    const getStatusVariant = (status: SubscriptionStatus) => {
+        switch (status) {
+        case 'active': return 'default';
+        case 'inactive': return 'secondary';
+        case 'expired': return 'destructive';
+        case 'suspended': return 'destructive';
+        default: return 'outline';
+        }
+    };
 
   return (
     <>
@@ -194,7 +206,7 @@ export default function FranchiseDashboardPage() {
                     {outlets.map(outlet => (
                         <TableRow key={outlet.id}>
                             <TableCell className='font-medium'>{outlet.name}</TableCell>
-                            <TableCell><Badge variant={outlet.status === 'active' ? 'default' : 'destructive'}>{outlet.status}</Badge></TableCell>
+                            <TableCell><Badge variant={getStatusVariant(outlet.status as SubscriptionStatus)} className="capitalize">{outlet.status}</Badge></TableCell>
                             <TableCell>
                                 <div className='flex items-center'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
