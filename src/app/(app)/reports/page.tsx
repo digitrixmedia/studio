@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { dailySalesData, menuItems, orders, menuCategories, hourlySalesData } from '@/lib/data';
+import { dailySalesData, menuItems, orders, menuCategories, hourlySalesData, users } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag } from 'lucide-react';
@@ -26,6 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Order } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 const chartConfig = {
   sales: {
@@ -93,6 +95,7 @@ export default function ReportsPage() {
     from: addDays(new Date(), -6),
     to: new Date(),
   });
+  const [selectedDay, setSelectedDay] = useState<{ date: string; orders: Order[] } | null>(null);
 
   const handleExport = () => {
     // This export logic can be expanded based on the active tab
@@ -113,6 +116,16 @@ export default function ReportsPage() {
     link.click();
     document.body.removeChild(link);
   };
+  
+  const handleDayClick = (dayData: { date: string, orders: number }) => {
+    // In a real app, you would fetch orders for the specific date.
+    // Here, we simulate it by taking a slice of the mock orders.
+    const simulatedOrders = completedOrders.slice(0, dayData.orders);
+    setSelectedDay({ date: dayData.date, orders: simulatedOrders });
+  };
+  
+  const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
+
 
   return (
     <div className='flex flex-col gap-6'>
@@ -265,7 +278,7 @@ export default function ReportsPage() {
            <Card>
                 <CardHeader>
                     <CardTitle>Daily Sales</CardTitle>
-                    <CardDescription>Sales data for the selected period.</CardDescription>
+                    <CardDescription>Sales data for the selected period. Click a row to see individual bills.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
@@ -296,7 +309,7 @@ export default function ReportsPage() {
                         </TableHeader>
                         <TableBody>
                             {dailySalesData.map(day => (
-                                <TableRow key={day.date}>
+                                <TableRow key={day.date} onClick={() => handleDayClick(day)} className="cursor-pointer">
                                     <TableCell className='font-medium'>{day.date}</TableCell>
                                     <TableCell className="text-right flex items-center justify-end">
                                         <IndianRupee className="h-4 w-4 mr-1" />
@@ -388,8 +401,46 @@ export default function ReportsPage() {
             </Card>
         </TabsContent>
       </Tabs>
+      
+      <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Sales Details for {selectedDay?.date}</DialogTitle>
+            <DialogDescription>
+              Showing all completed bills for the selected day.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order #</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Cashier</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {selectedDay?.orders.map(order => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+                    <TableCell>{format(order.createdAt, 'p')}</TableCell>
+                    <TableCell>{order.customerName || 'N/A'}</TableCell>
+                    <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
+                    <TableCell>{getUserName(order.createdBy)}</TableCell>
+                    <TableCell className="text-right flex items-center justify-end">
+                      <IndianRupee className="h-4 w-4 mr-1" />
+                      {order.total.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-
-    

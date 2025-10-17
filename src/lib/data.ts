@@ -198,7 +198,7 @@ const generateOrders = (count: number): Order[] => {
       customerPhone: status !== 'Cancelled' ? `98765432${String(customerIndex).padStart(2,'0')}` : undefined,
       paymentMethod: status === 'Completed' ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)] : undefined,
       createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
-      createdBy: users[Math.floor(Math.random() * 4) + 1].id,
+      createdBy: users[Math.floor(Math.random() * 3) + 2].id, // Cashier or Waiter
     });
   }
   return orders;
