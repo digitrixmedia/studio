@@ -1,0 +1,25 @@
+
+appId: com.zappyy.pos
+productName: ZappyyPOS
+directories:
+  output: dist
+  buildResources: build
+files:
+  - "out/**/*"
+  - "main.js"
+  - "package.json"
+mac:
+  target:
+    - dmg
+    - zip
+win:
+  target:
+    - nsis
+    - zip
+linux:
+  target:
+    - AppImage
+    - deb
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
