@@ -14,9 +14,9 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
-import { topFranchisesBySales, monthlyNewSubscriptions, subscriptions } from '@/lib/data';
+import { topFranchisesBySales, monthlyNewSubscriptions, subscriptions as allSubscriptions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
-import { Download, IndianRupee, Calendar as CalendarIcon } from 'lucide-react';
+import { Download, IndianRupee, Calendar as CalendarIcon, Database, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useRouter } from 'next/navigation';
 import { useState, useMemo } from 'react';
@@ -25,6 +25,10 @@ import { Calendar } from '@/components/ui/calendar';
 import { DateRange } from 'react-day-picker';
 import { addDays, format, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import type { SubscriptionStatus } from '@/lib/types';
+
 
 const storageChartConfig = {
   storage: { label: 'Storage (GB)', color: 'hsl(var(--chart-1))' },
@@ -40,10 +44,11 @@ export default function SuperAdminReportsPage() {
     to: new Date(),
   });
 
+  const [selectedFranchise, setSelectedFranchise] = useState<string>(topFranchisesBySales[0].id);
+
   const filteredFranchises = useMemo(() => {
     if (!date || !date.from) return topFranchisesBySales;
     
-    // if only 'from' is selected, check from that date onwards. if both, check within interval.
     const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
     
     return topFranchisesBySales.filter(f => isWithinInterval(f.lastActive, interval));
@@ -51,12 +56,18 @@ export default function SuperAdminReportsPage() {
   }, [date]);
   
   const filteredSubscriptions = useMemo(() => {
-    if (!date || !date.from) return subscriptions;
+    if (!date || !date.from) return allSubscriptions;
     
     const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
     
-    return subscriptions.filter(s => isWithinInterval(new Date(s.endDate), interval));
+    return allSubscriptions.filter(s => isWithinInterval(new Date(s.endDate), interval));
   }, [date]);
+
+  const outletsForSelectedFranchise = useMemo(() => {
+    const franchise = topFranchisesBySales.find(f => f.id === selectedFranchise);
+    if (!franchise) return [];
+    return allSubscriptions.filter(s => s.franchiseName === franchise.name);
+  }, [selectedFranchise]);
 
   const storageData = filteredFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
   
@@ -78,7 +89,7 @@ export default function SuperAdminReportsPage() {
         s.adminEmail,
         s.totalReads,
         s.totalWrites,
-      ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',') // Handle commas and quotes
+      ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
     );
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -94,6 +105,16 @@ export default function SuperAdminReportsPage() {
     document.body.removeChild(link);
   };
   
+    const getStatusVariant = (status: SubscriptionStatus) => {
+        switch (status) {
+        case 'Active': return 'default';
+        case 'Inactive': return 'secondary';
+        case 'Expired': return 'destructive';
+        case 'Suspended': return 'destructive';
+        default: return 'outline';
+        }
+    };
+
   return (
     <div className="flex flex-col gap-8">
        <div className="flex justify-between items-center">
@@ -148,7 +169,7 @@ export default function SuperAdminReportsPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Storage Used per Outlet (GB)</CardTitle>
+            <CardTitle>Storage Used per Franchise (GB)</CardTitle>
           </CardHeader>
           <CardContent>
              <ChartContainer config={storageChartConfig} className="min-h-[300px] w-full">
@@ -183,7 +204,7 @@ export default function SuperAdminReportsPage() {
       <Card>
         <CardHeader>
             <CardTitle>Franchise Summary</CardTitle>
-            <CardDescription>Overview of all franchises. Click a row to see details.</CardDescription>
+            <CardDescription>Overview of all franchises. Click a row to see subscription details.</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -213,6 +234,61 @@ export default function SuperAdminReportsPage() {
             </Table>
         </CardContent>
       </Card>
+
+        <Card>
+            <CardHeader>
+                <div className='flex justify-between items-center'>
+                    <div>
+                        <CardTitle>Outlet Breakdown</CardTitle>
+                        <CardDescription>Detailed view of outlets for the selected franchise.</CardDescription>
+                    </div>
+                    <Select value={selectedFranchise} onValueChange={setSelectedFranchise}>
+                        <SelectTrigger className="w-[250px]">
+                            <SelectValue placeholder="Select a franchise" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {topFranchisesBySales.map(f => (
+                                <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Outlet Name</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>End Date</TableHead>
+                            <TableHead>Storage</TableHead>
+                            <TableHead>Total Reads</TableHead>
+                            <TableHead>Total Writes</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {outletsForSelectedFranchise.map(sub => {
+                            const isExpired = new Date(sub.endDate) < new Date();
+                            let status = sub.status;
+                            if (isExpired && status !== 'Suspended') {
+                                status = 'Expired';
+                            }
+                            return (
+                                <TableRow key={sub.id}>
+                                    <TableCell className="font-medium">{sub.outletName}</TableCell>
+                                    <TableCell><Badge variant={getStatusVariant(status)}>{status}</Badge></TableCell>
+                                    <TableCell>{format(new Date(sub.endDate), 'dd MMM, yyyy')}</TableCell>
+                                    <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
+                                    <TableCell className='flex items-center gap-1'><FileText className="h-4 w-4 text-muted-foreground" /> {(sub.totalReads / 1000).toFixed(1)}k</TableCell>
+                                    <TableCell className='flex items-center gap-1'><Database className="h-4 w-4 text-muted-foreground" /> {(sub.totalWrites / 1000).toFixed(1)}k</TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
     </div>
   );
-}
+
+    
