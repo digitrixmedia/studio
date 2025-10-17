@@ -45,7 +45,7 @@ interface ManageOutletDialogProps {
   onClose: () => void;
 }
 
-const staffRoles: Exclude<Role, 'Admin' | 'Super Admin'>[] = ['Manager', 'Cashier', 'Waiter', 'Kitchen'];
+const staffRoles: Exclude<Role, 'admin' | 'super-admin'>[] = ['manager', 'cashier', 'waiter', 'kitchen'];
 
 const initialNewStaffState = {
   name: '',
@@ -56,7 +56,7 @@ const initialNewStaffState = {
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  const initialStaff = users.filter(u => u.role !== 'Admin' && u.role !== 'Super Admin').slice(0, 3);
+  const initialStaff = users.filter(u => u.role !== 'admin' && u.role !== 'super-admin').slice(0, 3);
   
   const [outletStatus, setOutletStatus] = useState(outlet.status);
   const [staff, setStaff] = useState<User[]>(initialStaff);
@@ -172,10 +172,10 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                 <div className='col-span-3 flex items-center gap-2'>
                     <Switch
                       id="status-switch"
-                      checked={outletStatus === 'Active'}
-                      onCheckedChange={(checked) => setOutletStatus(checked ? 'Active' : 'Inactive')}
+                      checked={outletStatus === 'active'}
+                      onCheckedChange={(checked) => setOutletStatus(checked ? 'active' : 'inactive')}
                     />
-                    <Label htmlFor="status-switch">{outletStatus}</Label>
+                    <Label htmlFor="status-switch" className="capitalize">{outletStatus}</Label>
                 </div>
               </div>
                <div className="flex justify-end mt-4">
@@ -225,7 +225,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                                 </SelectTrigger>
                                 <SelectContent>
                                     {staffRoles.map(role => (
-                                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                                        <SelectItem key={role} value={role} className="capitalize">{role}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -258,7 +258,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                             <TableRow key={s.id}>
                                 <TableCell>{s.name}</TableCell>
                                 <TableCell>{s.email}</TableCell>
-                                <TableCell><Badge variant="secondary">{s.role}</Badge></TableCell>
+                                <TableCell><Badge variant="secondary" className="capitalize">{s.role}</Badge></TableCell>
                                 <TableCell className='text-right'>
                                     <Button variant="ghost" size="icon" onClick={() => handleEditStaff(s)}><Edit className="h-4 w-4" /></Button>
                                     <AlertDialog>
@@ -293,5 +293,3 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
     </Dialog>
   );
 }
-
-    

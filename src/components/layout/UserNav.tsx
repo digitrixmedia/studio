@@ -23,9 +23,9 @@ export function UserNav() {
     return null;
   }
   
-  const isFranchiseAdmin = currentUser.role === 'Admin';
-  const isSuperAdmin = currentUser.role === 'Super Admin';
-  const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'Manager' : currentUser.role;
+  const isFranchiseAdmin = currentUser.role === 'admin';
+  const isSuperAdmin = currentUser.role === 'super-admin';
+  const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'manager' : currentUser.role;
 
   const { name, email, avatar } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
@@ -47,7 +47,7 @@ export function UserNav() {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{name}</p>
             <p className="text-xs leading-none text-muted-foreground">{email}</p>
-            <p className="text-xs leading-none text-muted-foreground font-bold pt-1">{effectiveRole}</p>
+            <p className="text-xs leading-none text-muted-foreground font-bold pt-1 capitalize">{effectiveRole.replace(/-/g, ' ')}</p>
              {isFranchiseAdmin && selectedOutlet && (
                <p className="text-xs leading-none text-blue-500 font-bold pt-1">Viewing: {selectedOutlet.name}</p>
             )}

@@ -20,7 +20,7 @@ import type { Role } from '@/lib/types';
 
 export default function LoginPage() {
   const { login } = useAppContext();
-  const [role, setRole] = useState<Role>('Admin');
+  const [role, setRole] = useState<Role>('admin');
 
   const handleDemoLogin = (selectedRole: Role) => {
     setRole(selectedRole);
@@ -30,7 +30,7 @@ export default function LoginPage() {
   const handleMainLogin = () => {
     // This is a simplified login. In a real app, you'd verify credentials.
     // For this demo, we'll just log in with the last selected role or a default.
-    login(role || 'Manager');
+    login(role || 'manager');
   };
 
   return (
@@ -65,13 +65,13 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">Or login with a demo account:</p>
           <div className="grid w-full grid-cols-2 gap-2">
-            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Admin')}>Admin</Button>
-            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Manager')}>Manager</Button>
-            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Cashier')}>Cashier</Button>
-            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('Waiter')}>Waiter</Button>
+            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('admin')}>Admin</Button>
+            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('manager')}>Manager</Button>
+            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('cashier')}>Cashier</Button>
+            <Button variant="secondary" size="sm" onClick={() => handleDemoLogin('waiter')}>Waiter</Button>
           </div>
            <div className="w-full border-t pt-4 mt-2">
-             <Button variant="outline" className="w-full" onClick={() => handleDemoLogin('Super Admin')}>
+             <Button variant="outline" className="w-full" onClick={() => handleDemoLogin('super-admin')}>
               <ShieldCheck className="mr-2 h-4 w-4" />
               Super Admin Login
             </Button>

@@ -48,7 +48,7 @@ const createNewOrder = (): AppOrder => ({
   orderNumber: `${orderCounter++}`,
   items: [],
   customer: { name: '', phone: '' },
-  orderType: 'Dine-In',
+  orderType: 'dine-in',
   tableId: '',
   discount: 0,
 });
@@ -109,23 +109,23 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     // 1. If user is on the login page, redirect them to their correct dashboard
     if (isLoginPage) {
-      if (userRole === 'Super Admin') router.push('/super-admin/dashboard');
-      else if (userRole === 'Admin') router.push('/franchise/dashboard');
-      else if (userRole === 'Waiter' || userRole === 'Cashier') router.push('/orders');
+      if (userRole === 'super-admin') router.push('/super-admin/dashboard');
+      else if (userRole === 'admin') router.push('/franchise/dashboard');
+      else if (userRole === 'waiter' || userRole === 'cashier') router.push('/orders');
       else router.push('/dashboard');
       return;
     }
 
     // 2. Handle role-based access to different app sections
     switch (userRole) {
-      case 'Super Admin':
+      case 'super-admin':
         // If a Super Admin is NOT in the super admin section, redirect them.
         if (!isSuperAdminPath) {
           router.push('/super-admin/dashboard');
         }
         break;
       
-      case 'Admin':
+      case 'admin':
         // If Franchise Admin has selected an outlet, they should be in the main app.
         if (selectedOutlet) {
           if (!isAppPath) {
@@ -143,7 +143,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       default: // For Manager, Cashier, Waiter, Kitchen
         // If a regular user is NOT in the main app section, redirect them.
         if (!isAppPath) {
-          if (userRole === 'Waiter' || userRole === 'Cashier') {
+          if (userRole === 'waiter' || userRole === 'cashier') {
             router.push('/orders');
           } else {
             router.push('/dashboard');
@@ -157,7 +157,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const user = users.find(u => u.role === role);
     if (user) {
       // Super Admins can always log in
-      if (user.role === 'Super Admin') {
+      if (user.role === 'super-admin') {
         setCurrentUser(user);
         localStorage.setItem('userRole', role);
         if (!isInitialLoad) router.push('/super-admin/dashboard');
@@ -166,13 +166,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       
       // Check subscription status for all other users
       const userSubscription = subscriptions.find(s => s.id === user.subscriptionId);
-      if (userSubscription && userSubscription.status === 'Active') {
+      if (userSubscription && userSubscription.status === 'active') {
         setCurrentUser(user);
         localStorage.setItem('userRole', role);
         if (!isInitialLoad) {
-           if (role === 'Admin') {
+           if (role === 'admin') {
             router.push('/franchise/dashboard');
-          } else if (role === 'Waiter' || role === 'Cashier') {
+          } else if (role === 'waiter' || role === 'cashier') {
             router.push('/orders');
           } else {
             router.push('/dashboard');
@@ -197,7 +197,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   };
   
   const selectOutlet = (outlet: FranchiseOutlet) => {
-    if (currentUser?.role === 'Admin') {
+    if (currentUser?.role === 'admin') {
       setSelectedOutlet(outlet);
       localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
       router.push('/orders');
@@ -241,7 +241,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         return orders.find(o => o.id === table.currentOrderId);
       }
       // Fallback for orders that might not have currentOrderId set on the table
-      return orders.find(o => o.tableId === tableId && o.orderType === 'Dine-In');
+      return orders.find(o => o.tableId === tableId && o.orderType === 'dine-in');
   }
 
   const holdOrder = (orderId: string) => {
@@ -317,6 +317,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       
       const newOrder = createNewOrder();
       newOrder.tableId = tableId;
+      newOrder.orderType = 'dine-in';
       newOrder.id = `order-table-${tableId}-${Date.now()}`; // More specific ID
       
       const emptyOrderIndex = orders.findIndex(o => o.items.length === 0 && !o.tableId);
@@ -333,7 +334,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           setActiveOrderId(newOrder.id);
       }
       
-      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'Occupied', currentOrderId: newOrder.id } : t));
+      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'occupied', currentOrderId: newOrder.id } : t));
       
       router.push('/orders');
   };

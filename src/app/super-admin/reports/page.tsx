@@ -107,10 +107,10 @@ export default function SuperAdminReportsPage() {
   
     const getStatusVariant = (status: SubscriptionStatus) => {
         switch (status) {
-        case 'Active': return 'default';
-        case 'Inactive': return 'secondary';
-        case 'Expired': return 'destructive';
-        case 'Suspended': return 'destructive';
+        case 'active': return 'default';
+        case 'inactive': return 'secondary';
+        case 'expired': return 'destructive';
+        case 'suspended': return 'destructive';
         default: return 'outline';
         }
     };
@@ -272,8 +272,8 @@ export default function SuperAdminReportsPage() {
                         {outletsForSelectedFranchise.map(sub => {
                             const isExpired = new Date(sub.endDate) < new Date();
                             let status = sub.status;
-                            if (isExpired && status !== 'Suspended') {
-                                status = 'Expired';
+                            if (isExpired && status !== 'suspended') {
+                                status = 'expired';
                             }
                             return (
                                 <TableRow key={sub.id}>

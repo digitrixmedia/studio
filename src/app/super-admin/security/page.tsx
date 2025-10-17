@@ -25,9 +25,9 @@ import { CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
 const statusColors: Record<AuditLogStatus, string> = {
-  Success: 'bg-green-500',
-  Failure: 'bg-red-500',
-  Warning: 'bg-yellow-500',
+  success: 'bg-green-500',
+  failure: 'bg-red-500',
+  warning: 'bg-yellow-500',
 };
 
 
@@ -68,16 +68,16 @@ export default function SecurityPage() {
                     <TableRow key={log.id}>
                       <TableCell>
                         <div className="font-medium">{log.user.name}</div>
-                        <div className="text-sm text-muted-foreground">{log.user.role}</div>
+                        <div className="text-sm text-muted-foreground capitalize">{log.user.role}</div>
                       </TableCell>
-                      <TableCell><Badge variant="secondary">{log.action}</Badge></TableCell>
+                      <TableCell><Badge variant="secondary" className="capitalize">{log.action.replace(/-/g, ' ')}</Badge></TableCell>
                       <TableCell>{log.target}</TableCell>
                       <TableCell className="font-mono text-xs">{log.ipAddress}</TableCell>
                       <TableCell>{formatDistanceToNow(log.timestamp, { addSuffix: true })}</TableCell>
                        <TableCell>
                         <div className="flex items-center gap-2">
                            <span className={cn("h-2 w-2 rounded-full", statusColors[log.status])} />
-                           <span>{log.status}</span>
+                           <span className="capitalize">{log.status}</span>
                         </div>
                       </TableCell>
                     </TableRow>

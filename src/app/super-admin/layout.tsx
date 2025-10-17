@@ -37,7 +37,7 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
   const { currentUser } = useAppContext();
   const pathname = usePathname();
 
-  if (!currentUser || currentUser.role !== 'Super Admin') {
+  if (!currentUser || currentUser.role !== 'super-admin') {
     return (
       <div className="flex h-screen items-center justify-center">
         <p>Access Denied. Redirecting...</p>

@@ -134,7 +134,7 @@ export default function SubscriptionsPage() {
         adminEmail: formData.adminEmail,
         startDate: new Date(formData.startDate),
         endDate: new Date(formData.endDate),
-        status: 'Active',
+        status: 'active',
         storageUsedMB: 0,
         totalReads: 0,
         totalWrites: 0,
@@ -161,10 +161,10 @@ export default function SubscriptionsPage() {
   
   const getStatusVariant = (status: SubscriptionStatus) => {
     switch (status) {
-      case 'Active': return 'default';
-      case 'Inactive': return 'secondary';
-      case 'Expired': return 'destructive';
-      case 'Suspended': return 'destructive';
+      case 'active': return 'default';
+      case 'inactive': return 'secondary';
+      case 'expired': return 'destructive';
+      case 'suspended': return 'destructive';
       default: return 'outline';
     }
   };
@@ -172,11 +172,11 @@ export default function SubscriptionsPage() {
   const toggleSubscriptionStatus = (subId: string, currentStatus: SubscriptionStatus) => {
     setSubscriptions(subscriptions.map(sub => {
       if (sub.id === subId) {
-        let newStatus: SubscriptionStatus = 'Active';
-        if (currentStatus === 'Active') {
-          newStatus = 'Suspended';
-        } else if (currentStatus === 'Suspended' || currentStatus === 'Inactive' || currentStatus === 'Expired') {
-          newStatus = 'Active';
+        let newStatus: SubscriptionStatus = 'active';
+        if (currentStatus === 'active') {
+          newStatus = 'suspended';
+        } else if (currentStatus === 'suspended' || currentStatus === 'inactive' || currentStatus === 'expired') {
+          newStatus = 'active';
         }
         return { ...sub, status: newStatus };
       }
@@ -287,23 +287,23 @@ export default function SubscriptionsPage() {
                     {subs.map(sub => {
                       const isExpired = new Date(sub.endDate) < new Date();
                       let status = sub.status;
-                      if (isExpired && status !== 'Suspended') {
-                          status = 'Expired';
+                      if (isExpired && status !== 'suspended') {
+                          status = 'expired';
                       }
                       
                       return (
-                      <TableRow key={sub.id} className={cn(status === 'Expired' && 'bg-red-500/10')}>
+                      <TableRow key={sub.id} className={cn(status === 'expired' && 'bg-red-500/10')}>
                         <TableCell className="font-medium">{sub.outletName}</TableCell>
                         <TableCell>{format(new Date(sub.endDate), 'dd/MM/yyyy')}</TableCell>
                         <TableCell>
-                          <Badge variant={getStatusVariant(status)}>
+                          <Badge variant={getStatusVariant(status)} className="capitalize">
                             {status}
                           </Badge>
                         </TableCell>
                         <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
                         <TableCell>
                           <Switch
-                            checked={status === 'Active'}
+                            checked={status === 'active'}
                             onCheckedChange={() => toggleSubscriptionStatus(sub.id, status)}
                           />
                         </TableCell>

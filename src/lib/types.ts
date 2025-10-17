@@ -1,6 +1,6 @@
 
 
-export type Role = 'Admin' | 'Manager' | 'Cashier' | 'Waiter' | 'Kitchen' | 'Super Admin';
+export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
   id: string;
@@ -37,7 +37,7 @@ export interface MenuItem {
   category: string; // categoryId
   imageUrl: string;
   imageHint: string;
-  foodType?: 'Veg' | 'Non-Veg' | 'Jain';
+  foodType?: 'veg' | 'non-veg' | 'jain';
   variations?: MenuItemVariation[];
   addons?: MenuItemAddon[];
   isAvailable: boolean;
@@ -56,9 +56,9 @@ export interface OrderItem {
   isBogo?: boolean;
 }
 
-export type OrderType = 'Dine-In' | 'Takeaway' | 'Delivery';
-export type OrderStatus = 'New' | 'Preparing' | 'Ready' | 'Out for Delivery' | 'Completed' | 'Cancelled';
-export type PaymentMethod = 'Cash' | 'UPI' | 'Card';
+export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
+export type OrderStatus = 'new' | 'preparing' | 'ready' | 'out-for-delivery' | 'completed' | 'cancelled';
+export type PaymentMethod = 'cash' | 'upi' | 'card';
 
 export interface Order {
   id: string;
@@ -79,7 +79,7 @@ export interface Order {
   customerPhone?: string;
 }
 
-export type TableStatus = 'Vacant' | 'Occupied' | 'Billing';
+export type TableStatus = 'vacant' | 'occupied' | 'billing';
 
 export interface Table {
   id: string;
@@ -98,7 +98,7 @@ export interface Ingredient {
 }
 
 // Super Admin Types
-export type SubscriptionStatus = 'Active' | 'Inactive' | 'Expired' | 'Suspended';
+export type SubscriptionStatus = 'active' | 'inactive' | 'expired' | 'suspended';
 
 export interface Franchise {
   id: string;
@@ -122,8 +122,8 @@ export interface Subscription {
   totalWrites: number;
 }
 
-export type AuditLogAction = 'Login' | 'Logout' | 'Failed Login' | 'Subscription Created' | 'Subscription Suspended' | 'Subscription Deleted';
-export type AuditLogStatus = 'Success' | 'Failure' | 'Warning';
+export type AuditLogAction = 'login' | 'logout' | 'failed-login' | 'subscription-created' | 'subscription-suspended' | 'subscription-deleted';
+export type AuditLogStatus = 'success' | 'failure' | 'warning';
 
 export interface AuditLog {
     id: string;
@@ -143,7 +143,7 @@ export interface AuditLog {
 export interface FranchiseOutlet {
   id: string;
   name: string;
-  status: 'Active' | 'Inactive';
+  status: 'active' | 'inactive';
   managerName: string;
   todaySales?: number;
   totalSales?: number;
@@ -152,7 +152,7 @@ export interface FranchiseOutlet {
 
 
 // Operations Types
-export type ReservationStatus = 'Confirmed' | 'Pending' | 'Arrived' | 'Cancelled';
+export type ReservationStatus = 'confirmed' | 'pending' | 'arrived' | 'cancelled';
 
 export interface Reservation {
     id: string;
@@ -168,7 +168,7 @@ export interface DeliveryBoy {
     id: string;
     name: string;
     phone: string;
-    status: 'Available' | 'On a delivery' | 'Offline';
+    status: 'available' | 'on-a-delivery' | 'offline';
     currentOrder?: string;
 }
 

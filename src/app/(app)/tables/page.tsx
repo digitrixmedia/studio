@@ -35,9 +35,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 const statusConfig: { [key in TableStatus]: { color: string; icon: React.ElementType } } = {
-  Vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
-  Occupied: { color: 'border-orange-500 bg-orange-500/10', icon: Utensils },
-  Billing: { color: 'border-red-500 bg-red-500/10', icon: IndianRupee },
+  vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
+  occupied: { color: 'border-orange-500 bg-orange-500/10', icon: Utensils },
+  billing: { color: 'border-red-500 bg-red-500/10', icon: IndianRupee },
 };
 
 export default function TablesPage() {
@@ -86,7 +86,7 @@ export default function TablesPage() {
     if (selectedTable) {
       setTables(prevTables => 
         prevTables.map(t => 
-          t.id === selectedTable.id ? { ...t, status: 'Billing' } : t
+          t.id === selectedTable.id ? { ...t, status: 'billing' } : t
         )
       );
       toast({
@@ -101,7 +101,7 @@ export default function TablesPage() {
     if (selectedTable) {
       setTables(prevTables => 
         prevTables.map(t => 
-          t.id === selectedTable.id ? { ...t, status: 'Vacant', currentOrderId: undefined } : t
+          t.id === selectedTable.id ? { ...t, status: 'vacant', currentOrderId: undefined } : t
         )
       );
        // Here you would also likely remove the order from the active orders list
@@ -126,7 +126,7 @@ export default function TablesPage() {
         id: `table-${Date.now()}`,
         name: newTableName,
         capacity: parseInt(newTableCapacity, 10),
-        status: 'Vacant',
+        status: 'vacant',
     };
     setTables(prev => [...prev, newTable]);
     toast({
@@ -158,7 +158,7 @@ export default function TablesPage() {
         <div className='flex items-center gap-4'>
             <div className="hidden sm:flex items-center gap-4">
             {Object.entries(statusConfig).map(([status, { color, icon: Icon }]) => (
-                <div key={status} className="flex items-center gap-2 text-sm">
+                <div key={status} className="flex items-center gap-2 text-sm capitalize">
                 <Icon className={cn('h-4 w-4', color.replace('border-', 'text-').replace(' bg-green-500/10',''))} />
                 <span>{status}</span>
                 </div>
@@ -193,7 +193,7 @@ export default function TablesPage() {
                   <Users className="h-4 w-4" />
                   <span>{table.capacity} Seats</span>
                 </div>
-                {orderForTable && table.status !== 'Vacant' && (
+                {orderForTable && table.status !== 'vacant' && (
                    <div className="mt-2 text-xs">
                      <p>Order: #{orderForTable.orderNumber}</p>
                      {orderTotal !== null && (
@@ -212,11 +212,11 @@ export default function TablesPage() {
           <DialogHeader>
             <DialogTitle>Table: {selectedTable?.name}</DialogTitle>
             <DialogDescription>
-              Capacity: {selectedTable?.capacity} | Status: <span className='font-bold'>{selectedTable?.status}</span>
+              Capacity: {selectedTable?.capacity} | Status: <span className='font-bold capitalize'>{selectedTable?.status}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-2">
-            {selectedTable?.status === 'Vacant' && (
+            {selectedTable?.status === 'vacant' && (
               <>
                 <Button className="w-full" onClick={handleStartNewOrder}>Start New Order</Button>
                 <AlertDialog>
@@ -240,13 +240,13 @@ export default function TablesPage() {
                 </AlertDialog>
               </>
             )}
-            {selectedTable?.status === 'Occupied' && (
+            {selectedTable?.status === 'occupied' && (
               <>
                  <Button className="w-full" variant="outline" onClick={viewOrder}>View / Add to Order</Button>
                  <Button className="w-full" onClick={handleGenerateBill}>Generate Bill</Button>
               </>
             )}
-             {selectedTable?.status === 'Billing' && (
+             {selectedTable?.status === 'billing' && (
               <>
                  <Button className="w-full" variant="outline" onClick={viewOrder}>View Order</Button>
                  <Button className="w-full" onClick={handleMarkAsPaid}>Mark as Paid & Vacate</Button>

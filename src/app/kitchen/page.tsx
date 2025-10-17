@@ -13,10 +13,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function KitchenPage() {
   const [orders, setOrders] = useState<Order[]>(
-    initialOrders.filter(o => o.status === 'New' || o.status === 'Preparing')
+    initialOrders.filter(o => o.status === 'new' || o.status === 'preparing')
   );
 
-  const updateOrderStatus = (orderId: string, status: 'Preparing' | 'Ready') => {
+  const updateOrderStatus = (orderId: string, status: 'preparing' | 'ready') => {
     setOrders(currentOrders =>
       currentOrders.map(o => (o.id === orderId ? { ...o, status } : o))
     );
@@ -25,13 +25,13 @@ export default function KitchenPage() {
   // Remove "Ready" orders after a delay
   useEffect(() => {
     const interval = setInterval(() => {
-      setOrders(currentOrders => currentOrders.filter(o => o.status !== 'Ready'));
+      setOrders(currentOrders => currentOrders.filter(o => o.status !== 'ready'));
     }, 30000); // Remove after 30 seconds
     return () => clearInterval(interval);
   }, []);
 
-  const newOrders = orders.filter(o => o.status === 'New');
-  const preparingOrders = orders.filter(o => o.status === 'Preparing');
+  const newOrders = orders.filter(o => o.status === 'new');
+  const preparingOrders = orders.filter(o => o.status === 'preparing');
 
   return (
     <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,17 +71,17 @@ export default function KitchenPage() {
   );
 }
 
-function OrderTicket({ order, onUpdateStatus }: { order: Order, onUpdateStatus: (orderId: string, status: 'Preparing' | 'Ready') => void }) {
+function OrderTicket({ order, onUpdateStatus }: { order: Order, onUpdateStatus: (orderId: string, status: 'preparing' | 'ready') => void }) {
   return (
     <Card className={cn(
         "flex flex-col",
-        order.status === 'New' && "bg-blue-500/10 border-blue-500",
-        order.status === 'Preparing' && "bg-orange-500/10 border-orange-500",
+        order.status === 'new' && "bg-blue-500/10 border-blue-500",
+        order.status === 'preparing' && "bg-orange-500/10 border-orange-500",
     )}>
       <CardHeader className="pb-2">
         <CardTitle className="flex justify-between items-center">
             <span>#{order.orderNumber}</span>
-            <Badge variant="secondary">{order.type === 'Dine-In' ? `Table: ${order.tableId?.split('-')[1]}` : order.type}</Badge>
+            <Badge variant="secondary">{order.type === 'dine-in' ? `Table: ${order.tableId?.split('-')[1]}` : order.type}</Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 space-y-2 text-sm">
@@ -93,13 +93,13 @@ function OrderTicket({ order, onUpdateStatus }: { order: Order, onUpdateStatus: 
         ))}
       </CardContent>
       <CardFooter className="p-2">
-        {order.status === 'New' && (
-             <Button className="w-full" onClick={() => onUpdateStatus(order.id, 'Preparing')}>
+        {order.status === 'new' && (
+             <Button className="w-full" onClick={() => onUpdateStatus(order.id, 'preparing')}>
                 <CookingPot className="mr-2 h-4 w-4" /> Start Preparing
             </Button>
         )}
-        {order.status === 'Preparing' && (
-             <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => onUpdateStatus(order.id, 'Ready')}>
+        {order.status === 'preparing' && (
+             <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => onUpdateStatus(order.id, 'ready')}>
                 <Check className="mr-2 h-4 w-4" /> Mark as Ready
             </Button>
         )}

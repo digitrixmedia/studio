@@ -68,7 +68,7 @@ export default function ProfilePage() {
   }
 
   // This page is not for Super Admins.
-  if (currentUser.role === 'Super Admin') {
+  if (currentUser.role === 'super-admin') {
     return (
         <div className="flex h-full w-full items-center justify-center">
              <p>Access Denied. Please use the Super Admin profile page.</p>

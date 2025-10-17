@@ -1,15 +1,15 @@
 
 
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog } from '@/lib/types';
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog, Role } from '@/lib/types';
 import { addDays } from 'date-fns';
 
 export const users: User[] = [
-  { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'Admin', avatar: '/avatars/01.png', subscriptionId: 'sub-1' },
-  { id: 'user-2', name: 'Manoj Manager', email: 'manager@zappyy.com', role: 'Manager', avatar: '/avatars/02.png', subscriptionId: 'sub-2' },
-  { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'Cashier', avatar: '/avatars/03.png', subscriptionId: 'sub-2' },
-  { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'Waiter', avatar: '/avatars/04.png', subscriptionId: 'sub-2' },
-  { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'Kitchen', avatar: '/avatars/05.png', subscriptionId: 'sub-2' },
-  { id: 'user-6', name: 'Sonia Super', email: 'super@zappyy.com', role: 'Super Admin', avatar: '/avatars/06.png' },
+  { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'admin', avatar: '/avatars/01.png', subscriptionId: 'sub-1' },
+  { id: 'user-2', name: 'Manoj Manager', email: 'manager@zappyy.com', role: 'manager', avatar: '/avatars/02.png', subscriptionId: 'sub-2' },
+  { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'cashier', avatar: '/avatars/03.png', subscriptionId: 'sub-2' },
+  { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'waiter', avatar: '/avatars/04.png', subscriptionId: 'sub-2' },
+  { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'kitchen', avatar: '/avatars/05.png', subscriptionId: 'sub-2' },
+  { id: 'user-6', name: 'Sonia Super', email: 'super@zappyy.com', role: 'super-admin', avatar: '/avatars/06.png' },
 ];
 
 export const menuCategories: MenuCategory[] = [
@@ -28,7 +28,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     imageUrl: 'https://picsum.photos/seed/cappuccino/400/300',
     imageHint: 'cappuccino coffee',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     variations: [
       { id: 'var-1-1', name: 'Regular', priceModifier: 0, ingredients: [] },
@@ -52,7 +52,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     imageUrl: 'https://picsum.photos/seed/espresso/400/300',
     imageHint: 'espresso shot',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     ingredients: [{ ingredientId: 'ing-1', quantity: 8 }],
   },
@@ -64,7 +64,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     imageUrl: 'https://picsum.photos/seed/latte/400/300',
     imageHint: 'latte art',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: false,
     ingredients: [
       { ingredientId: 'ing-1', quantity: 10 },
@@ -79,7 +79,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-2',
     imageUrl: 'https://picsum.photos/seed/icedcoffee/400/300',
     imageHint: 'iced coffee',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     ingredients: [
         { ingredientId: 'ing-1', quantity: 12 },
@@ -93,7 +93,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-3',
     imageUrl: 'https://picsum.photos/seed/sandwich/400/300',
     imageHint: 'vegetable sandwich',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     ingredients: [
       { ingredientId: 'ing-4', quantity: 2 },
@@ -108,7 +108,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/cheesecake/400/300',
     imageHint: 'cheesecake slice',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     ingredients: [{ ingredientId: 'ing-6', quantity: 1 }],
   },
@@ -120,7 +120,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/brownie/400/300',
     imageHint: 'chocolate brownie',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     ingredients: [],
   },
@@ -132,21 +132,21 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/croissant/400/300',
     imageHint: 'croissant pastry',
-    foodType: 'Veg',
+    foodType: 'veg',
     isAvailable: true,
     ingredients: [],
   },
 ];
 
 export const tables: Table[] = [
-  { id: 'table-1', name: 'Table 1', capacity: 4, status: 'Vacant' },
-  { id: 'table-2', name: 'Table 2', capacity: 4, status: 'Occupied', currentOrderId: 'order-1' },
-  { id: 'table-3', name: 'Table 3', capacity: 2, status: 'Vacant' },
-  { id: 'table-4', name: 'Table 4', capacity: 2, status: 'Billing', currentOrderId: 'order-2' },
-  { id: 'table-5', name: 'Table 5', capacity: 6, status: 'Vacant' },
-  { id: 'table-6', name: 'Sofa Seating', capacity: 8, status: 'Occupied', currentOrderId: 'order-3' },
-  { id: 'table-7', name: 'Table 7', capacity: 4, status: 'Vacant' },
-  { id: 'table-8', name: 'Table 8', capacity: 4, status: 'Vacant' },
+  { id: 'table-1', name: 'Table 1', capacity: 4, status: 'vacant' },
+  { id: 'table-2', name: 'Table 2', capacity: 4, status: 'occupied', currentOrderId: 'order-1' },
+  { id: 'table-3', name: 'Table 3', capacity: 2, status: 'vacant' },
+  { id: 'table-4', name: 'Table 4', capacity: 2, status: 'billing', currentOrderId: 'order-2' },
+  { id: 'table-5', name: 'Table 5', capacity: 6, status: 'vacant' },
+  { id: 'table-6', name: 'Sofa Seating', capacity: 8, status: 'occupied', currentOrderId: 'order-3' },
+  { id: 'table-7', name: 'Table 7', capacity: 4, status: 'vacant' },
+  { id: 'table-8', name: 'Table 8', capacity: 4, status: 'vacant' },
 ];
 
 export const ingredients: Ingredient[] = [
@@ -158,8 +158,8 @@ export const ingredients: Ingredient[] = [
   { id: 'ing-6', name: 'Cheesecake Slice', unit: 'pcs', stock: 5, minStock: 4 },
 ];
 
-const orderStatuses: OrderStatus[] = ['New', 'Preparing', 'Ready', 'Out for Delivery', 'Completed', 'Cancelled'];
-const paymentMethods: PaymentMethod[] = ['Cash', 'UPI', 'Card'];
+const orderStatuses: OrderStatus[] = ['new', 'preparing', 'ready', 'out-for-delivery', 'completed', 'cancelled'];
+const paymentMethods: PaymentMethod[] = ['cash', 'upi', 'card'];
 const customerNames = ['Aarav', 'Sanya', 'Vikram', 'Anika', 'Rohan', 'Isha'];
 
 const generateOrders = (count: number): Order[] => {
@@ -187,16 +187,16 @@ const generateOrders = (count: number): Order[] => {
     orders.push({
       id: `order-${i}`,
       orderNumber: `${1000 + i}`,
-      type: Math.random() > 0.5 ? 'Dine-In' : (Math.random() > 0.5 ? 'Takeaway' : 'Delivery'),
+      type: Math.random() > 0.5 ? 'dine-in' : (Math.random() > 0.5 ? 'takeaway' : 'delivery'),
       items: orderItems,
       subTotal,
       tax,
       discount: 0,
       total,
       status: status,
-      customerName: status !== 'Cancelled' ? customerNames[customerIndex] : undefined,
-      customerPhone: status !== 'Cancelled' ? `98765432${String(customerIndex).padStart(2,'0')}` : undefined,
-      paymentMethod: status === 'Completed' ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)] : undefined,
+      customerName: status !== 'cancelled' ? customerNames[customerIndex] : undefined,
+      customerPhone: status !== 'cancelled' ? `98765432${String(customerIndex).padStart(2,'0')}` : undefined,
+      paymentMethod: status === 'completed' ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)] : undefined,
       createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
       createdBy: users[Math.floor(Math.random() * 3) + 2].id, // Cashier or Waiter
     });
@@ -207,9 +207,9 @@ const generateOrders = (count: number): Order[] => {
 export const orders: Order[] = generateOrders(50);
 
 // Assign some specific orders to tables
-orders[0] = { ...orders[0], id: 'order-1', tableId: 'table-2', type: 'Dine-In', status: 'Preparing' };
-orders[1] = { ...orders[1], id: 'order-2', tableId: 'table-4', type: 'Dine-In', status: 'Ready' };
-orders[2] = { ...orders[2], id: 'order-3', tableId: 'table-6', type: 'Dine-In', status: 'New' };
+orders[0] = { ...orders[0], id: 'order-1', tableId: 'table-2', type: 'dine-in', status: 'preparing' };
+orders[1] = { ...orders[1], id: 'order-2', tableId: 'table-4', type: 'dine-in', status: 'ready' };
+orders[2] = { ...orders[2], id: 'order-3', tableId: 'table-6', type: 'dine-in', status: 'new' };
 
 export const dailySalesData = [
   { date: 'Mon', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
@@ -228,7 +228,7 @@ export const hourlySalesData = Array.from({length: 12}, (_, i) => ({
 }));
 
 // MOCKED SUPER ADMIN DATA
-const subscriptionStatuses: SubscriptionStatus[] = ['Active', 'Inactive', 'Expired', 'Suspended'];
+const subscriptionStatuses: SubscriptionStatus[] = ['active', 'inactive', 'expired', 'suspended'];
 
 const franchisesMock: { id: string; name: string }[] = [
     { id: 'franchise-1', name: 'The Coffee House' },
@@ -244,14 +244,14 @@ export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) =
     const endDate = new Date();
     endDate.setMonth(endDate.getMonth() + Math.floor(Math.random() * 12) - 3);
 
-    let status: SubscriptionStatus = 'Active';
+    let status: SubscriptionStatus = 'active';
     if (endDate < new Date()) {
-        status = 'Expired';
+        status = 'expired';
     } else if (i === 1) { // Ensure Manager user has an active subscription for demo
-        status = 'Active';
+        status = 'active';
     }
      else {
-        status = subscriptionStatuses[Math.floor(Math.random() * 2)]; // Active or Inactive
+        status = subscriptionStatuses[Math.floor(Math.random() * 2)]; // active or inactive
     }
     
     return {
@@ -270,13 +270,13 @@ export const subscriptions: Subscription[] = Array.from({ length: 15 }, (_, i) =
 });
 
 // Ensure the main users have predictable subscription statuses
-subscriptions[0] = {...subscriptions[0], id: 'sub-1', adminEmail: 'admin@zappyy.com', status: 'Active'}; // For Admin
-subscriptions[1] = {...subscriptions[1], id: 'sub-2', adminEmail: 'manager@zappyy.com', status: 'Active'}; // For Manager/Cashier/etc
+subscriptions[0] = {...subscriptions[0], id: 'sub-1', adminEmail: 'admin@zappyy.com', status: 'active'}; // For Admin
+subscriptions[1] = {...subscriptions[1], id: 'sub-2', adminEmail: 'manager@zappyy.com', status: 'active'}; // For Manager/Cashier/etc
 
 
 export const superAdminStats = {
     totalSubscriptions: subscriptions.length,
-    activeOutlets: subscriptions.filter(s => s.status === 'Active').length,
+    activeOutlets: subscriptions.filter(s => s.status === 'active').length,
     totalStorageUsedGB: (subscriptions.reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024).toFixed(2),
     totalSales: 12500000,
     totalOrders: 45000,
@@ -315,24 +315,24 @@ export const monthlyNewSubscriptions = [
 ];
 
 export const reservations: Reservation[] = [
-    { id: 'res-1', name: 'Ankit Sharma', phone: '9988776655', guests: 4, time: new Date(new Date().setHours(20,0,0)), status: 'Confirmed' },
-    { id: 'res-2', name: 'Riya Gupta', phone: '9123456789', guests: 2, time: new Date(new Date().setHours(19,30,0)), status: 'Pending' },
-    { id: 'res-3', name: 'Vikram Singh', phone: '9876543210', guests: 6, time: new Date(new Date().setHours(21,0,0)), status: 'Arrived', tableId: 'table-6' },
-    { id: 'res-4', name: 'Priya Mehta', phone: '9876501234', guests: 3, time: new Date(addDays(new Date(), 1).setHours(20,30,0)), status: 'Confirmed' },
-    { id: 'res-5', name: 'Rahul Verma', phone: '9998887776', guests: 5, time: new Date(addDays(new Date(), 2).setHours(19,0,0)), status: 'Confirmed' },
+    { id: 'res-1', name: 'Ankit Sharma', phone: '9988776655', guests: 4, time: new Date(new Date().setHours(20,0,0)), status: 'confirmed' },
+    { id: 'res-2', name: 'Riya Gupta', phone: '9123456789', guests: 2, time: new Date(new Date().setHours(19,30,0)), status: 'pending' },
+    { id: 'res-3', name: 'Vikram Singh', phone: '9876543210', guests: 6, time: new Date(new Date().setHours(21,0,0)), status: 'arrived', tableId: 'table-6' },
+    { id: 'res-4', name: 'Priya Mehta', phone: '9876501234', guests: 3, time: new Date(addDays(new Date(), 1).setHours(20,30,0)), status: 'confirmed' },
+    { id: 'res-5', name: 'Rahul Verma', phone: '9998887776', guests: 5, time: new Date(addDays(new Date(), 2).setHours(19,0,0)), status: 'confirmed' },
 ];
 
 
 export const deliveryBoys: DeliveryBoy[] = [
-    { id: 'db-1', name: 'Ravi Kumar', phone: '8877665544', status: 'Available' },
-    { id: 'db-2', name: 'Suresh Patel', phone: '8123456789', status: 'On a delivery', currentOrder: '#1045' },
-    { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'Available' },
+    { id: 'db-1', name: 'Ravi Kumar', phone: '8877665544', status: 'available' },
+    { id: 'db-2', name: 'Suresh Patel', phone: '8123456789', status: 'on-a-delivery', currentOrder: '#1045' },
+    { id: 'db-3', name: 'Manoj Verma', phone: '8888888888', status: 'available' },
 ]
 
 export const auditLogs: AuditLog[] = [
-    { id: 'log-1', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Login', target: 'System', status: 'Success', ipAddress: '103.22.45.1', timestamp: new Date() },
-    { id: 'log-2', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Subscription Created', target: 'Daily Grind - Outlet 3', status: 'Success', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
-    { id: 'log-3', user: { name: 'Alia Admin', role: 'Admin' }, action: 'Login', target: 'The Coffee House', status: 'Success', ipAddress: '192.168.1.10', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) },
-    { id: 'log-4', user: { name: 'Sonia Super', role: 'Super Admin' }, action: 'Subscription Suspended', target: 'Mocha Magic - Outlet 2', status: 'Warning', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-    { id: 'log-5', user: { name: 'Unknown', role: 'Manager' }, action: 'Failed Login', target: 'System', status: 'Failure', ipAddress: '203.11.10.5', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+    { id: 'log-1', user: { name: 'Sonia Super', role: 'super-admin' }, action: 'login', target: 'System', status: 'success', ipAddress: '103.22.45.1', timestamp: new Date() },
+    { id: 'log-2', user: { name: 'Sonia Super', role: 'super-admin' }, action: 'subscription-created', target: 'Daily Grind - Outlet 3', status: 'success', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+    { id: 'log-3', user: { name: 'Alia Admin', role: 'admin' }, action: 'login', target: 'The Coffee House', status: 'success', ipAddress: '192.168.1.10', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000) },
+    { id: 'log-4', user: { name: 'Sonia Super', role: 'super-admin' }, action: 'subscription-suspended', target: 'Mocha Magic - Outlet 2', status: 'warning', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+    { id: 'log-5', user: { name: 'Unknown', role: 'manager' }, action: 'failed-login', target: 'System', status: 'failure', ipAddress: '203.11.10.5', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
 ];

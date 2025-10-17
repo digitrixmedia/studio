@@ -32,7 +32,7 @@ export default function FranchiseDashboardPage() {
     const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
       id: f.id,
       name: f.name,
-      status: 'Active', // This is simplified, would need more data in a real app
+      status: 'active', // This is simplified, would need more data in a real app
       managerName: `Manager for ${f.name}`,
       todaySales: f.totalSales / 30, // Mocked data
       totalSales: f.totalSales,
@@ -194,7 +194,7 @@ export default function FranchiseDashboardPage() {
                     {outlets.map(outlet => (
                         <TableRow key={outlet.id}>
                             <TableCell className='font-medium'>{outlet.name}</TableCell>
-                            <TableCell><Badge variant={outlet.status === 'Active' ? 'default' : 'destructive'}>{outlet.status}</Badge></TableCell>
+                            <TableCell><Badge variant={outlet.status === 'active' ? 'default' : 'destructive'}>{outlet.status}</Badge></TableCell>
                             <TableCell>
                                 <div className='flex items-center'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
