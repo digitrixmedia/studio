@@ -29,8 +29,11 @@ const trendChartConfig = {
 }
 
 export default function FranchiseDashboardPage() {
+    // Simulate being logged in as the admin for "The Coffee House"
+    const loggedInFranchiseName = "The Coffee House";
+
     const outlets: FranchiseOutlet[] = subscriptions
-      .filter(s => s.franchiseName === 'The Coffee House' || s.franchiseName === 'Brew & Bake' || s.franchiseName === 'Daily Grind') // Mocking for a single franchise admin
+      .filter(s => s.franchiseName === loggedInFranchiseName)
       .map(sub => ({
         id: sub.id,
         name: sub.outletName,
@@ -42,23 +45,23 @@ export default function FranchiseDashboardPage() {
     }));
 
     const summary = {
-      totalSales: superAdminStats.totalSales,
-      todaySales: superAdminStats.totalSales / 30, // Mocked
-      totalOrders: superAdminStats.totalOrders,
-      activeOutlets: superAdminStats.activeOutlets,
-      inactiveOutlets: superAdminStats.totalSubscriptions - superAdminStats.activeOutlets,
+      totalSales: outlets.reduce((sum, o) => sum + (o.totalSales || 0), 0),
+      todaySales: outlets.reduce((sum, o) => sum + (o.todaySales || 0), 0),
+      totalOrders: outlets.reduce((sum, o) => sum + (o.ordersToday || 0), 0),
+      activeOutlets: outlets.filter(o => o.status === 'active').length,
+      inactiveOutlets: outlets.filter(o => o.status !== 'active').length,
       topPerformer: { name: topFranchisesBySales[0].name, sales: topFranchisesBySales[0].totalSales / 30 },
       lowPerformer: { name: topFranchisesBySales[topFranchisesBySales.length - 1].name, sales: topFranchisesBySales[topFranchisesBySales.length - 1].totalSales / 30 },
       avgOrderValue: superAdminStats.totalOrders > 0 ? superAdminStats.totalSales / superAdminStats.totalOrders : 0,
     };
 
-    const salesPerOutlet = topFranchisesBySales.map(f => ({
-        name: f.name,
-        total: f.totalSales,
-        today: f.totalSales / 30,
+    const salesPerOutlet = outlets.map(o => ({
+        name: o.name.replace(`${loggedInFranchiseName} - `, ''),
+        total: o.totalSales,
+        today: o.todaySales,
     }));
 
-    const salesTrend = dailySalesData.map(d => ({ day: d.date, sales: d.sales * 5 }));
+    const salesTrend = dailySalesData.map(d => ({ day: d.date, sales: d.sales }));
 
 
     const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
