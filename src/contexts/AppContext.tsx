@@ -111,6 +111,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (isLoginPage) {
       if (userRole === 'Super Admin') router.push('/super-admin/dashboard');
       else if (userRole === 'Admin') router.push('/franchise/dashboard');
+      else if (userRole === 'Waiter' || userRole === 'Cashier') router.push('/orders');
       else router.push('/dashboard');
       return;
     }
@@ -142,7 +143,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       default: // For Manager, Cashier, Waiter, Kitchen
         // If a regular user is NOT in the main app section, redirect them.
         if (!isAppPath) {
-          router.push('/dashboard');
+          if (userRole === 'Waiter' || userRole === 'Cashier') {
+            router.push('/orders');
+          } else {
+            router.push('/dashboard');
+          }
         }
         break;
     }
@@ -167,6 +172,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (!isInitialLoad) {
            if (role === 'Admin') {
             router.push('/franchise/dashboard');
+          } else if (role === 'Waiter' || role === 'Cashier') {
+            router.push('/orders');
           } else {
             router.push('/dashboard');
           }
@@ -233,6 +240,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (table && table.currentOrderId) {
         return orders.find(o => o.id === table.currentOrderId);
       }
+      // Fallback for orders that might not have currentOrderId set on the table
       return orders.find(o => o.tableId === tableId && o.orderType === 'Dine-In');
   }
 
@@ -309,6 +317,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       
       const newOrder = createNewOrder();
       newOrder.tableId = tableId;
+      newOrder.id = `order-table-${tableId}-${Date.now()}`; // More specific ID
       
       const emptyOrderIndex = orders.findIndex(o => o.items.length === 0 && !o.tableId);
       
