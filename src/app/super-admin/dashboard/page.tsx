@@ -9,7 +9,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 
 import { superAdminStats as initialStats, topFranchisesBySales as initialFranchises, dailyActiveOutlets as initialActivity, subscriptionStatusDistribution as initialSubs } from '@/lib/data';
 import { BarChart3, Box, CreditCard, IndianRupee, RefreshCw, ShoppingBag, Users, Database, FileText } from 'lucide-react';
@@ -25,6 +25,10 @@ const subscriptionChartConfig = {
 const activityChartConfig = {
     outlets: { label: 'Active Outlets', color: 'hsl(var(--primary))' },
 }
+const storageChartConfig = {
+  storage: { label: 'Storage (GB)', color: 'hsl(var(--chart-1))' },
+};
+
 
 export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(false);
@@ -43,6 +47,8 @@ export default function SuperAdminDashboardPage() {
       setLoading(false);
     }, 1000);
   };
+  
+  const storageData = franchises.map(f => ({ name: f.name, storage: f.totalStorage }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -131,8 +137,7 @@ export default function SuperAdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Top Franchises Table */}
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Top 5 Franchises by Sales</CardTitle>
           </CardHeader>
@@ -159,13 +164,12 @@ export default function SuperAdminDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Charts */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Subscription Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={subscriptionChartConfig} className="min-h-[200px] w-full">
+            <ChartContainer config={subscriptionChartConfig} className="min-h-[250px] w-full">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent nameKey="count" hideLabel />} />
                 <Pie data={subscriptions} dataKey="count" nameKey="status" innerRadius={50}>
@@ -177,23 +181,23 @@ export default function SuperAdminDashboardPage() {
             </ChartContainer>
           </CardContent>
         </Card>
-      </div>
-      <Card>
+         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Daily Active Outlets (Last 7 Days)</CardTitle>
+            <CardTitle>Storage Used per Franchise</CardTitle>
           </CardHeader>
           <CardContent>
-             <ChartContainer config={activityChartConfig} className="min-h-[200px] w-full">
-              <LineChart data={activity}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="day" tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line dataKey="count" type="monotone" stroke="var(--color-outlets)" strokeWidth={2} dot={true} />
-              </LineChart>
+             <ChartContainer config={storageChartConfig} className="min-h-[250px] w-full">
+               <BarChart data={storageData} layout="vertical" margin={{ left: 20 }}>
+                 <CartesianGrid horizontal={false} />
+                 <XAxis type="number" dataKey="storage" tickFormatter={(val) => `${val}GB`} />
+                 <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
+                 <ChartTooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent />} />
+                 <Bar dataKey="storage" fill="var(--color-storage)" radius={4} />
+               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
+      </div>
     </div>
   );
 }
