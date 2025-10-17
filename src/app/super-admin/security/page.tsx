@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { CardFooter } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const statusColors: Record<AuditLogStatus, string> = {
   Success: 'bg-green-500',
