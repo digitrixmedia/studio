@@ -48,9 +48,9 @@ import { orders as initialOrders } from '@/lib/data';
 import type { Order, OrderStatus, OrderType } from '@/lib/types';
 import { Eye, IndianRupee, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { format, isToday } from 'date-fns';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function OperationsPage() {
     const { toast } = useToast();
@@ -61,12 +61,10 @@ export default function OperationsPage() {
     
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
 
-
     const filteredOrders = orders.filter(order => {
-        const isFromToday = isToday(order.createdAt);
         const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
         const typeMatch = orderTypeFilter === 'All' || order.type === orderTypeFilter;
-        return isFromToday && statusMatch && typeMatch;
+        return statusMatch && typeMatch;
     });
     
     const handleCancelOrder = (orderId: string) => {
@@ -76,92 +74,113 @@ export default function OperationsPage() {
 
   return (
     <>
-    <Card>
-        <CardHeader>
-            <div className="flex justify-between items-center">
-            <div>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>A log of all orders placed today.</CardDescription>
-            </div>
-            <div className="flex gap-2">
-                <Select value={orderStatusFilter} onValueChange={(val) => setOrderStatusFilter(val as any)}>
-                    <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="All">All Statuses</SelectItem>
-                        <SelectItem value="New">New</SelectItem>
-                        <SelectItem value="Preparing">Preparing</SelectItem>
-                        <SelectItem value="Ready">Ready</SelectItem>
-                        <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
-                        <SelectItem value="Completed">Completed</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={orderTypeFilter} onValueChange={(val) => setOrderTypeFilter(val as any)}>
-                    <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by type..." /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="All">All Types</SelectItem>
-                        <SelectItem value="Dine-In">Dine-In</SelectItem>
-                        <SelectItem value="Takeaway">Takeaway</SelectItem>
-                        <SelectItem value="Delivery">Delivery</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
-        </CardHeader>
-        <CardContent>
-        <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Order #</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className='text-right'>Actions</TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {filteredOrders.map(order => (
-                    <TableRow key={order.id}>
-                        <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
-                        <TableCell>
-                            <div>{order.customerName || 'N/A'}</div>
-                            {order.customerPhone && <div className='text-xs text-muted-foreground'>{order.customerPhone}</div>}
-                        </TableCell>
-                        <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
-                        <TableCell><Badge>{order.status}</Badge></TableCell>
-                        <TableCell className='text-right flex items-center justify-end'>
-                            <IndianRupee className="h-4 w-4 mr-1" />
-                            {order.total.toFixed(2)}
-                        </TableCell>
-                        <TableCell>{format(order.createdAt, 'p')}</TableCell>
-                        <TableCell className='text-right'>
-                            <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
-                                <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className='text-destructive' disabled={order.status === 'Cancelled' || order.status === 'Completed'}>
-                                        <XCircle />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>This will cancel order #{order.orderNumber}. This action cannot be undone.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Close</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleCancelOrder(order.id)}>Confirm Cancel</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-        </CardContent>
-    </Card>
+    <div className='space-y-4'>
+        <h1 className='text-2xl font-bold'>Operations Management</h1>
+        <Tabs defaultValue="orders">
+            <TabsList>
+                <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="kots">KOTs</TabsTrigger>
+                <TabsTrigger value="customers">Customers</TabsTrigger>
+                <TabsTrigger value="live-view">Live View</TabsTrigger>
+                <TabsTrigger value="reservations">Reservations</TabsTrigger>
+                <TabsTrigger value="delivery">Delivery</TabsTrigger>
+            </TabsList>
+            <TabsContent value="orders">
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>All Orders</CardTitle>
+                            <CardDescription>A log of all orders placed today.</CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                            <Select value={orderStatusFilter} onValueChange={(val) => setOrderStatusFilter(val as any)}>
+                                <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Statuses</SelectItem>
+                                    <SelectItem value="New">New</SelectItem>
+                                    <SelectItem value="Preparing">Preparing</SelectItem>
+                                    <SelectItem value="Ready">Ready</SelectItem>
+                                    <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
+                                    <SelectItem value="Completed">Completed</SelectItem>
+                                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select value={orderTypeFilter} onValueChange={(val) => setOrderTypeFilter(val as any)}>
+                                <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by type..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="All">All Types</SelectItem>
+                                    <SelectItem value="Dine-In">Dine-In</SelectItem>
+                                    <SelectItem value="Takeaway">Takeaway</SelectItem>
+                                    <SelectItem value="Delivery">Delivery</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    </CardHeader>
+                    <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Order #</TableHead>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Type</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead className='text-right'>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredOrders.map(order => (
+                                <TableRow key={order.id}>
+                                    <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
+                                    <TableCell>
+                                        <div>{order.customerName || 'N/A'}</div>
+                                        {order.customerPhone && <div className='text-xs text-muted-foreground'>{order.customerPhone}</div>}
+                                    </TableCell>
+                                    <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
+                                    <TableCell><Badge>{order.status}</Badge></TableCell>
+                                    <TableCell className='text-right flex items-center justify-end'>
+                                        <IndianRupee className="h-4 w-4 mr-1" />
+                                        {order.total.toFixed(2)}
+                                    </TableCell>
+                                    <TableCell>{format(order.createdAt, 'PPp')}</TableCell>
+                                    <TableCell className='text-right'>
+                                        <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
+                                            <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className='text-destructive' disabled={order.status === 'Cancelled' || order.status === 'Completed'}>
+                                                    <XCircle />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will cancel order #{order.orderNumber}. This action cannot be undone.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Close</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleCancelOrder(order.id)}>Confirm Cancel</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            {/* Placeholder content for other tabs */}
+            <TabsContent value="kots"><Card><CardHeader><CardTitle>KOTs</CardTitle></CardHeader><CardContent><p>Kitchen Order Tickets will be displayed here.</p></CardContent></Card></TabsContent>
+            <TabsContent value="customers"><Card><CardHeader><CardTitle>Customers</CardTitle></CardHeader><CardContent><p>Customer management will be displayed here.</p></CardContent></Card></TabsContent>
+            <TabsContent value="live-view"><Card><CardHeader><CardTitle>Live View</CardTitle></CardHeader><CardContent><p>Live order tracking will be displayed here.</p></CardContent></Card></TabsContent>
+            <TabsContent value="reservations"><Card><CardHeader><CardTitle>Reservations</CardTitle></CardHeader><CardContent><p>Table reservations will be displayed here.</p></CardContent></Card></TabsContent>
+            <TabsContent value="delivery"><Card><CardHeader><CardTitle>Delivery</CardTitle></CardHeader><CardContent><p>Delivery management will be displayed here.</p></CardContent></Card></TabsContent>
+        </Tabs>
+    </div>
 
      {/* Dialog for viewing an order */}
     <Dialog open={!!viewOrder} onOpenChange={() => setViewOrder(null)}>
