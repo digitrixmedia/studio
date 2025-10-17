@@ -2,8 +2,8 @@
 
 'use client';
 
-import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder } from '@/lib/types';
-import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions } from '@/lib/data';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table } from '@/lib/types';
+import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,8 @@ interface AppContextType {
   menuCategories: MenuCategory[];
   orders: AppOrder[];
   setOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
+  tables: Table[];
+  setTables: React.Dispatch<React.SetStateAction<Table[]>>;
   heldOrders: AppOrder[];
   setHeldOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
   activeOrderId: string | null;
@@ -34,6 +36,7 @@ interface AppContextType {
   selectOutlet: (outlet: FranchiseOutlet) => void;
   clearSelectedOutlet: () => void;
   createNewOrder: () => AppOrder;
+  startOrderForTable: (tableId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -57,6 +60,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
+  const [tables, setTables] = useState<Table[]>(initialTables);
   const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
 
@@ -291,6 +295,36 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const startOrderForTable = (tableId: string) => {
+      const existingOrder = getOrderByTable(tableId);
+      if (existingOrder) {
+          setActiveOrderId(existingOrder.id);
+          router.push('/orders');
+          return;
+      }
+      
+      const newOrder = createNewOrder();
+      newOrder.tableId = tableId;
+      
+      const emptyOrderIndex = orders.findIndex(o => o.items.length === 0 && !o.tableId);
+      
+      if (emptyOrderIndex !== -1) {
+          setOrders(prev => {
+              const newOrders = [...prev];
+              newOrders[emptyOrderIndex] = newOrder;
+              return newOrders;
+          });
+          setActiveOrderId(newOrder.id);
+      } else {
+          setOrders(prev => [...prev, newOrder]);
+          setActiveOrderId(newOrder.id);
+      }
+      
+      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'Occupied' } : t));
+      
+      router.push('/orders');
+  };
+
   const value = { 
     currentUser, 
     selectedOutlet, 
@@ -304,6 +338,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setMenuCategories,
     orders,
     setOrders,
+    tables,
+    setTables,
     heldOrders,
     setHeldOrders,
     activeOrderId,
@@ -316,6 +352,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     getOrderByTable,
     loadOrder,
     createNewOrder,
+    startOrderForTable,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
