@@ -121,7 +121,7 @@ export default function SuperAdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(stats.totalReads / 1000000).toFixed(2)}M</div>
-            <p className="text-xs text-muted-foreground">Firestore document reads</p>
+            <p className="text-xs text-muted-foreground">Database reads</p>
           </CardContent>
         </Card>
          <Card>
@@ -131,7 +131,7 @@ export default function SuperAdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(stats.totalWrites / 1000000).toFixed(2)}M</div>
-            <p className="text-xs text-muted-foreground">Firestore document writes</p>
+            <p className="text-xs text-muted-foreground">Database writes</p>
           </CardContent>
         </Card>
       </div>
