@@ -65,7 +65,8 @@ const initialNewVendorState = {
 interface OtherCharge {
     name: string;
     amount: number;
-    taxRate: number;
+    cgst: number;
+    sgst: number;
 }
 
 export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDialogProps) {
@@ -81,7 +82,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
         grandTotal: 0,
         paymentStatus: 'unpaid',
     });
-    const [otherChargesList, setOtherChargesList] = useState<OtherCharge[]>([]);
+    const [otherCharge, setOtherCharge] = useState<OtherCharge>({ name: 'Delivery Charge', amount: 0, cgst: 0, sgst: 0 });
     const [isOtherChargesOpen, setIsOtherChargesOpen] = useState(false);
 
     const [updateInventory, setUpdateInventory] = useState(true);
@@ -124,19 +125,20 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
     useEffect(() => {
         const subTotal = po.items.reduce((sum, item) => sum + item.amount, 0);
         const totalItemTaxes = po.items.reduce((sum, item) => sum + (item.amount * ((item.cgst + item.sgst + item.igst) / 100)), 0);
-        const totalOtherCharges = otherChargesList.reduce((sum, charge) => sum + charge.amount, 0);
-        const totalOtherChargesTaxes = otherChargesList.reduce((sum, charge) => sum + (charge.amount * (charge.taxRate / 100)), 0);
         
-        const grandTotal = subTotal - po.totalDiscount + totalOtherCharges + totalItemTaxes + totalOtherChargesTaxes;
+        const otherChargeAmount = otherCharge.amount || 0;
+        const otherChargeTaxes = otherChargeAmount * ((otherCharge.cgst + otherCharge.sgst) / 100);
+        
+        const grandTotal = subTotal - po.totalDiscount + otherChargeAmount + totalItemTaxes + otherChargeTaxes;
 
         setPo(prev => ({
             ...prev,
             subTotal,
-            otherCharges: totalOtherCharges,
-            totalTaxes: totalItemTaxes + totalOtherChargesTaxes,
+            otherCharges: otherChargeAmount,
+            totalTaxes: totalItemTaxes + otherChargeTaxes,
             grandTotal,
         }));
-    }, [po.items, po.totalDiscount, otherChargesList]);
+    }, [po.items, po.totalDiscount, otherCharge]);
 
     const handleSave = () => {
         if (!po.vendorId || po.items.some(i => !i.ingredientId)) {
@@ -152,7 +154,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
             title: 'Purchase Entry Saved',
             description: `Entry for PO #${po.poNumber} has been saved.`,
         });
-        console.log('Saved PO:', { ...po, otherChargesList });
+        console.log('Saved PO:', { ...po, otherCharge });
         onClose();
     };
 
@@ -180,6 +182,11 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
             description: `${newVendorData.name} has been added and selected.`
         });
     };
+    
+    const handleSaveOtherCharge = () => {
+        // The state is already updated onChange, so this just closes the dialog
+        setIsOtherChargesOpen(false);
+    }
 
     return (
         <>
@@ -264,7 +271,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                     <Table>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead className="w-[250px]">Name</TableHead>
+                                                <TableHead className="min-w-[250px]">Name</TableHead>
                                                 <TableHead>Quantity</TableHead>
                                                 <TableHead>Unit</TableHead>
                                                 <TableHead>Price (₹)</TableHead>
@@ -318,28 +325,28 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                 <CardContent className="p-4 space-y-2">
                                     <div className="flex justify-between items-center text-sm">
                                         <Label>Sub Total:</Label>
-                                        <span>{po.subTotal.toFixed(3)}</span>
+                                        <span>{po.subTotal.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
                                         <Label>Total Discount:</Label>
                                          <div className="flex items-center gap-2">
                                             <Input type="number" className="w-24 h-8" value={po.totalDiscount} onChange={e => setPo(p => ({...p, totalDiscount: Number(e.target.value)}))} />
-                                            <span className="text-destructive">- {po.totalDiscount.toFixed(3)}</span>
+                                            <span className="text-destructive">- {po.totalDiscount.toFixed(2)}</span>
                                          </div>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
                                         <Button variant="link" className="p-0 h-auto" onClick={() => setIsOtherChargesOpen(true)}>
-                                            + Add Other Charges:
+                                            + {otherCharge.name}:
                                         </Button>
-                                        <span>{po.otherCharges.toFixed(3)}</span>
+                                        <span>{po.otherCharges.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
                                         <Label>Total Taxes:</Label>
-                                        <span className="text-green-600">{po.totalTaxes.toFixed(3)}</span>
+                                        <span className="text-green-600">{po.totalTaxes.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center font-bold text-base border-t pt-2">
                                         <Label>Grand Total:</Label>
-                                        <span>{po.grandTotal.toFixed(3)}</span>
+                                        <span>{po.grandTotal.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm pt-2">
                                         <Label>Payment Type:</Label>
@@ -362,38 +369,42 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
         <Dialog open={isOtherChargesOpen} onOpenChange={setIsOtherChargesOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Other Charges</DialogTitle>
+                    <DialogTitle>{otherCharge.name}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                     {otherChargesList.map((charge, index) => (
-                        <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
-                            <span className="flex-1">{charge.name} - ₹{charge.amount} (+{charge.taxRate}%)</span>
-                            <Button variant="ghost" size="icon" onClick={() => setOtherChargesList(prev => prev.filter((_, i) => i !== index))}>
-                                <Trash2 className="h-4 w-4 text-destructive"/>
-                            </Button>
+                    <div className='space-y-2'>
+                       <Label>Delivery Charge:</Label>
+                        <Input 
+                            type="number" 
+                            placeholder="Included in Invoice" 
+                            value={otherCharge.amount}
+                            onChange={(e) => setOtherCharge(prev => ({ ...prev, amount: Number(e.target.value)}))}
+                        />
+                    </div>
+                    <Card className='p-4'>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>CGST(%):</Label>
+                                <Input 
+                                    type="number"
+                                    value={otherCharge.cgst}
+                                    onChange={(e) => setOtherCharge(prev => ({ ...prev, cgst: Number(e.target.value)}))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>SGST(%):</Label>
+                                <Input
+                                    type="number"
+                                    value={otherCharge.sgst}
+                                    onChange={(e) => setOtherCharge(prev => ({ ...prev, sgst: Number(e.target.value)}))}
+                                />
+                            </div>
                         </div>
-                     ))}
-                     <form onSubmit={(e) => {
-                        e.preventDefault();
-                        const formData = new FormData(e.currentTarget);
-                        const name = formData.get('chargeName') as string;
-                        const amount = Number(formData.get('chargeAmount'));
-                        const taxRate = Number(formData.get('chargeTax'));
-                        if(name && amount > 0) {
-                            setOtherChargesList(prev => [...prev, { name, amount, taxRate }]);
-                            e.currentTarget.reset();
-                        }
-                     }}>
-                        <div className="grid grid-cols-3 gap-2">
-                            <Input name="chargeName" placeholder="Charge Name (e.g., Delivery)" required />
-                            <Input name="chargeAmount" type="number" placeholder="Amount" required/>
-                            <Input name="chargeTax" type="number" placeholder="Tax %" defaultValue={0} />
-                        </div>
-                        <Button type="submit" className="mt-2">Add Charge</Button>
-                     </form>
+                    </Card>
                 </div>
                 <DialogFooter>
-                    <Button onClick={() => setIsOtherChargesOpen(false)}>Done</Button>
+                    <Button variant="outline" onClick={() => setIsOtherChargesOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSaveOtherCharge}>Save</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
