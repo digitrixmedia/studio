@@ -255,7 +255,7 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
                                                 </Select>
                                             </TableCell>
                                             <TableCell><Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(index, 'quantity', e.target.value)} placeholder="Quantity" /></TableCell>
-                                            <TableCell><Input value={item.unit || ''} readOnly className="border-none bg-transparent" placeholder="Unit" /></TableCell>
+                                            <TableCell><Input value={item.unit} readOnly className="border-none bg-transparent" placeholder="Unit" /></TableCell>
                                             <TableCell><Input type="number" value={item.purchasePrice || ''} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} placeholder="Avg. Price" /></TableCell>
                                             <TableCell><Input value={(item.amount || 0).toFixed(2)} readOnly className="border-none bg-transparent" /></TableCell>
                                             <TableCell><Input value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Description" /></TableCell>
