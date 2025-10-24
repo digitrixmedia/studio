@@ -104,7 +104,7 @@ export default function ReportsPage() {
     const headers = ['Item Name', 'Total Sales'];
     let filename = 'item-wise-sales.csv';
 
-    const rows = data.map(row => Object.values(row).join(','));
+    const rows = data.map(row => Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(','));
     const csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(',') + "\n" 
       + rows.join("\n");
@@ -139,7 +139,7 @@ export default function ReportsPage() {
             order.type,
             getUserName(order.createdBy),
             order.total.toFixed(2)
-        ].join(',')
+        ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
     );
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -529,3 +529,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+
