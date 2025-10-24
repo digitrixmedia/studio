@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -31,6 +30,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { generateSmsBill } from '@/ai/flows/generate-sms-bill-flow';
 
 
 export default function OrdersPage() {
@@ -620,12 +620,48 @@ export default function OrdersPage() {
     handlePrintBill();
   };
   
-  const handleSaveAndEbill = () => {
-    toast({
-        title: "eBill Sent",
-        description: "The bill has been sent to the customer's registered contact.",
-    });
-    resetCurrentOrder();
+  const handleSaveAndEbill = async () => {
+    if (!activeOrder) return;
+    if (!activeOrder.customer.phone) {
+      toast({
+        variant: 'destructive',
+        title: 'Missing Phone Number',
+        description: 'Please enter a customer phone number to send an e-bill.',
+      });
+      return;
+    }
+
+    try {
+      const orderDetails = {
+        customerName: activeOrder.customer.name,
+        items: activeOrder.items.map(i => ({ name: i.name, quantity: i.quantity, totalPrice: i.totalPrice })),
+        total: total,
+        orderNumber: activeOrder.orderNumber,
+        cafeName: settings.printCafeName,
+      };
+
+      const result = await generateSmsBill(orderDetails);
+
+      // Simulate sending SMS
+      console.log('--- SIMULATING SMS ---');
+      console.log(`To: ${activeOrder.customer.phone}`);
+      console.log(`Message: ${result.smsContent}`);
+      console.log('--------------------');
+      
+      toast({
+          title: "eBill Sent",
+          description: `SMS bill sent to ${activeOrder.customer.phone}.`,
+      });
+
+      resetCurrentOrder();
+    } catch (error) {
+      console.error("Error generating or sending eBill:", error);
+      toast({
+          variant: "destructive",
+          title: "Failed to Send eBill",
+          description: "There was a problem generating the bill content.",
+      });
+    }
   }
 
   const filteredMenuItems = menuItems.filter(item => {
