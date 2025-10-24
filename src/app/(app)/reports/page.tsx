@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { dailySalesData, menuItems, orders, menuCategories, hourlySalesData, users } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag } from 'lucide-react';
+import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -96,6 +96,7 @@ export default function ReportsPage() {
     to: new Date(),
   });
   const [selectedDay, setSelectedDay] = useState<{ date: string; orders: Order[] } | null>(null);
+  const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
 
   const handleExport = () => {
     // This export logic can be expanded based on the active tab
@@ -449,6 +450,7 @@ export default function ReportsPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Cashier</TableHead>
                   <TableHead className="text-right">Total</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -462,6 +464,11 @@ export default function ReportsPage() {
                     <TableCell className="text-right flex items-center justify-end">
                       <IndianRupee className="h-4 w-4 mr-1" />
                       {order.total.toFixed(2)}
+                    </TableCell>
+                     <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => setViewedOrder(order)}>
+                            <Eye className="h-4 w-4" />
+                        </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -477,6 +484,48 @@ export default function ReportsPage() {
             </DialogFooter>
         </DialogContent>
       </Dialog>
+
+       <Dialog open={!!viewedOrder} onOpenChange={() => setViewedOrder(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Order #{viewedOrder?.orderNumber}</DialogTitle>
+                <DialogDescription>
+                    {viewedOrder?.customerName} | {viewedOrder?.type}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Item</TableHead>
+                            <TableHead className='text-right'>Total</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {viewedOrder?.items.map(item => (
+                            <TableRow key={item.id}>
+                                <TableCell>{item.quantity} x {item.name}</TableCell>
+                                <TableCell className='text-right flex items-center justify-end'>
+                                    <IndianRupee className="h-4 w-4 mr-1" />
+                                    {item.totalPrice.toFixed(2)}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                 <div className='mt-4 pt-4 border-t font-bold flex justify-between'>
+                    <span>Total</span>
+                    <span className='flex items-center'>
+                        <IndianRupee className="h-5 w-5 mr-1" />
+                        {viewedOrder?.total.toFixed(2)}
+                    </span>
+                </div>
+            </div>
+             <DialogFooter>
+                <Button variant="outline" onClick={() => setViewedOrder(null)}>Close</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
     </div>
   );
 }
