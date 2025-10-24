@@ -226,47 +226,49 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className='w-[250px]'>{wastageFor}</TableHead>
-                                    <TableHead>Quantity</TableHead>
-                                    <TableHead>Unit</TableHead>
-                                    <TableHead>Avg. Purchase Price</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Action</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {wastageItems.map((item, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell>
-                                            <Select value={item.itemId} onValueChange={val => handleItemChange(index, 'itemId', val)}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={`Select ${wastageFor}`} />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {(wastageFor === 'Raw Material' ? ingredients : menuItems).map(i => (
-                                                        <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                        <TableCell><Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(index, 'quantity', e.target.value)} placeholder="Quantity" /></TableCell>
-                                        <TableCell><Input value={item.unit || ''} readOnly className="border-none bg-transparent" placeholder="Unit" /></TableCell>
-                                        <TableCell><Input type="number" value={item.purchasePrice || ''} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} placeholder="Avg. Price" /></TableCell>
-                                        <TableCell><Input value={(item.amount || 0).toFixed(2)} readOnly className="border-none bg-transparent" /></TableCell>
-                                        <TableCell><Input value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Description" /></TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" size="icon" onClick={() => removeWastageItem(index)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </TableCell>
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className='min-w-[250px]'>{wastageFor}</TableHead>
+                                        <TableHead className='min-w-[120px]'>Quantity</TableHead>
+                                        <TableHead className='min-w-[80px]'>Unit</TableHead>
+                                        <TableHead className='min-w-[150px]'>Avg. Purchase Price</TableHead>
+                                        <TableHead className='min-w-[120px]'>Amount</TableHead>
+                                        <TableHead className='min-w-[200px]'>Description</TableHead>
+                                        <TableHead>Action</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {wastageItems.map((item, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell>
+                                                <Select value={item.itemId} onValueChange={val => handleItemChange(index, 'itemId', val)}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder={`Select ${wastageFor}`} />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {(wastageFor === 'Raw Material' ? ingredients : menuItems).map(i => (
+                                                            <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell><Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(index, 'quantity', e.target.value)} placeholder="Quantity" /></TableCell>
+                                            <TableCell><Input value={item.unit || ''} readOnly className="border-none bg-transparent" placeholder="Unit" /></TableCell>
+                                            <TableCell><Input type="number" value={item.purchasePrice || ''} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} placeholder="Avg. Price" /></TableCell>
+                                            <TableCell><Input value={(item.amount || 0).toFixed(2)} readOnly className="border-none bg-transparent" /></TableCell>
+                                            <TableCell><Input value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Description" /></TableCell>
+                                            <TableCell>
+                                                <Button variant="ghost" size="icon" onClick={() => removeWastageItem(index)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
