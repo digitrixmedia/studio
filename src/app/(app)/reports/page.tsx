@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { dailySalesData, menuItems, orders, menuCategories, hourlySalesData, users } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye } from 'lucide-react';
+import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -73,27 +73,44 @@ export default function ReportsPage() {
   const itemWiseSales = useMemo(() => {
     return menuItems
       .map(item => {
-        const quantitySold = filteredCompletedOrders.reduce((sum, order) => 
-          sum + order.items.reduce((itemSum, orderItem) => 
-            itemSum + (orderItem.id.startsWith(item.id) ? orderItem.quantity : 0), 0), 0);
-        return { 
-          name: item.name, 
+        const { quantitySold, totalSales } = filteredCompletedOrders.reduce(
+          (acc, order) => {
+            order.items.forEach(orderItem => {
+              if (orderItem.id.startsWith(item.id)) {
+                acc.quantitySold += orderItem.quantity;
+                acc.totalSales += orderItem.totalPrice;
+              }
+            });
+            return acc;
+          },
+          { quantitySold: 0, totalSales: 0 }
+        );
+
+        return {
+          name: item.name,
+          category: item.category,
           quantitySold: quantitySold,
-          sales: quantitySold * item.price 
+          sales: totalSales,
         };
       })
       .filter(item => item.sales > 0)
       .sort((a, b) => b.sales - a.sales);
   }, [filteredCompletedOrders]);
 
-    const categorySales = menuCategories.map(category => {
-        const categoryItems = menuItems.filter(item => item.category === category.id);
-        const sales = categoryItems.reduce((catSum, item) => {
-            const itemSalesData = itemWiseSales.find(s => s.name === item.name);
-            return catSum + (itemSalesData?.sales || 0);
-        }, 0);
-        return { name: category.name, sales };
-    }).filter(c => c.sales > 0);
+    const categorySales = useMemo(() => {
+        return menuCategories.map(category => {
+            const itemsInCategory = itemWiseSales.filter(item => item.category === category.id);
+            const sales = itemsInCategory.reduce((sum, item) => sum + item.sales, 0);
+            const itemsSold = itemsInCategory.reduce((sum, item) => sum + item.quantitySold, 0);
+            return {
+                name: category.name,
+                sales,
+                itemsSold,
+                percentage: totalSales > 0 ? (sales / totalSales) * 100 : 0,
+            };
+        }).filter(c => c.sales > 0)
+          .sort((a, b) => b.sales - a.sales);
+    }, [itemWiseSales, totalSales]);
 
     const paymentMethodSales = (filteredCompletedOrders as Required<Order>[]).reduce((acc, order) => {
         acc[order.paymentMethod] = (acc[order.paymentMethod] || 0) + order.total;
@@ -309,7 +326,7 @@ export default function ReportsPage() {
                                 />
                                 <Bar dataKey="sales" radius={4}>
                                     {orderTypeData.map((entry) => (
-                                        <Cell key={entry.type} fill={`var(--color-${entry.type})`} />
+                                        <Cell key={entry.type} fill={`var(--color-${entry.type.toLowerCase()})`} />
                                     ))}
                                 </Bar>
                             </BarChart>
@@ -396,7 +413,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent className='space-y-6'>
                 <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
-                <BarChart data={itemWiseSales} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <BarChart data={itemWiseSales.slice(0, 10)} layout="vertical" margin={{ left: 20, right: 20 }}>
                     <CartesianGrid horizontal={false} />
                     <XAxis type="number" dataKey="sales" tickFormatter={(value) => `₹${value / 1000}k`} />
                     <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }}/>
@@ -440,7 +457,7 @@ export default function ReportsPage() {
                 <CardTitle>Category Sales</CardTitle>
                 <CardDescription>Revenue from different menu categories for the selected period.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
                 <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
                 <BarChart data={categorySales}>
                     <CartesianGrid vertical={false} />
@@ -454,6 +471,36 @@ export default function ReportsPage() {
                     <Bar dataKey="sales" fill="var(--color-sales)" radius={4} />
                 </BarChart>
                 </ChartContainer>
+
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Items Sold</TableHead>
+                      <TableHead className="text-right">% of Total Sales</TableHead>
+                      <TableHead className="text-right">Total Revenue</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categorySales.map(cat => (
+                      <TableRow key={cat.name}>
+                        <TableCell className="font-medium">{cat.name}</TableCell>
+                        <TableCell className="text-right">{cat.itemsSold}</TableCell>
+                        <TableCell className="text-right">
+                            <div className="flex items-center justify-end">
+                                {cat.percentage.toFixed(2)}<Percent className="h-3 w-3 ml-1" />
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end">
+                            <IndianRupee className="h-4 w-4 mr-1" />
+                            {cat.sales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
             </CardContent>
             </Card>
         </TabsContent>
