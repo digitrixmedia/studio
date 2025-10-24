@@ -18,6 +18,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { PlusCircle, IndianRupee } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
@@ -59,6 +67,7 @@ export default function WastagePage() {
   const [wastageEntries, setWastageEntries] = useState(initialWastageEntries);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [ingredientsState, setIngredientsState] = useState(ingredients);
+  const [viewingEntry, setViewingEntry] = useState<Wastage | null>(null);
 
 
   const getUserName = (userId: string) => {
@@ -115,7 +124,7 @@ export default function WastagePage() {
             </TableHeader>
             <TableBody>
               {wastageEntries.map((entry) => (
-                <TableRow key={entry.id}>
+                <TableRow key={entry.id} onClick={() => setViewingEntry(entry)} className="cursor-pointer">
                   <TableCell className="font-medium">{entry.wastageNumber}</TableCell>
                   <TableCell>{format(entry.date, 'PPP')}</TableCell>
                   <TableCell>{entry.wastageFor}</TableCell>
@@ -139,6 +148,54 @@ export default function WastagePage() {
         onClose={() => setIsDialogOpen(false)}
         onSave={handleSaveWastage}
       />
+
+       <Dialog open={!!viewingEntry} onOpenChange={() => setViewingEntry(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Wastage Details: {viewingEntry?.wastageNumber}</DialogTitle>
+            <DialogDescription>
+              Recorded on {viewingEntry ? format(viewingEntry.date, 'PPP') : ''} by {viewingEntry ? getUserName(viewingEntry.userId) : ''}.
+              <br/>
+              Reason: {viewingEntry?.reason}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item Name</TableHead>
+                  <TableHead className='text-right'>Quantity</TableHead>
+                  <TableHead className='text-right'>Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {viewingEntry?.items.map(item => (
+                  <TableRow key={item.id}>
+                    <TableCell className='font-medium'>{item.name}</TableCell>
+                    <TableCell className='text-right'>{item.quantity} {item.unit}</TableCell>
+                    <TableCell className='text-right flex items-center justify-end'>
+                      <IndianRupee className="h-4 w-4 mr-1"/>
+                      {item.amount.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+             <div className="flex justify-end font-bold text-lg mt-4 pr-4">
+                <div className="flex items-center gap-4">
+                  <span>Total Wastage:</span>
+                  <div className="flex items-center">
+                    <IndianRupee className="h-5 w-5 mr-1" />
+                    {viewingEntry?.totalAmount.toFixed(2)}
+                  </div>
+                </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingEntry(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
