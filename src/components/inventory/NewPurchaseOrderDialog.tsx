@@ -209,6 +209,13 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
         // The state is already updated onChange, so this just closes the dialog
         setIsOtherChargesOpen(false);
     }
+    
+    const effectiveTaxRate = useMemo(() => {
+        const taxableAmount = po.subTotal - po.totalDiscount + po.otherCharges;
+        if (taxableAmount <= 0 || po.totalTaxes <= 0) return 0;
+        return (po.totalTaxes / taxableAmount) * 100;
+    }, [po.subTotal, po.totalDiscount, po.otherCharges, po.totalTaxes]);
+
 
     return (
         <>
@@ -298,9 +305,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                                 <TableHead>Unit</TableHead>
                                                 <TableHead>Price (₹)</TableHead>
                                                 <TableHead>Amount (₹)</TableHead>
-                                                <TableHead className="min-w-[100px] text-center">CGST %</TableHead>
-                                                <TableHead className="min-w-[100px] text-center">SGST %</TableHead>
-                                                <TableHead className="min-w-[100px] text-center">IGST %</TableHead>
+                                                <TableHead className="min-w-[120px] text-center">CGST %</TableHead>
+                                                <TableHead className="min-w-[120px] text-center">SGST %</TableHead>
+                                                <TableHead className="min-w-[120px] text-center">IGST %</TableHead>
                                                 <TableHead>Description</TableHead>
                                                 <TableHead>Action</TableHead>
                                             </TableRow>
@@ -369,7 +376,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                         <span>{po.otherCharges.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
-                                        <Label>Total Taxes:</Label>
+                                        <Label>Total Taxes ({effectiveTaxRate.toFixed(2)}%):</Label>
                                         <span className="text-green-600">{po.totalTaxes.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center font-bold text-base border-t pt-2">
