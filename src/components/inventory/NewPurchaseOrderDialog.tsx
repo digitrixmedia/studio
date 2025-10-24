@@ -32,11 +32,13 @@ import {
 } from '@/components/ui/select';
 import { vendors as initialVendors, ingredients } from '@/lib/data';
 import type { PurchaseOrder, PurchaseOrderItem, Vendor, Ingredient } from '@/lib/types';
-import { PlusCircle, Trash2, Save } from 'lucide-react';
+import { PlusCircle, Trash2, Save, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 interface NewPurchaseOrderDialogProps {
     isOpen: boolean;
@@ -87,6 +89,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     const [otherCharge, setOtherCharge] = useState<OtherCharge>({ name: 'Delivery Charge', amount: 0, cgst: 0, sgst: 0 });
     const [isOtherChargesOpen, setIsOtherChargesOpen] = useState(false);
 
+    const [discountValue, setDiscountValue] = useState(0);
+    const [discountType, setDiscountType] = useState<'fixed' | 'percentage'>('fixed');
+
     const [updateInventory, setUpdateInventory] = useState(true);
     const { toast } = useToast();
     
@@ -126,21 +131,31 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
 
     useEffect(() => {
         const subTotal = po.items.reduce((sum, item) => sum + item.amount, 0);
+        
+        let calculatedDiscount = 0;
+        if (discountType === 'percentage') {
+            calculatedDiscount = subTotal * (discountValue / 100);
+        } else {
+            calculatedDiscount = discountValue;
+        }
+        const totalDiscount = Math.min(subTotal, calculatedDiscount);
+
         const totalItemTaxes = po.items.reduce((sum, item) => sum + (item.amount * ((item.cgst + item.sgst + item.igst) / 100)), 0);
         
         const otherChargeAmount = otherCharge.amount || 0;
         const otherChargeTaxes = otherChargeAmount * ((otherCharge.cgst + otherCharge.sgst) / 100);
         
-        const grandTotal = subTotal - po.totalDiscount + otherChargeAmount + totalItemTaxes + otherChargeTaxes;
+        const grandTotal = subTotal - totalDiscount + otherChargeAmount + totalItemTaxes + otherChargeTaxes;
 
         setPo(prev => ({
             ...prev,
             subTotal,
+            totalDiscount,
             otherCharges: otherChargeAmount,
             totalTaxes: totalItemTaxes + otherChargeTaxes,
             grandTotal,
         }));
-    }, [po.items, po.totalDiscount, otherCharge]);
+    }, [po.items, discountValue, discountType, otherCharge]);
 
     const handleSave = () => {
         if (!po.vendorId || po.items.some(i => !i.ingredientId)) {
@@ -206,7 +221,6 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     };
     
     const handleSaveOtherCharge = () => {
-        // The state is already updated onChange, so this just closes the dialog
         setIsOtherChargesOpen(false);
     }
     
@@ -328,13 +342,13 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                                     <TableCell><Input type="number" value={item.unitPrice} onChange={e => handleItemChange(index, 'unitPrice', e.target.value)} className="w-24" /></TableCell>
                                                     <TableCell>{item.amount.toFixed(2)}</TableCell>
                                                     <TableCell>
-                                                        <Input type="number" value={item.cgst} onChange={(e) => handleItemChange(index, 'cgst', e.target.value)} className="w-20 text-center" />
+                                                        <Input type="number" value={item.cgst} onChange={(e) => handleItemChange(index, 'cgst', e.target.value)} className="w-full text-center" />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Input type="number" value={item.sgst} onChange={(e) => handleItemChange(index, 'sgst', e.target.value)} className="w-20 text-center" />
+                                                        <Input type="number" value={item.sgst} onChange={(e) => handleItemChange(index, 'sgst', e.target.value)} className="w-full text-center" />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Input type="number" value={item.igst} onChange={(e) => handleItemChange(index, 'igst', e.target.value)} className="w-20 text-center" />
+                                                        <Input type="number" value={item.igst} onChange={(e) => handleItemChange(index, 'igst', e.target.value)} className="w-full text-center" />
                                                     </TableCell>
                                                     <TableCell><Input placeholder="Description" value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} /></TableCell>
                                                     <TableCell>
@@ -363,11 +377,34 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                         <span>{po.subTotal.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
-                                        <Label>Total Discount:</Label>
-                                         <div className="flex items-center gap-2">
-                                            <Input type="number" className="w-24 h-8" value={po.totalDiscount} onChange={e => setPo(p => ({...p, totalDiscount: Number(e.target.value)}))} />
-                                            <span className="text-destructive">- {po.totalDiscount.toFixed(2)}</span>
-                                         </div>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="link" className="p-0 h-auto gap-2">
+                                                    Total Discount:
+                                                    <Tag className="h-4 w-4" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className='w-72'>
+                                                <div className="grid gap-4">
+                                                    <div className="space-y-2">
+                                                        <h4 className="font-medium leading-none">Apply Discount</h4>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Set a fixed or percentage-based discount.
+                                                        </p>
+                                                    </div>
+                                                    <div className="grid gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Input type="number" value={discountValue || ''} onChange={(e) => setDiscountValue(Number(e.target.value))} />
+                                                             <ToggleGroup type="single" variant="outline" value={discountType} onValueChange={(val: 'fixed' | 'percentage') => val && setDiscountType(val)}>
+                                                                <ToggleGroupItem value="fixed">₹</ToggleGroupItem>
+                                                                <ToggleGroupItem value="percentage">%</ToggleGroupItem>
+                                                            </ToggleGroup>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                         <span className="text-destructive">- {po.totalDiscount.toFixed(2)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
                                         <Button variant="link" className="p-0 h-auto" onClick={() => setIsOtherChargesOpen(true)}>
