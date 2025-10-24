@@ -29,6 +29,14 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -36,7 +44,7 @@ import {
 } from '@/components/ui/accordion';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ingredients, menuItems } from '@/lib/data';
+import { ingredients as initialIngredients, menuItems } from '@/lib/data';
 import { PlusCircle, Edit, Save, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -48,10 +56,15 @@ import {
 } from '@/components/ui/select';
 import { useState } from 'react';
 import type { MenuItem, Ingredient } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function InventoryPage() {
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
   const [editableRecipes, setEditableRecipes] = useState<Record<string, { ingredientId: string; quantity: number }[]>>({});
+  const [stockUpdateIngredient, setStockUpdateIngredient] = useState<Ingredient | null>(null);
+  const [stockUpdateQuantity, setStockUpdateQuantity] = useState('');
+  const { toast } = useToast();
 
   const handleEditRecipe = (item: MenuItem) => {
     setEditableRecipes(prev => ({ ...prev, [item.id]: [...item.ingredients] }));
@@ -97,9 +110,43 @@ export default function InventoryPage() {
   const getIngredientUnit = (id: string) => {
     return ingredients.find(i => i.id === id)?.unit || '';
   };
+  
+  const handleOpenAddStockDialog = (ingredient: Ingredient) => {
+    setStockUpdateIngredient(ingredient);
+    setStockUpdateQuantity('');
+  };
 
+  const handleAddStock = () => {
+    if (!stockUpdateIngredient || !stockUpdateQuantity) return;
+    const quantityToAdd = Number(stockUpdateQuantity);
+
+    if (isNaN(quantityToAdd) || quantityToAdd <= 0) {
+        toast({
+            variant: "destructive",
+            title: "Invalid Quantity",
+            description: "Please enter a valid positive number for the stock quantity.",
+        });
+        return;
+    }
+
+    setIngredients(prevIngredients =>
+        prevIngredients.map(ing =>
+            ing.id === stockUpdateIngredient.id
+                ? { ...ing, stock: ing.stock + quantityToAdd }
+                : ing
+        )
+    );
+
+    toast({
+        title: "Stock Updated",
+        description: `${quantityToAdd} ${stockUpdateIngredient.unit} added to ${stockUpdateIngredient.name}.`,
+    });
+
+    setStockUpdateIngredient(null);
+  };
 
   return (
+    <>
     <Tabs defaultValue="stock">
       <div className="flex justify-between items-center mb-4">
         <TabsList>
@@ -205,7 +252,7 @@ export default function InventoryPage() {
                         />
                       </TableCell>
                       <TableCell>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleOpenAddStockDialog(item)}>
                           <PlusCircle className="mr-2 h-4 w-4" /> Add Stock
                         </Button>
                       </TableCell>
@@ -324,6 +371,34 @@ export default function InventoryPage() {
         </Card>
       </TabsContent>
     </Tabs>
+
+     {/* Add Stock Dialog */}
+    <Dialog open={!!stockUpdateIngredient} onOpenChange={() => setStockUpdateIngredient(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add Stock for {stockUpdateIngredient?.name}</DialogTitle>
+          <DialogDescription>
+            Current stock: {stockUpdateIngredient?.stock} {stockUpdateIngredient?.unit}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Label htmlFor="stock-quantity">Quantity to Add ({stockUpdateIngredient?.unit})</Label>
+          <Input 
+            id="stock-quantity"
+            type="number"
+            value={stockUpdateQuantity}
+            onChange={(e) => setStockUpdateQuantity(e.target.value)}
+            placeholder={`e.g., 500`}
+            autoFocus
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setStockUpdateIngredient(null)}>Cancel</Button>
+          <Button onClick={handleAddStock}>Add Stock</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
     
