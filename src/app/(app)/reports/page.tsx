@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { dailySalesData, menuItems, orders, menuCategories, hourlySalesData, users } from '@/lib/data';
+import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent } from 'lucide-react';
@@ -53,7 +53,7 @@ export default function ReportsPage() {
     from: addDays(new Date(), -6),
     to: new Date(),
   });
-  const [selectedDay, setSelectedDay] = useState<{ date: string; orders: Order[] } | null>(null);
+  const [selectedDay, setSelectedDay] = useState<{ date: Date; orders: Order[] } | null>(null);
   const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
 
   const filteredCompletedOrders = useMemo(() => {
@@ -133,6 +133,18 @@ export default function ReportsPage() {
       type,
       sales,
     }));
+    
+  const dailySalesData = useMemo(() => {
+    return initialDailySales.map(day => {
+      const filtered = filteredCompletedOrders.filter(order => format(order.createdAt, 'EEE') === format(day.date, 'EEE'));
+      return {
+        ...day,
+        sales: filtered.reduce((sum, o) => sum + o.total, 0),
+        orders: filtered.length,
+        aov: filtered.length > 0 ? filtered.reduce((sum, o) => sum + o.total, 0) / filtered.length : 0
+      };
+    }).filter(d => d.orders > 0);
+  }, [filteredCompletedOrders]);
 
 
   const handleExport = () => {
@@ -168,10 +180,8 @@ export default function ReportsPage() {
     }
   };
   
-  const handleDayClick = (dayData: { date: string, orders: number }) => {
-    // In a real app, you would fetch orders for the specific date.
-    // Here, we simulate it by taking a slice of the mock orders.
-    const simulatedOrders = orders.filter(o => o.status === 'completed').slice(0, dayData.orders);
+  const handleDayClick = (dayData: { date: Date, orders: number }) => {
+    const simulatedOrders = orders.filter(o => o.status === 'completed' && format(o.createdAt, 'EEE') === format(dayData.date, 'EEE'));
     setSelectedDay({ date: dayData.date, orders: simulatedOrders });
   };
   
@@ -197,7 +207,7 @@ export default function ReportsPage() {
     if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        link.setAttribute("download", `sales_details_${selectedDay.date}.csv`);
+        link.setAttribute("download", `sales_details_${format(selectedDay.date, 'yyyy-MM-dd')}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -365,7 +375,13 @@ export default function ReportsPage() {
                     <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
                     <LineChart data={dailySalesData}>
                         <CartesianGrid vertical={false} />
-                        <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                        <XAxis 
+                            dataKey="date" 
+                            tickLine={false} 
+                            axisLine={false} 
+                            tickMargin={8} 
+                            tickFormatter={(value) => format(value, 'EEE, d')}
+                        />
                         <YAxis
                         tickFormatter={(value) => `₹${value / 1000}k`}
                         tickLine={false}
@@ -374,6 +390,12 @@ export default function ReportsPage() {
                         <ChartTooltip 
                         content={<ChartTooltipContent 
                             formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+                            labelFormatter={(label, payload) => {
+                                if (payload && payload.length > 0) {
+                                    return format(payload[0].payload.date, 'EEE, MMM d');
+                                }
+                                return label;
+                            }}
                         />} 
                         />
                         <Line dataKey="sales" type="monotone" stroke="var(--color-sales)" strokeWidth={2} dot={true} />
@@ -390,8 +412,8 @@ export default function ReportsPage() {
                         </TableHeader>
                         <TableBody>
                             {dailySalesData.map(day => (
-                                <TableRow key={day.date} onClick={() => handleDayClick(day)} className="cursor-pointer">
-                                    <TableCell className='font-medium'>{day.date}</TableCell>
+                                <TableRow key={format(day.date, 'yyyy-MM-dd')} onClick={() => handleDayClick(day)} className="cursor-pointer">
+                                    <TableCell className='font-medium'>{format(day.date, 'EEE, MMM d')}</TableCell>
                                     <TableCell className="text-right flex items-center justify-end">
                                         <IndianRupee className="h-4 w-4 mr-1" />
                                         {day.sales.toLocaleString('en-IN')}
@@ -539,7 +561,7 @@ export default function ReportsPage() {
       <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Sales Details for {selectedDay?.date}</DialogTitle>
+            <DialogTitle>Sales Details for {selectedDay?.date ? format(selectedDay.date, 'EEE, MMM d') : ''}</DialogTitle>
             <DialogDescription>
               Showing all completed bills for the selected day.
             </DialogDescription>

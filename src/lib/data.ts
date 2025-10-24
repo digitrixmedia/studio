@@ -1,7 +1,7 @@
 
 
 import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog, Role } from '@/lib/types';
-import { addDays } from 'date-fns';
+import { addDays, subDays } from 'date-fns';
 
 export const users: User[] = [
   { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'admin', avatar: '/avatars/01.png', subscriptionId: 'sub-1' },
@@ -211,15 +211,17 @@ orders[0] = { ...orders[0], id: 'order-1', tableId: 'table-2', type: 'dine-in', 
 orders[1] = { ...orders[1], id: 'order-2', tableId: 'table-4', type: 'dine-in', status: 'ready' };
 orders[2] = { ...orders[2], id: 'order-3', tableId: 'table-6', type: 'dine-in', status: 'new' };
 
-export const dailySalesData = [
-  { date: 'Mon', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-  { date: 'Tue', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-  { date: 'Wed', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-  { date: 'Thu', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-  { date: 'Fri', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-  { date: 'Sat', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-  { date: 'Sun', sales: Math.floor(Math.random() * 5000) + 1000, orders: Math.floor(Math.random() * 20) + 10, aov: 0 },
-].map(d => ({ ...d, aov: d.orders > 0 ? d.sales / d.orders : 0 }));
+export const dailySalesData: { date: Date, sales: number, orders: number, aov: number }[] = Array.from({ length: 7 }, (_, i) => {
+    const date = subDays(new Date(), 6 - i);
+    const sales = Math.floor(Math.random() * 5000) + 1000;
+    const orders = Math.floor(Math.random() * 20) + 10;
+    return {
+        date,
+        sales,
+        orders,
+        aov: orders > 0 ? sales / orders : 0
+    };
+});
 
 
 export const hourlySalesData = Array.from({length: 12}, (_, i) => ({
