@@ -62,6 +62,12 @@ const initialNewVendorState = {
     gstin: ''
 };
 
+interface OtherCharge {
+    name: string;
+    amount: number;
+    taxRate: number;
+}
+
 export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDialogProps) {
     const [po, setPo] = useState<Omit<PurchaseOrder, 'id' | 'status'>>({
         poNumber: `PO-${Date.now()}`,
@@ -75,6 +81,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
         grandTotal: 0,
         paymentStatus: 'unpaid',
     });
+    const [otherChargesList, setOtherChargesList] = useState<OtherCharge[]>([]);
+    const [isOtherChargesOpen, setIsOtherChargesOpen] = useState(false);
+
     const [updateInventory, setUpdateInventory] = useState(true);
     const { toast } = useToast();
     
@@ -114,16 +123,20 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
 
     useEffect(() => {
         const subTotal = po.items.reduce((sum, item) => sum + item.amount, 0);
-        const totalTaxes = po.items.reduce((sum, item) => sum + (item.amount * ((item.cgst + item.sgst + item.igst) / 100)), 0);
-        const grandTotal = subTotal - po.totalDiscount + po.otherCharges + totalTaxes;
+        const totalItemTaxes = po.items.reduce((sum, item) => sum + (item.amount * ((item.cgst + item.sgst + item.igst) / 100)), 0);
+        const totalOtherCharges = otherChargesList.reduce((sum, charge) => sum + charge.amount, 0);
+        const totalOtherChargesTaxes = otherChargesList.reduce((sum, charge) => sum + (charge.amount * (charge.taxRate / 100)), 0);
+        
+        const grandTotal = subTotal - po.totalDiscount + totalOtherCharges + totalItemTaxes + totalOtherChargesTaxes;
 
         setPo(prev => ({
             ...prev,
             subTotal,
-            totalTaxes,
+            otherCharges: totalOtherCharges,
+            totalTaxes: totalItemTaxes + totalOtherChargesTaxes,
             grandTotal,
         }));
-    }, [po.items, po.totalDiscount, po.otherCharges]);
+    }, [po.items, po.totalDiscount, otherChargesList]);
 
     const handleSave = () => {
         if (!po.vendorId || po.items.some(i => !i.ingredientId)) {
@@ -139,7 +152,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
             title: 'Purchase Entry Saved',
             description: `Entry for PO #${po.poNumber} has been saved.`,
         });
-        console.log('Saved PO:', po);
+        console.log('Saved PO:', { ...po, otherChargesList });
         onClose();
     };
 
@@ -169,6 +182,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
     };
 
     return (
+        <>
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
                 <DialogHeader>
@@ -255,9 +269,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                                 <TableHead>Unit</TableHead>
                                                 <TableHead>Price (₹)</TableHead>
                                                 <TableHead>Amount (₹)</TableHead>
-                                                <TableHead className="text-center">CGST %</TableHead>
-                                                <TableHead className="text-center">SGST %</TableHead>
-                                                <TableHead className="text-center">IGST %</TableHead>
+                                                <TableHead className="text-center w-24">CGST %</TableHead>
+                                                <TableHead className="text-center w-24">SGST %</TableHead>
+                                                <TableHead className="text-center w-24">IGST %</TableHead>
                                                 <TableHead>Description</TableHead>
                                                 <TableHead>Action</TableHead>
                                             </TableRow>
@@ -277,9 +291,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                                     <TableCell>{getIngredientUnit(item.ingredientId) || 'Unit'}</TableCell>
                                                     <TableCell><Input type="number" value={item.unitPrice} onChange={e => handleItemChange(index, 'unitPrice', e.target.value)} className="w-24" /></TableCell>
                                                     <TableCell>{item.amount.toFixed(2)}</TableCell>
-                                                    <TableCell><Input type="number" value={item.cgst} onChange={e => handleItemChange(index, 'cgst', e.target.value)} className="w-20 text-center" /></TableCell>
-                                                    <TableCell><Input type="number" value={item.sgst} onChange={e => handleItemChange(index, 'sgst', e.target.value)} className="w-20 text-center" /></TableCell>
-                                                    <TableCell><Input type="number" value={item.igst} onChange={e => handleItemChange(index, 'igst', e.target.value)} className="w-20 text-center" /></TableCell>
+                                                    <TableCell><Input type="number" value={item.cgst} onChange={e => handleItemChange(index, 'cgst', e.target.value)} className="w-full text-center" /></TableCell>
+                                                    <TableCell><Input type="number" value={item.sgst} onChange={e => handleItemChange(index, 'sgst', e.target.value)} className="w-full text-center" /></TableCell>
+                                                    <TableCell><Input type="number" value={item.igst} onChange={e => handleItemChange(index, 'igst', e.target.value)} className="w-full text-center" /></TableCell>
                                                     <TableCell><Input placeholder="Description" value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} /></TableCell>
                                                     <TableCell>
                                                         <Button variant="ghost" size="icon" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -314,7 +328,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                          </div>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
-                                        <Label>+ Add Other Charges:</Label>
+                                        <Button variant="link" className="p-0 h-auto" onClick={() => setIsOtherChargesOpen(true)}>
+                                            + Add Other Charges:
+                                        </Button>
                                         <span>{po.otherCharges.toFixed(3)}</span>
                                     </div>
                                      <div className="flex justify-between items-center text-sm">
@@ -342,5 +358,46 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+        
+        <Dialog open={isOtherChargesOpen} onOpenChange={setIsOtherChargesOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Other Charges</DialogTitle>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                     {otherChargesList.map((charge, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 border rounded-md">
+                            <span className="flex-1">{charge.name} - ₹{charge.amount} (+{charge.taxRate}%)</span>
+                            <Button variant="ghost" size="icon" onClick={() => setOtherChargesList(prev => prev.filter((_, i) => i !== index))}>
+                                <Trash2 className="h-4 w-4 text-destructive"/>
+                            </Button>
+                        </div>
+                     ))}
+                     <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const name = formData.get('chargeName') as string;
+                        const amount = Number(formData.get('chargeAmount'));
+                        const taxRate = Number(formData.get('chargeTax'));
+                        if(name && amount > 0) {
+                            setOtherChargesList(prev => [...prev, { name, amount, taxRate }]);
+                            e.currentTarget.reset();
+                        }
+                     }}>
+                        <div className="grid grid-cols-3 gap-2">
+                            <Input name="chargeName" placeholder="Charge Name (e.g., Delivery)" required />
+                            <Input name="chargeAmount" type="number" placeholder="Amount" required/>
+                            <Input name="chargeTax" type="number" placeholder="Tax %" defaultValue={0} />
+                        </div>
+                        <Button type="submit" className="mt-2">Add Charge</Button>
+                     </form>
+                </div>
+                <DialogFooter>
+                    <Button onClick={() => setIsOtherChargesOpen(false)}>Done</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        </>
     );
 }
