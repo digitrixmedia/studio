@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -32,7 +33,7 @@ const features = [
         title: 'Purchase Management',
         description: 'Keep track of your raw material purchases and inward entries.',
         icon: ClipboardList,
-        href: '#',
+        href: '/inventory/purchase',
         section: 'Purchase'
     },
     {

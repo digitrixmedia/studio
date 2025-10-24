@@ -1,6 +1,6 @@
 
 
-import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog, Role } from '@/lib/types';
+import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog, Role, Vendor, PurchaseOrder } from '@/lib/types';
 import { addDays, subDays } from 'date-fns';
 
 export const users: User[] = [
@@ -228,6 +228,48 @@ export const hourlySalesData = Array.from({length: 12}, (_, i) => ({
     hour: `${i + 9} AM`,
     sales: Math.floor(Math.random() * 1500) + 200
 }));
+
+export const vendors: Vendor[] = [
+    { id: 'vendor-1', name: 'Fresh Veggies Co.', contactPerson: 'Rajesh Kumar', phone: '9876543210', email: 'rajesh@freshveg.com' },
+    { id: 'vendor-2', name: 'Daily Dairy Supply', contactPerson: 'Sunita Sharma', phone: '9876543211', email: 'sunita@dailydairy.com' },
+    { id: 'vendor-3', name: 'Beans & Co.', contactPerson: 'Amit Patel', phone: '9876543212', email: 'amit@beansco.com' },
+];
+
+export const purchaseOrders: PurchaseOrder[] = [
+    {
+        id: 'po-1',
+        poNumber: 'PO-2024-001',
+        vendorId: 'vendor-1',
+        date: subDays(new Date(), 5),
+        items: [
+            { id: 'poi-1', ingredientId: 'ing-5', quantity: 10, unitPrice: 150, totalPrice: 1500 },
+        ],
+        totalAmount: 1500,
+        status: 'completed',
+    },
+    {
+        id: 'po-2',
+        poNumber: 'PO-2024-002',
+        vendorId: 'vendor-2',
+        date: subDays(new Date(), 2),
+        items: [
+            { id: 'poi-2', ingredientId: 'ing-2', quantity: 20, unitPrice: 50, totalPrice: 1000 },
+        ],
+        totalAmount: 1000,
+        status: 'completed',
+    },
+    {
+        id: 'po-3',
+        poNumber: 'PO-2024-003',
+        vendorId: 'vendor-3',
+        date: new Date(),
+        items: [
+            { id: 'poi-3', ingredientId: 'ing-1', quantity: 5, unitPrice: 800, totalPrice: 4000 },
+        ],
+        totalAmount: 4000,
+        status: 'pending',
+    },
+];
 
 // MOCKED SUPER ADMIN DATA
 const subscriptionStatuses: SubscriptionStatus[] = ['active', 'inactive', 'expired', 'suspended'];

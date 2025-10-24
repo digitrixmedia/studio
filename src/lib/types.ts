@@ -97,6 +97,36 @@ export interface Ingredient {
   minStock: number;
 }
 
+// Inventory & Purchase Types
+export interface Vendor {
+    id: string;
+    name: string;
+    contactPerson: string;
+    phone: string;
+    email: string;
+}
+
+export interface PurchaseOrderItem {
+    id: string;
+    ingredientId: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+}
+
+export type PurchaseOrderStatus = 'pending' | 'completed' | 'cancelled';
+
+export interface PurchaseOrder {
+    id: string;
+    poNumber: string;
+    vendorId: string;
+    date: Date;
+    items: PurchaseOrderItem[];
+    totalAmount: number;
+    status: PurchaseOrderStatus;
+}
+
+
 // Super Admin Types
 export type SubscriptionStatus = 'active' | 'inactive' | 'expired' | 'suspended';
 
