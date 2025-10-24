@@ -37,6 +37,16 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -64,6 +74,7 @@ export default function InventoryPage() {
   const [editableRecipes, setEditableRecipes] = useState<Record<string, { ingredientId: string; quantity: number }[]>>({});
   const [stockUpdateIngredient, setStockUpdateIngredient] = useState<Ingredient | null>(null);
   const [stockUpdateQuantity, setStockUpdateQuantity] = useState('');
+  const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null);
   const { toast } = useToast();
 
   const handleEditRecipe = (item: MenuItem) => {
@@ -143,6 +154,17 @@ export default function InventoryPage() {
     });
 
     setStockUpdateIngredient(null);
+  };
+
+  const handleDeleteIngredient = () => {
+    if (!ingredientToDelete) return;
+    setIngredients(prev => prev.filter(ing => ing.id !== ingredientToDelete.id));
+    toast({
+        title: "Ingredient Removed",
+        description: `${ingredientToDelete.name} has been removed from the inventory.`,
+        variant: "destructive",
+    });
+    setIngredientToDelete(null);
   };
 
   return (
@@ -251,9 +273,12 @@ export default function InventoryPage() {
                           }
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleOpenAddStockDialog(item)}>
                           <PlusCircle className="mr-2 h-4 w-4" /> Add Stock
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => setIngredientToDelete(item)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Remove
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -398,7 +423,28 @@ export default function InventoryPage() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Delete Ingredient Dialog */}
+    <AlertDialog open={!!ingredientToDelete} onOpenChange={() => setIngredientToDelete(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently remove "{ingredientToDelete?.name}" from your inventory.
+            This action cannot be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setIngredientToDelete(null)}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteIngredient} className="bg-destructive hover:bg-destructive/90">
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
+    
+
     
