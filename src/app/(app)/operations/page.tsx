@@ -49,7 +49,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2 } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search } from 'lucide-react';
 import { useState } from 'react';
 import { format, setHours, setMinutes } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -90,8 +90,9 @@ export default function OperationsPage() {
     const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
     const [orders, setOrders] = useState<Order[]>(mockOrders);
     
-    const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'All'>('All');
-    const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'All'>('All');
+    const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'all'>('all');
+    const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'all'>('all');
+    const [orderSearchQuery, setOrderSearchQuery] = useState('');
     
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
     const [isReservationOpen, setIsReservationOpen] = useState(false);
@@ -103,9 +104,13 @@ export default function OperationsPage() {
     const [seatingReservation, setSeatingReservation] = useState<Reservation | null>(null);
 
     const filteredOrders = orders.filter(order => {
-        const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
-        const typeMatch = orderTypeFilter === 'All' || order.type === orderTypeFilter;
-        return statusMatch && typeMatch;
+        const statusMatch = orderStatusFilter === 'all' || order.status === orderStatusFilter;
+        const typeMatch = orderTypeFilter === 'all' || order.type === orderTypeFilter;
+        const searchMatch = orderSearchQuery === '' ||
+            order.orderNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
+            (order.customerName && order.customerName.toLowerCase().includes(orderSearchQuery.toLowerCase())) ||
+            (order.customerPhone && order.customerPhone.includes(orderSearchQuery));
+        return statusMatch && typeMatch && searchMatch;
     });
     
     const handleCancelOrder = (orderId: string) => {
@@ -199,9 +204,9 @@ export default function OperationsPage() {
     const customerList = Object.values(customerSummary).sort((a,b) => b.totalSpent - a.totalSpent);
     
     const liveViewOrders = {
-        'New': orders.filter(o => o.status === 'new'),
-        'Preparing': orders.filter(o => o.status === 'preparing'),
-        'Ready': orders.filter(o => o.status === 'ready'),
+        'new': orders.filter(o => o.status === 'new'),
+        'preparing': orders.filter(o => o.status === 'preparing'),
+        'ready': orders.filter(o => o.status === 'ready'),
     };
     
     const handleUpdateReservationStatus = (reservationId: string, newStatus: ReservationStatus) => {
@@ -274,16 +279,25 @@ export default function OperationsPage() {
             <TabsContent value="orders">
                 <Card>
                     <CardHeader>
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle>All Orders</CardTitle>
                             <CardDescription>A log of all orders placed today.</CardDescription>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                             <div className="relative w-full sm:w-auto">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                placeholder="Search by Order #, Name, Phone..." 
+                                className="pl-10 w-full sm:w-64"
+                                value={orderSearchQuery}
+                                onChange={(e) => setOrderSearchQuery(e.target.value)}
+                                />
+                            </div>
                             <Select value={orderStatusFilter} onValueChange={(val) => setOrderStatusFilter(val as any)}>
-                                <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
+                                <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="All">All Statuses</SelectItem>
+                                    <SelectItem value="all">All Statuses</SelectItem>
                                     <SelectItem value="new">New</SelectItem>
                                     <SelectItem value="preparing">Preparing</SelectItem>
                                     <SelectItem value="ready">Ready</SelectItem>
@@ -293,9 +307,9 @@ export default function OperationsPage() {
                                 </SelectContent>
                             </Select>
                             <Select value={orderTypeFilter} onValueChange={(val) => setOrderTypeFilter(val as any)}>
-                                <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by type..." /></SelectTrigger>
+                                <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Filter by type..." /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="All">All Types</SelectItem>
+                                    <SelectItem value="all">All Types</SelectItem>
                                     <SelectItem value="dine-in">Dine-In</SelectItem>
                                     <SelectItem value="takeaway">Takeaway</SelectItem>
                                     <SelectItem value="delivery">Delivery</SelectItem>
@@ -429,10 +443,10 @@ export default function OperationsPage() {
                     {Object.entries(liveViewOrders).map(([status, orders]) => (
                         <Card key={status} className="flex flex-col">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    {status === 'New' && <Clock />}
-                                    {status === 'Preparing' && <CookingPot />}
-                                    {status === 'Ready' && <Check />}
+                                <CardTitle className="flex items-center gap-2 capitalize">
+                                    {status === 'new' && <Clock />}
+                                    {status === 'preparing' && <CookingPot />}
+                                    {status === 'ready' && <Check />}
                                     {status} ({orders.length})
                                 </CardTitle>
                             </CardHeader>
@@ -440,7 +454,7 @@ export default function OperationsPage() {
                                 <ScrollArea className="h-full">
                                     <div className="space-y-3 pr-4">
                                         {orders.map(order => (
-                                            <Card key={order.id} className={cn("p-3", status === 'New' && 'bg-blue-500/10 border-blue-500', status === 'Preparing' && 'bg-orange-500/10 border-orange-500', status === 'Ready' && 'bg-green-500/10 border-green-500')}>
+                                            <Card key={order.id} className={cn("p-3", status === 'new' && 'bg-blue-500/10 border-blue-500', status === 'preparing' && 'bg-orange-500/10 border-orange-500', status === 'ready' && 'bg-green-500/10 border-green-500')}>
                                                 <div className="flex justify-between font-bold">
                                                     <span>#{order.orderNumber}</span>
                                                     <Badge variant="secondary">{order.type}</Badge>
@@ -745,3 +759,5 @@ export default function OperationsPage() {
     </>
   );
 }
+
+    
