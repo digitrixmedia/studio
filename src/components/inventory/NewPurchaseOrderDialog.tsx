@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -328,13 +328,13 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                                     <TableCell><Input type="number" value={item.unitPrice} onChange={e => handleItemChange(index, 'unitPrice', e.target.value)} className="w-24" /></TableCell>
                                                     <TableCell>{item.amount.toFixed(2)}</TableCell>
                                                     <TableCell>
-                                                        <Input type="number" value={item.cgst || ''} onChange={e => handleItemChange(index, 'cgst', e.target.value)} className="text-center" />
+                                                        <Input type="number" value={item.cgst} onChange={(e) => handleItemChange(index, 'cgst', e.target.value)} className="w-20 text-center" />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Input type="number" value={item.sgst || ''} onChange={e => handleItemChange(index, 'sgst', e.target.value)} className="text-center" />
+                                                        <Input type="number" value={item.sgst} onChange={(e) => handleItemChange(index, 'sgst', e.target.value)} className="w-20 text-center" />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Input type="number" value={item.igst || ''} onChange={e => handleItemChange(index, 'igst', e.target.value)} className="text-center" />
+                                                        <Input type="number" value={item.igst} onChange={(e) => handleItemChange(index, 'igst', e.target.value)} className="w-20 text-center" />
                                                     </TableCell>
                                                     <TableCell><Input placeholder="Description" value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} /></TableCell>
                                                     <TableCell>
