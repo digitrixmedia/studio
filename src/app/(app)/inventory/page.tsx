@@ -40,7 +40,7 @@ const features = [
         title: 'Wastage',
         description: 'Enter wastage of your items/raw materials to optimize and plug leakages.',
         icon: Recycle,
-        href: '#',
+        href: '/inventory/wastage',
         section: 'Wastage & Conversion'
     },
      {

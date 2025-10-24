@@ -1,0 +1,251 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { CalendarIcon, PlusCircle, Save, Trash2 } from 'lucide-react';
+import { ingredients as initialIngredients, menuItems as initialMenuItems } from '@/lib/data';
+import type { Ingredient, MenuItem, WastageItem } from '@/lib/types';
+import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
+
+
+const initialWastageItemState: Omit<WastageItem, 'id' | 'unit'> = {
+  itemId: '',
+  quantity: 1,
+  purchasePrice: 0,
+  amount: 0,
+  description: '',
+};
+
+export default function AddWastagePage() {
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  const [date, setDate] = useState<Date>(new Date());
+  const [wastageFor, setWastageFor] = useState<'Raw Material' | 'Item'>('Raw Material');
+  const [wastageItems, setWastageItems] = useState<WastageItem[]>([{ ...initialWastageItemState, id: `wi-${Date.now()}`, unit: '' }]);
+  const [reason, setReason] = useState('');
+  
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+
+  const handleItemChange = (index: number, field: keyof Omit<WastageItem, 'id'>, value: string | number) => {
+    const updatedItems = [...wastageItems];
+    const currentItem = { ...updatedItems[index] };
+
+    const numericValue = typeof value === 'string' && field !== 'itemId' && field !== 'description' ? parseFloat(value) || 0 : value;
+
+    if (field === 'itemId' || field === 'description') {
+        (currentItem as any)[field] = value;
+    } else {
+        (currentItem as any)[field] = numericValue;
+    }
+
+    if (field === 'itemId') {
+        const selectedSourceItem = wastageFor === 'Raw Material'
+            ? ingredients.find(i => i.id === value)
+            : menuItems.find(i => i.id === value);
+        
+        if (selectedSourceItem) {
+            currentItem.unit = 'unit' in selectedSourceItem ? selectedSourceItem.unit : 'pcs';
+            // A real app would fetch avg. purchase price. Here we use item price for menu items.
+            currentItem.purchasePrice = 'price' in selectedSourceItem ? selectedSourceItem.price : 0; 
+        }
+    }
+    
+    if (field === 'quantity' || field === 'purchasePrice') {
+        currentItem.amount = currentItem.quantity * currentItem.purchasePrice;
+    }
+
+    updatedItems[index] = currentItem;
+    setWastageItems(updatedItems);
+  };
+  
+  useEffect(() => {
+    setWastageItems([{ ...initialWastageItemState, id: `wi-${Date.now()}`, unit: '' }]);
+  }, [wastageFor]);
+
+  const addNewWastageItem = () => {
+    setWastageItems(prev => [...prev, { ...initialWastageItemState, id: `wi-${Date.now()}`, unit: '' }]);
+  };
+
+  const removeWastageItem = (id: string) => {
+    setWastageItems(prev => prev.filter(item => item.id !== id));
+  };
+  
+  const handleSave = () => {
+     if (wastageItems.some(i => !i.itemId || i.quantity <= 0)) {
+      toast({
+        variant: 'destructive',
+        title: 'Invalid Items',
+        description: 'Please select a material/item and enter a valid quantity for all rows.',
+      });
+      return;
+    }
+
+    // Deduct stock logic
+    if (wastageFor === 'Raw Material') {
+      setIngredients(prevIngredients => {
+        const updatedIngredients = [...prevIngredients];
+        wastageItems.forEach(wItem => {
+          const ingIndex = updatedIngredients.findIndex(ing => ing.id === wItem.itemId);
+          if (ingIndex !== -1) {
+            updatedIngredients[ingIndex].stock -= wItem.quantity;
+          }
+        });
+        return updatedIngredients;
+      });
+    } else {
+      // For menu items, you would deduct from the raw materials based on recipe mapping.
+      // This is a complex logic that would be implemented here in a real application.
+    }
+
+    toast({
+      title: 'Wastage Entry Saved',
+      description: 'The wastage has been recorded and stock levels updated.',
+    });
+    router.push('/inventory/wastage');
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Wastage Details</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <Label>Date *</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="space-y-2">
+            <Label>Wastage For *</Label>
+            <RadioGroup
+              value={wastageFor}
+              onValueChange={(val) => setWastageFor(val as any)}
+              className="flex items-center space-x-4 pt-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Raw Material" id="raw-material" />
+                <Label htmlFor="raw-material">Raw Material</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="Item" id="item" />
+                <Label htmlFor="item">Item</Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <div className="space-y-2">
+            <Label>Reason</Label>
+            <Textarea placeholder="Reason for wastage..." value={reason} onChange={e => setReason(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+            <div className='flex justify-between items-center'>
+                <CardTitle>Wastage Item Details *</CardTitle>
+                <Button variant="outline" onClick={addNewWastageItem}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add New
+                </Button>
+            </div>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className='w-[250px]'>{wastageFor}</TableHead>
+                        <TableHead>Quantity</TableHead>
+                        <TableHead>Unit</TableHead>
+                        <TableHead>Avg. Purchase Price</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Action</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {wastageItems.map((item, index) => (
+                        <TableRow key={item.id}>
+                            <TableCell>
+                                <Select value={item.itemId} onValueChange={val => handleItemChange(index, 'itemId', val)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={`Select ${wastageFor}`} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {(wastageFor === 'Raw Material' ? ingredients : menuItems).map(i => (
+                                            <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </TableCell>
+                             <TableCell><Input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} placeholder="Quantity" /></TableCell>
+                            <TableCell><Input value={item.unit} disabled placeholder="Unit"/></TableCell>
+                            <TableCell><Input type="number" value={item.purchasePrice} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} placeholder="Avg. Price" /></TableCell>
+                            <TableCell><Input value={item.amount.toFixed(2)} disabled placeholder="Amount" /></TableCell>
+                            <TableCell><Input value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Description" /></TableCell>
+                            <TableCell>
+                                <Button variant="ghost" size="icon" onClick={() => removeWastageItem(item.id)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </CardContent>
+      </Card>
+      
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+        <Button onClick={handleSave}>
+          <Save className="mr-2 h-4 w-4" /> Save
+        </Button>
+      </div>
+    </div>
+  );
+}

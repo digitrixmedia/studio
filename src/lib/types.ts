@@ -92,7 +92,7 @@ export interface Table {
 export interface Ingredient {
   id: string;
   name: string;
-  unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l';
+  unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l' | '';
   stock: number;
   minStock: number;
 }
@@ -137,6 +137,27 @@ export interface PurchaseOrder {
     grandTotal: number;
     status: PurchaseOrderStatus;
     paymentStatus: PurchasePaymentStatus;
+}
+
+export interface WastageItem {
+    id: string;
+    itemId: string; // can be ingredientId or menuItemId
+    quantity: number;
+    unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l' | '';
+    purchasePrice: number;
+    amount: number;
+    description?: string;
+}
+
+export interface Wastage {
+    id: string;
+    wastageNumber: string;
+    date: Date;
+    wastageFor: 'Raw Material' | 'Item';
+    items: WastageItem[];
+    totalAmount: number;
+    userId: string;
+    reason: string;
 }
 
 
