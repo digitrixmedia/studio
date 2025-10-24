@@ -614,6 +614,7 @@ export default function OrdersPage() {
   const handlePrintAndSettle = () => {
     handlePrintBill();
     resetCurrentOrder();
+    setIsPaymentDialogOpen(false);
   };
   
   const handleKotAndPrint = () => {
@@ -655,6 +656,7 @@ export default function OrdersPage() {
       });
 
       resetCurrentOrder();
+      setIsPaymentDialogOpen(false);
     } catch (error) {
       console.error("Error generating or sending eBill:", error);
       toast({
@@ -730,9 +732,9 @@ export default function OrdersPage() {
                 <ScrollArea className="h-full">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
                     {filteredMenuItems.map(item => (
-                        <Card key={item.id} className="overflow-hidden relative shadow-md hover:shadow-xl transition-shadow duration-200 hover:-translate-y-1">
+                        <Card key={item.id} className="overflow-hidden relative shadow-md hover:shadow-xl transition-shadow duration-200 hover:-translate-y-1 flex flex-col">
                           <button
-                            className="w-full text-left p-2"
+                            className="w-full text-left p-2 flex-1"
                             onClick={() => addToCart(item)}
                             disabled={!item.isAvailable}
                           >
@@ -741,9 +743,9 @@ export default function OrdersPage() {
                                     <span className="font-bold text-destructive">Unavailable</span>
                                 </div>
                             )}
-                            <h3 className="font-semibold truncate text-sm sm:text-base">{item.name}</h3>
-                             <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                            <p className="text-sm flex items-center mt-1">
+                            <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
+                             <p className="text-xs text-muted-foreground whitespace-normal">{item.description}</p>
+                            <p className="text-sm flex items-center mt-auto pt-1">
                               <IndianRupee className="h-3.5 w-3.5 mr-1" />
                               {item.price.toFixed(2)}
                             </p>
@@ -1222,7 +1224,7 @@ export default function OrdersPage() {
                       <Button variant="outline" onClick={handleSaveAndEbill}>
                         <Mail className="mr-2" /> Save & eBill
                       </Button>
-                       <Button onClick={resetCurrentOrder} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
+                       <Button onClick={() => { resetCurrentOrder(); setIsPaymentDialogOpen(false); }} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
                         <CheckCircle className="mr-2"/> Confirm Payment
                       </Button>
                     </div>
