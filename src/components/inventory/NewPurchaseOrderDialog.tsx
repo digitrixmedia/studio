@@ -255,21 +255,11 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                                 <TableHead>Unit</TableHead>
                                                 <TableHead>Price (₹)</TableHead>
                                                 <TableHead>Amount (₹)</TableHead>
-                                                <TableHead colSpan={3} className="text-center">Tax (%)</TableHead>
+                                                <TableHead className="text-center">CGST %</TableHead>
+                                                <TableHead className="text-center">SGST %</TableHead>
+                                                <TableHead className="text-center">IGST %</TableHead>
                                                 <TableHead>Description</TableHead>
                                                 <TableHead>Action</TableHead>
-                                            </TableRow>
-                                             <TableRow>
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
-                                                <TableHead className="w-[80px]">CGST</TableHead>
-                                                <TableHead className="w-[80px]">SGST</TableHead>
-                                                <TableHead className="w-[80px]">IGST</TableHead>
-                                                <TableHead></TableHead>
-                                                <TableHead></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -287,9 +277,9 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                                     <TableCell>{getIngredientUnit(item.ingredientId) || 'Unit'}</TableCell>
                                                     <TableCell><Input type="number" value={item.unitPrice} onChange={e => handleItemChange(index, 'unitPrice', e.target.value)} className="w-24" /></TableCell>
                                                     <TableCell>{item.amount.toFixed(2)}</TableCell>
-                                                    <TableCell><Input type="number" value={item.cgst} onChange={e => handleItemChange(index, 'cgst', e.target.value)} /></TableCell>
-                                                    <TableCell><Input type="number" value={item.sgst} onChange={e => handleItemChange(index, 'sgst', e.target.value)} /></TableCell>
-                                                    <TableCell><Input type="number" value={item.igst} onChange={e => handleItemChange(index, 'igst', e.target.value)} /></TableCell>
+                                                    <TableCell><Input type="number" value={item.cgst} onChange={e => handleItemChange(index, 'cgst', e.target.value)} className="w-20 text-center" /></TableCell>
+                                                    <TableCell><Input type="number" value={item.sgst} onChange={e => handleItemChange(index, 'sgst', e.target.value)} className="w-20 text-center" /></TableCell>
+                                                    <TableCell><Input type="number" value={item.igst} onChange={e => handleItemChange(index, 'igst', e.target.value)} className="w-20 text-center" /></TableCell>
                                                     <TableCell><Input placeholder="Description" value={item.description} onChange={e => handleItemChange(index, 'description', e.target.value)} /></TableCell>
                                                     <TableCell>
                                                         <Button variant="ghost" size="icon" onClick={() => removeItem(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
