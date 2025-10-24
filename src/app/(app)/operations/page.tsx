@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -51,7 +52,7 @@ import { reservations as initialReservations, deliveryBoys as initialDeliveryBoy
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem } from '@/lib/types';
 import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search } from 'lucide-react';
 import { useState } from 'react';
-import { format, setHours, setMinutes } from 'date-fns';
+import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -60,6 +61,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useRouter } from 'next/navigation';
+import { DateRange } from 'react-day-picker';
 
 type CustomerSummary = {
     phone: string;
@@ -93,6 +95,10 @@ export default function OperationsPage() {
     const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'all'>('all');
     const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'all'>('all');
     const [orderSearchQuery, setOrderSearchQuery] = useState('');
+    const [dateFilter, setDateFilter] = useState<DateRange | undefined>({
+        from: undefined,
+        to: undefined,
+    });
     
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
     const [isReservationOpen, setIsReservationOpen] = useState(false);
@@ -110,7 +116,13 @@ export default function OperationsPage() {
             order.orderNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()) ||
             (order.customerName && order.customerName.toLowerCase().includes(orderSearchQuery.toLowerCase())) ||
             (order.customerPhone && order.customerPhone.includes(orderSearchQuery));
-        return statusMatch && typeMatch && searchMatch;
+        
+        const dateMatch = !dateFilter?.from || isWithinInterval(order.createdAt, {
+            start: startOfDay(dateFilter.from),
+            end: dateFilter.to ? endOfDay(dateFilter.to) : endOfDay(dateFilter.from)
+        });
+
+        return statusMatch && typeMatch && searchMatch && dateMatch;
     });
     
     const handleCancelOrder = (orderId: string) => {
@@ -294,6 +306,42 @@ export default function OperationsPage() {
                                 onChange={(e) => setOrderSearchQuery(e.target.value)}
                                 />
                             </div>
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full sm:w-[280px] justify-start text-left font-normal",
+                                    !dateFilter && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateFilter?.from ? (
+                                    dateFilter.to ? (
+                                        <>
+                                        {format(dateFilter.from, "LLL dd, y")} -{" "}
+                                        {format(dateFilter.to, "LLL dd, y")}
+                                        </>
+                                    ) : (
+                                        format(dateFilter.from, "LLL dd, y")
+                                    )
+                                    ) : (
+                                    <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateFilter?.from}
+                                    selected={dateFilter}
+                                    onSelect={setDateFilter}
+                                    numberOfMonths={2}
+                                />
+                                </PopoverContent>
+                            </Popover>
                             <Select value={orderStatusFilter} onValueChange={(val) => setOrderStatusFilter(val as any)}>
                                 <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                                 <SelectContent>
