@@ -50,7 +50,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -108,6 +108,10 @@ export default function OperationsPage() {
     const [newDeliveryBoy, setNewDeliveryBoy] = useState(initialDeliveryBoyState);
 
     const [seatingReservation, setSeatingReservation] = useState<Reservation | null>(null);
+    
+    const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+    const [password, setPassword] = useState('');
+
 
     const filteredOrders = orders.filter(order => {
         const statusMatch = orderStatusFilter === 'all' || order.status === orderStatusFilter;
@@ -126,8 +130,21 @@ export default function OperationsPage() {
     });
     
     const handleCancelOrder = (orderId: string) => {
+        // In a real app, you would verify the password against the current user's credentials
+        if (password !== 'password') { // Using "password" as a dummy password for demo
+            toast({
+                variant: 'destructive',
+                title: 'Incorrect Password',
+                description: 'The password you entered is incorrect. Order not cancelled.',
+            });
+            setPassword('');
+            return;
+        }
+
         setOrders(orders.map(o => o.id === orderId ? {...o, status: 'cancelled'} : o));
         toast({ title: 'Order Cancelled', description: `Order #${orders.find(o=>o.id === orderId)?.orderNumber} has been cancelled.` });
+        setOrderToCancel(null);
+        setPassword('');
     };
 
     const handleCreateReservation = () => {
@@ -410,7 +427,7 @@ export default function OperationsPage() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Close</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleCancelOrder(order.id)}>Confirm Cancel</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => setOrderToCancel(order)}>Confirm Cancel</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
@@ -803,6 +820,39 @@ export default function OperationsPage() {
                 <Button onClick={handleCreateDeliveryBoy}>Save Personnel</Button>
             </DialogFooter>
         </DialogContent>
+    </Dialog>
+
+    {/* Dialog for password confirmation on cancel */}
+    <Dialog open={!!orderToCancel} onOpenChange={() => { setOrderToCancel(null); setPassword(''); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Password Required</DialogTitle>
+          <DialogDescription>
+            Enter your password to confirm cancellation of order #{orderToCancel?.orderNumber}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="cancel-password"
+              type="password"
+              placeholder="••••••••"
+              className="pl-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { setOrderToCancel(null); setPassword(''); }}>
+            Cancel
+          </Button>
+          <Button onClick={() => handleCancelOrder(orderToCancel!.id)} className="bg-destructive hover:bg-destructive/90">
+            Confirm Cancellation
+          </Button>
+        </DialogFooter>
+      </DialogContent>
     </Dialog>
     </>
   );
