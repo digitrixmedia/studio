@@ -149,9 +149,9 @@ export const tables: Table[] = [
 ];
 
 export const ingredients: Ingredient[] = [
-  { id: 'ing-1', name: 'Coffee Beans', unit: 'kg', stock: 800, minStock: 1000 },
-  { id: 'ing-2', name: 'Milk', unit: 'l', stock: 5000, minStock: 2000 },
-  { id: 'ing-3', name: 'Sugar', unit: 'kg', stock: 10000, minStock: 2000 },
+  { id: 'ing-1', name: 'Coffee Beans', unit: 'g', stock: 800000, minStock: 1000 },
+  { id: 'ing-2', name: 'Milk', unit: 'ml', stock: 5000, minStock: 2000 },
+  { id: 'ing-3', name: 'Sugar', unit: 'g', stock: 10000, minStock: 2000 },
   { id: 'ing-4', name: 'Bread Loaves', unit: 'pcs', stock: 8, minStock: 10 },
   { id: 'ing-5', name: 'Veggie Mix', unit: 'g', stock: 2000, minStock: 500 },
   { id: 'ing-6', name: 'Cheesecake Slice', unit: 'pcs', stock: 5, minStock: 4 },
@@ -349,7 +349,7 @@ export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => ({
     totalOutlets: subscriptions.filter(s => s.franchiseName === f.name).length,
     totalStorage: (subscriptions.filter(s => s.franchiseName === f.name).reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024),
     lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-})).sort((a, b) => b.totalSales - a.totalSales);
+})).sort((a, b) => b.totalSales - a.sales);
 
 
 export const dailyActiveOutlets = [
