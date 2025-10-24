@@ -37,13 +37,13 @@ const chartConfig = {
   cash: { label: 'Cash', color: 'hsl(var(--chart-1))' },
   upi: { label: 'UPI', color: 'hsl(var(--chart-2))' },
   card: { label: 'Card', color: 'hsl(var(--chart-3))' },
-  'Dine-In': { label: 'Dine-In', color: 'hsl(var(--chart-1))' },
-  'Takeaway': { label: 'Takeaway', color: 'hsl(var(--chart-2))' },
-  'Delivery': { label: 'Delivery', color: 'hsl(var(--chart-3))' },
+  'dine-in': { label: 'Dine-In', color: 'hsl(var(--chart-1))' },
+  'takeaway': { label: 'Takeaway', color: 'hsl(var(--chart-2))' },
+  'delivery': { label: 'Delivery', color: 'hsl(var(--chart-3))' },
 };
 
 // Data processing should happen based on selected date range in a real app
-const completedOrders = orders.filter(o => o.status === 'Completed');
+const completedOrders = orders.filter(o => o.status === 'completed');
 
 const totalSales = completedOrders.reduce((sum, order) => sum + order.total, 0);
 const totalOrders = completedOrders.length;
@@ -267,14 +267,15 @@ export default function ReportsPage() {
                         <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
                             <BarChart data={orderTypeData}>
                                 <CartesianGrid vertical={false} />
-                                <XAxis dataKey="type" tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
+                                <XAxis dataKey="type" tickLine={false} axisLine={false} tickMargin={8} className="capitalize" />
+                                <YAxis tickFormatter={(value) => `₹${Number(value) / 1000}k`} />
                                 <ChartTooltip 
+                                    cursor={false}
                                     content={<ChartTooltipContent 
                                     formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
                                     />}
                                 />
-                                <Bar dataKey="sales" fill="var(--color-sales)" radius={4}>
+                                <Bar dataKey="sales" radius={4}>
                                     {orderTypeData.map((entry) => (
                                         <Cell key={entry.type} fill={`var(--color-${entry.type})`} />
                                     ))}
@@ -291,7 +292,7 @@ export default function ReportsPage() {
                          <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
                             <PieChart>
                                 <ChartTooltip content={<ChartTooltipContent nameKey="sales" hideLabel formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`} />} />
-                                <Pie data={paymentMethodData} dataKey="sales" nameKey="method" innerRadius={50}>
+                                <Pie data={paymentMethodData} dataKey="sales" nameKey="method" innerRadius={50} paddingAngle={5}>
                                     {paymentMethodData.map((entry) => (
                                         <Cell key={entry.method} fill={`var(--color-${entry.method.toLowerCase()})`} />
                                     ))}
