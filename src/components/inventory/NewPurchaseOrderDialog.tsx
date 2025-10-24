@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { vendors as initialVendors, ingredients } from '@/lib/data';
-import type { PurchaseOrder, PurchaseOrderItem, Vendor } from '@/lib/types';
+import type { PurchaseOrder, PurchaseOrderItem, Vendor, Ingredient } from '@/lib/types';
 import { PlusCircle, Trash2, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +41,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 interface NewPurchaseOrderDialogProps {
     isOpen: boolean;
     onClose: () => void;
+    onSave: (newOrder: PurchaseOrder) => void;
+    setIngredients: React.Dispatch<React.SetStateAction<Ingredient[]>>;
 }
 
 const initialItemState: Omit<PurchaseOrderItem, 'id'> = {
@@ -69,12 +71,12 @@ interface OtherCharge {
     sgst: number;
 }
 
-export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDialogProps) {
+export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients }: NewPurchaseOrderDialogProps) {
     const [po, setPo] = useState<Omit<PurchaseOrder, 'id' | 'status'>>({
         poNumber: `PO-${Date.now()}`,
         vendorId: '',
         date: new Date(),
-        items: [{...initialItemState}],
+        items: [{...initialItemState, id: `item-${Date.now()}`}],
         subTotal: 0,
         totalDiscount: 0,
         otherCharges: 0,
@@ -115,7 +117,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
     };
 
     const addNewItem = () => {
-        setPo(prev => ({ ...prev, items: [...prev.items, { ...initialItemState }] }));
+        setPo(prev => ({ ...prev, items: [...prev.items, { ...initialItemState, id: `item-${Date.now()}` }] }));
     };
 
     const removeItem = (index: number) => {
@@ -149,12 +151,32 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
             });
             return;
         }
+        
+        const newOrder: PurchaseOrder = {
+            ...po,
+            id: `po-${Date.now()}`,
+            status: 'completed',
+        };
+
+        if (updateInventory) {
+          setIngredients(prevIngredients => {
+            const newIngredients = [...prevIngredients];
+            newOrder.items.forEach(item => {
+              const ingIndex = newIngredients.findIndex(ing => ing.id === item.ingredientId);
+              if (ingIndex > -1) {
+                newIngredients[ingIndex].stock += item.quantity;
+              }
+            });
+            return newIngredients;
+          });
+        }
+
+        onSave(newOrder);
 
         toast({
             title: 'Purchase Entry Saved',
             description: `Entry for PO #${po.poNumber} has been saved.`,
         });
-        console.log('Saved PO:', { ...po, otherCharge });
         onClose();
     };
 
@@ -285,7 +307,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                         </TableHeader>
                                         <TableBody>
                                             {po.items.map((item, index) => (
-                                                <TableRow key={index}>
+                                                <TableRow key={item.id}>
                                                     <TableCell>
                                                         <Select value={item.ingredientId} onValueChange={(val) => handleItemChange(index, 'ingredientId', val)}>
                                                             <SelectTrigger><SelectValue placeholder="Select/Add Raw Material"/></SelectTrigger>
@@ -383,7 +405,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                         <Input 
                             type="number" 
                             placeholder="Included in Invoice" 
-                            value={otherCharge.amount}
+                            value={otherCharge.amount === 0 ? '' : otherCharge.amount}
                             onChange={(e) => setOtherCharge(prev => ({ ...prev, amount: Number(e.target.value)}))}
                         />
                     </div>
@@ -393,7 +415,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                 <Label>CGST(%):</Label>
                                 <Input 
                                     type="number"
-                                    value={otherCharge.cgst}
+                                    value={otherCharge.cgst === 0 ? '' : otherCharge.cgst}
                                     onChange={(e) => setOtherCharge(prev => ({ ...prev, cgst: Number(e.target.value)}))}
                                 />
                             </div>
@@ -401,7 +423,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                                 <Label>SGST(%):</Label>
                                 <Input
                                     type="number"
-                                    value={otherCharge.sgst}
+                                    value={otherCharge.sgst === 0 ? '' : otherCharge.sgst}
                                     onChange={(e) => setOtherCharge(prev => ({ ...prev, sgst: Number(e.target.value)}))}
                                 />
                             </div>

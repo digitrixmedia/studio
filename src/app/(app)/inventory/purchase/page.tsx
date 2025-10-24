@@ -19,13 +19,15 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { purchaseOrders, vendors } from '@/lib/data';
-import type { PurchaseOrder } from '@/lib/types';
+import { purchaseOrders as initialPurchaseOrders, vendors, ingredients as initialIngredients } from '@/lib/data';
+import type { PurchaseOrder, Ingredient } from '@/lib/types';
 import { PlusCircle, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 import { NewPurchaseOrderDialog } from '@/components/inventory/NewPurchaseOrderDialog';
 
 export default function PurchaseOrdersPage() {
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(initialPurchaseOrders);
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const getVendorName = (vendorId: string) => {
@@ -43,6 +45,10 @@ export default function PurchaseOrdersPage() {
   const getPaymentStatusVariant = (status: 'paid' | 'unpaid') => {
     return status === 'paid' ? 'default' : 'destructive';
   }
+
+  const handleNewOrder = (newOrder: PurchaseOrder) => {
+    setPurchaseOrders(prev => [newOrder, ...prev]);
+  };
 
   return (
     <>
@@ -96,7 +102,12 @@ export default function PurchaseOrdersPage() {
           </Table>
         </CardContent>
       </Card>
-      <NewPurchaseOrderDialog isOpen={isDialogOpen} onClose={() => setIsDialogOpen(false)} />
+      <NewPurchaseOrderDialog 
+        isOpen={isDialogOpen} 
+        onClose={() => setIsDialogOpen(false)} 
+        onSave={handleNewOrder}
+        setIngredients={setIngredients}
+      />
     </>
   );
 }
