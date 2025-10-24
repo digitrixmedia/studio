@@ -52,9 +52,11 @@ interface AddWastageDialogProps {
   onSave: (wastage: Wastage) => void;
 }
 
-const initialWastageItemState: Omit<WastageItem, 'id' | 'unit' | 'name'> = {
+const initialWastageItemState: Omit<WastageItem, 'id'> = {
   itemId: '',
+  name: '',
   quantity: 1,
+  unit: '',
   purchasePrice: 0,
   amount: 0,
   description: '',
@@ -72,52 +74,57 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
   const [ingredients] = useState<Ingredient[]>(initialIngredients);
   const [menuItems] = useState<MenuItem[]>(initialMenuItems);
 
-  const handleItemChange = (index: number, field: keyof Omit<WastageItem, 'id'>, value: string | number) => {
-    const updatedItems = [...wastageItems];
-    const currentItem = { ...updatedItems[index] };
+  const handleItemChange = (index: number, field: keyof Omit<WastageItem, 'id' | 'name' | 'unit'>, value: string | number) => {
+    setWastageItems(prevItems => {
+        const updatedItems = [...prevItems];
+        const currentItem = { ...updatedItems[index] };
 
-    const numericValue = typeof value === 'string' && !['itemId', 'description', 'name', 'unit'].includes(field) ? parseFloat(value) || 0 : value;
-
-    // Use a type assertion to handle the flexible key
-    (currentItem as any)[field] = numericValue;
-    
-    if (field === 'itemId') {
-        const selectedSourceItem = wastageFor === 'Raw Material'
-            ? ingredients.find(i => i.id === value)
-            : menuItems.find(i => i.id === value);
+        const numericValue = typeof value === 'string' && !['itemId', 'description'].includes(field) ? parseFloat(value) || 0 : value;
         
-        if (selectedSourceItem) {
-            currentItem.unit = 'unit' in selectedSourceItem ? selectedSourceItem.unit : 'pcs';
-            currentItem.name = selectedSourceItem.name;
-            // A real app would fetch avg. purchase price. Here we use item price for menu items.
-            currentItem.purchasePrice = 'price' in selectedSourceItem ? selectedSourceItem.price : 0; 
+        // Use a type assertion to handle the flexible key
+        (currentItem as any)[field] = numericValue;
+        
+        if (field === 'itemId') {
+            const selectedSourceItem = wastageFor === 'Raw Material'
+                ? ingredients.find(i => i.id === value)
+                : menuItems.find(i => i.id === value);
+            
+            if (selectedSourceItem) {
+                currentItem.unit = 'unit' in selectedSourceItem ? selectedSourceItem.unit : 'pcs';
+                currentItem.name = selectedSourceItem.name;
+                // A real app would fetch avg. purchase price. Here we use item price for menu items.
+                currentItem.purchasePrice = 'price' in selectedSourceItem ? selectedSourceItem.price : 0; 
+            }
         }
-    }
-    
-    if (field === 'quantity' || field === 'purchasePrice') {
+        
+        // Always recalculate amount
         currentItem.amount = (currentItem.quantity || 0) * (currentItem.purchasePrice || 0);
-    }
 
-    updatedItems[index] = currentItem;
-    setWastageItems(updatedItems);
+        updatedItems[index] = currentItem;
+        return updatedItems;
+    });
   };
   
   useEffect(() => {
+    // Reset items when wastage type changes
     setWastageItems([initialWastageItemState]);
   }, [wastageFor]);
   
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      // When dialog opens, initialize with one item
+      setWastageItems([initialWastageItemState]);
+    } else {
         // Reset state when dialog closes
         setDate(new Date());
         setWastageFor('Raw Material');
-        setWastageItems([initialWastageItemState]);
+        setWastageItems([]);
         setReason('');
     }
   }, [isOpen]);
 
   const addNewWastageItem = () => {
-    setWastageItems(prev => [...prev, initialWastageItemState]);
+    setWastageItems(prev => [...prev, { ...initialWastageItemState }]);
   };
 
   const removeWastageItem = (index: number) => {
@@ -247,9 +254,9 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
                                             </Select>
                                         </TableCell>
                                         <TableCell><Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(index, 'quantity', e.target.value)} placeholder="Quantity" /></TableCell>
-                                        <TableCell><Input value={item.unit || ''} disabled placeholder="Unit"/></TableCell>
+                                        <TableCell>{item.unit || '-'}</TableCell>
                                         <TableCell><Input type="number" value={item.purchasePrice || ''} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} placeholder="Avg. Price" /></TableCell>
-                                        <TableCell><Input value={(item.amount || 0).toFixed(2)} disabled placeholder="Amount" /></TableCell>
+                                        <TableCell>{(item.amount || 0).toFixed(2)}</TableCell>
                                         <TableCell><Input value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Description" /></TableCell>
                                         <TableCell>
                                             <Button variant="ghost" size="icon" onClick={() => removeWastageItem(index)}>
