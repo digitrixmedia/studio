@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { tables } from '@/lib/data';
+import { menuItems, menuCategories, tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon } from '@/lib/types';
 import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, ShoppingBag, Tag, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
@@ -35,8 +35,6 @@ import { Badge } from '@/components/ui/badge';
 
 export default function OrdersPage() {
   const { 
-    menuItems, 
-    menuCategories, 
     orders,
     heldOrders,
     setOrders,
@@ -50,6 +48,7 @@ export default function OrdersPage() {
     resumeOrder,
     getOrderByTable,
     currentUser,
+    createNewOrder,
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -181,16 +180,6 @@ export default function OrdersPage() {
     updateActiveOrder(updatedItems);
   };
   
-  const createNewOrder = (): AppOrder => ({
-    id: `order-${Date.now()}`,
-    orderNumber: `${1000 + orderCounter++}`,
-    items: [],
-    customer: { name: '', phone: '' },
-    orderType: 'Dine-In',
-    tableId: '',
-    discount: 0,
-  });
-
   const resetCurrentOrder = () => {
     if (!activeOrderId) return;
     
@@ -446,7 +435,7 @@ export default function OrdersPage() {
 
             <div class="info-grid">
               <div>Date: ${now.toLocaleDateString()}</div>
-              <div>${activeOrder.orderType}: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Self' : 'Self'}</div>
+              <div>${activeOrder.orderType}: ${activeOrder.orderType === 'dine-in' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Self' : 'Self'}</div>
               <div>Time: ${now.toLocaleTimeString()}</div>
               <div>Bill No.: ${activeOrder.orderNumber}</div>
               <div>Cashier: ${currentUser?.name.split(' ')[0] || 'Biller'}</div>
@@ -588,7 +577,7 @@ export default function OrdersPage() {
             <div class="info-grid">
               <div>Order: #${activeOrder.orderNumber}</div>
               <div>${now.toLocaleTimeString()}</div>
-              <div>For: ${activeOrder.orderType === 'Dine-In' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : activeOrder.orderType}</div>
+              <div>For: ${activeOrder.orderType === 'dine-in' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : activeOrder.orderType}</div>
               <div>Cashier: ${currentUser?.name.split(' ')[0] || 'Biller'}</div>
             </div>
 
@@ -771,20 +760,20 @@ export default function OrdersPage() {
                         </div>
                         <Tabs value={activeOrder.orderType} onValueChange={(value) => updateOrder(activeOrder.id, {orderType: value as OrderType})} className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="Dine-In"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
-                            <TabsTrigger value="Takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
-                            <TabsTrigger value="Delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
+                            <TabsTrigger value="dine-in"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
+                            <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
+                            <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
                         </TabsList>
                         <CardDescription asChild className="space-y-2 pt-4">
                             <div>
-                                {activeOrder.orderType === 'Dine-In' && (
+                                {activeOrder.orderType === 'dine-in' && (
                                     <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select Table" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {tables.map(table => (
-                                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'Vacant'}>
+                                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
                                                     {table.name} ({table.status})
                                                 </SelectItem>
                                             ))}
@@ -1106,7 +1095,7 @@ export default function OrdersPage() {
                             <div>
                                 <CardTitle>Bill Summary</CardTitle>
                                 <CardDescription>
-                                {activeOrder.orderType === 'Dine-In' && activeOrder.tableId ? tables.find(t => t.id === activeOrder.tableId)?.name : `${activeOrder.orderType} - ${activeOrder.customer.name}`}
+                                {activeOrder.orderType === 'dine-in' && activeOrder.tableId ? tables.find(t => t.id === activeOrder.tableId)?.name : `${activeOrder.orderType} - ${activeOrder.customer.name}`}
                                 </CardDescription>
                             </div>
                             {settings.isComplimentary && <Badge variant="destructive">COMPLIMENTARY</Badge>}
@@ -1206,15 +1195,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -47,8 +47,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys } from '@/lib/data';
-import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType } from '@/lib/types';
+import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders } from '@/lib/data';
+import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem } from '@/lib/types';
 import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { format, setHours, setMinutes } from 'date-fns';
@@ -83,11 +83,12 @@ const initialDeliveryBoyState = {
 };
 
 export default function OperationsPage() {
-    const { orders, setOrders, tables, setTables, startOrderForTable } = useAppContext();
+    const { orders: appOrders, setOrders: setAppOrders, tables, setTables, startOrderForTable, loadOrder } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
     const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
+    const [orders, setOrders] = useState<Order[]>(mockOrders);
     
     const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'All'>('All');
     const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'All'>('All');
@@ -102,14 +103,13 @@ export default function OperationsPage() {
     const [seatingReservation, setSeatingReservation] = useState<Reservation | null>(null);
 
     const filteredOrders = orders.filter(order => {
-        const statusMatch = orderStatusFilter === 'All'; // || order.status === orderStatusFilter; - status not on AppOrder
-        const typeMatch = orderTypeFilter === 'All' || order.orderType === orderTypeFilter;
+        const statusMatch = orderStatusFilter === 'All' || order.status === orderStatusFilter;
+        const typeMatch = orderTypeFilter === 'All' || order.type === orderTypeFilter;
         return statusMatch && typeMatch;
     });
     
     const handleCancelOrder = (orderId: string) => {
-        // This needs to be adapted to the new AppOrder structure
-        // setOrders(orders.map(o => o.id === orderId ? {...o, status: 'Cancelled'} : o));
+        setOrders(orders.map(o => o.id === orderId ? {...o, status: 'cancelled'} : o));
         toast({ title: 'Order Cancelled', description: `Order #${orders.find(o=>o.id === orderId)?.orderNumber} has been cancelled.` });
     };
 
@@ -127,7 +127,7 @@ export default function OperationsPage() {
             phone: newReservation.phone,
             guests: parseInt(newReservation.guests),
             time: reservationTime,
-            status: 'Confirmed'
+            status: 'confirmed'
         };
 
         setReservations(prev => [reservation, ...prev]);
@@ -146,7 +146,7 @@ export default function OperationsPage() {
             id: `db-${Date.now()}`,
             name: newDeliveryBoy.name,
             phone: newDeliveryBoy.phone,
-            status: 'Available',
+            status: 'available',
         };
 
         setDeliveryBoys(prev => [deliveryBoy, ...prev]);
@@ -175,23 +175,23 @@ export default function OperationsPage() {
         }
 
         // Update delivery boy status
-        setDeliveryBoys(prev => prev.map(b => b.id === deliveryBoyId ? { ...b, status: 'On a delivery', currentOrder: `#${order.orderNumber}` } : b));
+        setDeliveryBoys(prev => prev.map(b => b.id === deliveryBoyId ? { ...b, status: 'on-a-delivery', currentOrder: `#${order.orderNumber}` } : b));
         
         // Update order status
-        // setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'Out for Delivery' } : o));
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'out-for-delivery' } : o));
 
         toast({ title: 'Rider Assigned', description: `${deliveryBoy.name} has been assigned to order #${order.orderNumber}.` });
     }
 
-    const kots = orders.filter(o => o.items.length > 0); // Simplified for now // o.status === 'New' || o.status === 'Preparing');
+    const kots = orders.filter(o => o.status === 'new' || o.status === 'preparing');
 
     const customerSummary = orders.reduce((acc, order) => {
-        if (order.customer.phone) {
-            if (!acc[order.customer.phone]) {
-                acc[order.customer.phone] = { phone: order.customer.phone, name: order.customer.name || 'Unknown', totalOrders: 0, totalSpent: 0 };
+        if (order.customerPhone) {
+            if (!acc[order.customerPhone]) {
+                acc[order.customerPhone] = { phone: order.customerPhone, name: order.customerName || 'Unknown', totalOrders: 0, totalSpent: 0 };
             }
-            acc[order.customer.phone].totalOrders += 1;
-            acc[order.customer.phone].totalSpent += order.items.reduce((sum, item) => sum + item.totalPrice, 0);
+            acc[order.customerPhone].totalOrders += 1;
+            acc[order.customerPhone].totalSpent += order.total;
         }
         return acc;
     }, {} as Record<string, CustomerSummary>);
@@ -199,9 +199,9 @@ export default function OperationsPage() {
     const customerList = Object.values(customerSummary).sort((a,b) => b.totalSpent - a.totalSpent);
     
     const liveViewOrders = {
-        'New': orders.filter(o => o.items.length > 0), // Simplified
-        'Preparing': [], // Simplified
-        'Ready': [], // Simplified
+        'New': orders.filter(o => o.status === 'new'),
+        'Preparing': orders.filter(o => o.status === 'preparing'),
+        'Ready': orders.filter(o => o.status === 'ready'),
     };
     
     const handleUpdateReservationStatus = (reservationId: string, newStatus: ReservationStatus) => {
@@ -217,10 +217,10 @@ export default function OperationsPage() {
         if (!seatingReservation) return;
 
         // 1. Update table status to 'Occupied'
-        setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'Occupied' } : t));
+        setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'occupied' } : t));
 
         // 2. Update reservation status to 'Arrived'
-        handleUpdateReservationStatus(seatingReservation.id, 'Arrived');
+        handleUpdateReservationStatus(seatingReservation.id, 'arrived');
         
         // 3. Create a new order for this table
         startOrderForTable(tableId);
@@ -240,15 +240,20 @@ export default function OperationsPage() {
 
     const getReservationAction = (reservation: Reservation) => {
         switch (reservation.status) {
-            case 'Pending':
-                return <Button variant="outline" size="sm" onClick={() => handleUpdateReservationStatus(reservation.id, 'Confirmed')}>Confirm</Button>;
-            case 'Confirmed':
+            case 'pending':
+                return <Button variant="outline" size="sm" onClick={() => handleUpdateReservationStatus(reservation.id, 'confirmed')}>Confirm</Button>;
+            case 'confirmed':
                 return <Button variant="outline" size="sm" onClick={() => setSeatingReservation(reservation)}>Mark as Arrived</Button>;
-            case 'Arrived':
+            case 'arrived':
                  return <Button variant="outline" size="sm" disabled>Seated</Button>;
             default:
                 return null;
         }
+    };
+    
+    const handleReorder = (order: Order) => {
+        loadOrder(order);
+        router.push('/orders');
     };
     
     const totalForOrder = (items: OrderItem[]) => items.reduce((sum, item) => sum + item.totalPrice, 0);
@@ -279,21 +284,21 @@ export default function OperationsPage() {
                                 <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="All">All Statuses</SelectItem>
-                                    <SelectItem value="New">New</SelectItem>
-                                    <SelectItem value="Preparing">Preparing</SelectItem>
-                                    <SelectItem value="Ready">Ready</SelectItem>
-                                    <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
-                                    <SelectItem value="Completed">Completed</SelectItem>
-                                    <SelectItem value="Cancelled">Cancelled</SelectItem>
+                                    <SelectItem value="new">New</SelectItem>
+                                    <SelectItem value="preparing">Preparing</SelectItem>
+                                    <SelectItem value="ready">Ready</SelectItem>
+                                    <SelectItem value="out-for-delivery">Out for Delivery</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                    <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                             </Select>
                             <Select value={orderTypeFilter} onValueChange={(val) => setOrderTypeFilter(val as any)}>
                                 <SelectTrigger className="w-[160px]"><SelectValue placeholder="Filter by type..." /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="All">All Types</SelectItem>
-                                    <SelectItem value="Dine-In">Dine-In</SelectItem>
-                                    <SelectItem value="Takeaway">Takeaway</SelectItem>
-                                    <SelectItem value="Delivery">Delivery</SelectItem>
+                                    <SelectItem value="dine-in">Dine-In</SelectItem>
+                                    <SelectItem value="takeaway">Takeaway</SelectItem>
+                                    <SelectItem value="delivery">Delivery</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -317,21 +322,22 @@ export default function OperationsPage() {
                                 <TableRow key={order.id}>
                                     <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
                                     <TableCell>
-                                        <div>{order.customer.name || 'N/A'}</div>
-                                        {order.customer.phone && <div className='text-xs text-muted-foreground'>{order.customer.phone}</div>}
+                                        <div>{order.customerName || 'N/A'}</div>
+                                        {order.customerPhone && <div className='text-xs text-muted-foreground'>{order.customerPhone}</div>}
                                     </TableCell>
-                                    <TableCell><Badge variant="outline">{order.orderType}</Badge></TableCell>
-                                    <TableCell><Badge>New</Badge></TableCell>
+                                    <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>
+                                    <TableCell><Badge>{order.status}</Badge></TableCell>
                                     <TableCell className='text-right flex items-center justify-end'>
                                         <IndianRupee className="h-4 w-4 mr-1" />
-                                        {totalForOrder(order.items).toFixed(2)}
+                                        {order.total.toFixed(2)}
                                     </TableCell>
-                                    <TableCell>{format(new Date(), 'PPp')}</TableCell>
+                                    <TableCell>{format(order.createdAt, 'PPp')}</TableCell>
                                     <TableCell className='text-right'>
-                                        <Button variant="ghost" size="icon" onClick={() => setViewOrder(order as any)}><Eye /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
+                                         <Button variant="ghost" size="icon" onClick={() => handleReorder(order)}><PlusCircle /></Button>
                                             <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className='text-destructive' disabled={false}>
+                                                <Button variant="ghost" size="icon" className='text-destructive' disabled={order.status === 'cancelled'}>
                                                     <XCircle />
                                                 </Button>
                                             </AlertDialogTrigger>
@@ -366,7 +372,7 @@ export default function OperationsPage() {
                                 <Card key={kot.id} className="flex flex-col">
                                     <CardHeader className="flex-row items-center justify-between">
                                         <CardTitle className="text-lg">#{kot.orderNumber}</CardTitle>
-                                        <Badge>New</Badge>
+                                        <Badge>{kot.status}</Badge>
                                     </CardHeader>
                                     <CardContent className="flex-1 space-y-1">
                                         {kot.items.map(item => (
@@ -376,7 +382,7 @@ export default function OperationsPage() {
                                         ))}
                                     </CardContent>
                                     <CardFooter>
-                                        <p className="text-xs text-muted-foreground">Sent to kitchen at {format(new Date(), 'p')}</p>
+                                        <p className="text-xs text-muted-foreground">Sent to kitchen at {format(kot.createdAt, 'p')}</p>
                                     </CardFooter>
                                 </Card>
                             ))}
@@ -437,7 +443,7 @@ export default function OperationsPage() {
                                             <Card key={order.id} className={cn("p-3", status === 'New' && 'bg-blue-500/10 border-blue-500', status === 'Preparing' && 'bg-orange-500/10 border-orange-500', status === 'Ready' && 'bg-green-500/10 border-green-500')}>
                                                 <div className="flex justify-between font-bold">
                                                     <span>#{order.orderNumber}</span>
-                                                    <Badge variant="secondary">{order.orderType}</Badge>
+                                                    <Badge variant="secondary">{order.type}</Badge>
                                                 </div>
                                                 <div className="text-sm mt-1">
                                                     {order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
@@ -517,7 +523,7 @@ export default function OperationsPage() {
                                                 <p className="text-sm text-muted-foreground">{boy.phone}</p>
                                             </div>
                                             <div className='flex flex-col items-end gap-2'>
-                                                <Badge variant={boy.status === 'Available' ? 'default' : 'secondary'}>{boy.status}</Badge>
+                                                <Badge variant={boy.status === 'available' ? 'default' : 'secondary'}>{boy.status}</Badge>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
@@ -541,7 +547,7 @@ export default function OperationsPage() {
                                                 </AlertDialog>
                                             </div>
                                         </CardHeader>
-                                        {boy.status === 'On a delivery' && (
+                                        {boy.status === 'on-a-delivery' && (
                                             <CardFooter className="p-4 pt-0">
                                                 <p className="text-xs">Delivering Order: <span className="font-bold">{boy.currentOrder}</span></p>
                                             </CardFooter>
@@ -553,20 +559,20 @@ export default function OperationsPage() {
                             <div>
                                 <h3 className="font-semibold mb-2">Orders for Delivery</h3>
                                 <div className="space-y-3">
-                                {orders.filter(o => o.orderType === 'Delivery' && o.items.length > 0).map(order => (
+                                {orders.filter(o => o.type === 'delivery' && o.status === 'ready').map(order => (
                                     <Card key={order.id}>
                                         <CardContent className="p-4">
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <p className="font-bold">#{order.orderNumber}</p>
-                                                    <p className="text-sm text-muted-foreground">{order.customer.name}</p>
+                                                    <p className="text-sm text-muted-foreground">{order.customerName}</p>
                                                 </div>
                                                 <Select onValueChange={(deliveryBoyId) => handleAssignRider(order.id, deliveryBoyId)}>
                                                     <SelectTrigger className="w-[150px]">
                                                         <SelectValue placeholder="Assign Rider" />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {deliveryBoys.filter(b => b.status === 'Available').map(b => (
+                                                        {deliveryBoys.filter(b => b.status === 'available').map(b => (
                                                             <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -696,7 +702,7 @@ export default function OperationsPage() {
         </DialogHeader>
         <div className="py-4">
           <div className="space-y-2">
-            {tables.filter(t => t.status === 'Vacant' && t.capacity >= (seatingReservation?.guests || 0)).map(table => (
+            {tables.filter(t => t.status === 'vacant' && t.capacity >= (seatingReservation?.guests || 0)).map(table => (
               <Button 
                 key={table.id}
                 variant="outline" 
@@ -706,7 +712,7 @@ export default function OperationsPage() {
                 {table.name} (Capacity: {table.capacity})
               </Button>
             ))}
-            {tables.filter(t => t.status === 'Vacant' && t.capacity >= (seatingReservation?.guests || 0)).length === 0 && (
+            {tables.filter(t => t.status === 'vacant' && t.capacity >= (seatingReservation?.guests || 0)).length === 0 && (
               <p className="text-center text-muted-foreground">No suitable vacant tables found.</p>
             )}
           </div>

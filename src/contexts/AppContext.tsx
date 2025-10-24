@@ -3,7 +3,7 @@
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table } from '@/lib/types';
-import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables } from '@/lib/data';
+import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -28,8 +28,6 @@ interface AppContextType {
   holdOrder: (orderId: string) => void;
   resumeOrder: (orderId: string) => void;
   getOrderByTable: (tableId: string) => AppOrder | undefined;
-  setMenuItems: React.Dispatch<React.SetStateAction<MenuItem[]>>;
-  setMenuCategories: React.Dispatch<React.SetStateAction<MenuCategory[]>>;
   loadOrder: (order: Order) => void;
   login: (role: Role) => void;
   logout: () => void;
@@ -41,11 +39,11 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-let orderCounter = 41;
+let orderCounter = mockOrders.length + 1;
 
 const createNewOrder = (): AppOrder => ({
   id: `order-${Date.now()}`,
-  orderNumber: `${orderCounter++}`,
+  orderNumber: `${1000 + orderCounter++}`,
   items: [],
   customer: { name: '', phone: '' },
   orderType: 'dine-in',
@@ -56,8 +54,8 @@ const createNewOrder = (): AppOrder => ({
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
+  const menuItems = initialMenuItems;
+  const menuCategories = initialMenuCategories;
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
   const [tables, setTables] = useState<Table[]>(initialTables);
@@ -348,8 +346,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     clearSelectedOutlet, 
     menuItems, 
     menuCategories, 
-    setMenuItems, 
-    setMenuCategories,
+    // These setters are not needed when using mock data directly
+    // setMenuItems, 
+    // setMenuCategories,
     orders,
     setOrders,
     tables,
