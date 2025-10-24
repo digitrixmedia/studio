@@ -74,12 +74,12 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
   const [ingredients] = useState<Ingredient[]>(initialIngredients);
   const [menuItems] = useState<MenuItem[]>(initialMenuItems);
 
-  const handleItemChange = (index: number, field: keyof Omit<WastageItem, 'id' | 'name' | 'unit'>, value: string | number) => {
+  const handleItemChange = (index: number, field: keyof Omit<WastageItem, 'id'>, value: string | number) => {
     setWastageItems(prevItems => {
         const updatedItems = [...prevItems];
         const currentItem = { ...updatedItems[index] };
 
-        const numericValue = typeof value === 'string' && !['itemId', 'description'].includes(field) ? parseFloat(value) || 0 : value;
+        const numericValue = typeof value === 'string' && !['itemId', 'description', 'name', 'unit'].includes(field) ? parseFloat(value) || 0 : value;
         
         // Use a type assertion to handle the flexible key
         (currentItem as any)[field] = numericValue;
@@ -254,9 +254,9 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
                                             </Select>
                                         </TableCell>
                                         <TableCell><Input type="number" value={item.quantity || ''} onChange={e => handleItemChange(index, 'quantity', e.target.value)} placeholder="Quantity" /></TableCell>
-                                        <TableCell>{item.unit || '-'}</TableCell>
+                                        <TableCell><Input value={item.unit || ''} readOnly className="border-none bg-transparent" placeholder="Unit" /></TableCell>
                                         <TableCell><Input type="number" value={item.purchasePrice || ''} onChange={e => handleItemChange(index, 'purchasePrice', e.target.value)} placeholder="Avg. Price" /></TableCell>
-                                        <TableCell>{(item.amount || 0).toFixed(2)}</TableCell>
+                                        <TableCell><Input value={(item.amount || 0).toFixed(2)} readOnly className="border-none bg-transparent" /></TableCell>
                                         <TableCell><Input value={item.description || ''} onChange={e => handleItemChange(index, 'description', e.target.value)} placeholder="Description" /></TableCell>
                                         <TableCell>
                                             <Button variant="ghost" size="icon" onClick={() => removeWastageItem(index)}>
