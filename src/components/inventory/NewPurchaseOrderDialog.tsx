@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Table,
