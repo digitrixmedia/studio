@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates a concise SMS-friendly e-bill from order details.
@@ -16,7 +17,7 @@ const OrderItemSchema = z.object({
   totalPrice: z.number(),
 });
 
-export const OrderDetailsInputSchema = z.object({
+const OrderDetailsInputSchema = z.object({
   customerName: z.string().optional(),
   items: z.array(OrderItemSchema),
   total: z.number(),
@@ -25,7 +26,7 @@ export const OrderDetailsInputSchema = z.object({
 });
 export type OrderDetailsInput = z.infer<typeof OrderDetailsInputSchema>;
 
-export const SmsBillOutputSchema = z.object({
+const SmsBillOutputSchema = z.object({
   smsContent: z.string().describe('The formatted SMS bill content.'),
 });
 export type SmsBillOutput = z.infer<typeof SmsBillOutputSchema>;
