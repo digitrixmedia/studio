@@ -198,6 +198,7 @@ export default function OrdersPage() {
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
     setManualTaxRate(null);
+    setIsPaymentDialogOpen(false);
   }
   
   const handleSendToKitchen = () => {
