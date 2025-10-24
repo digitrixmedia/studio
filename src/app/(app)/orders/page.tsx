@@ -742,7 +742,8 @@ export default function OrdersPage() {
                                 </div>
                             )}
                             <h3 className="font-semibold truncate text-sm sm:text-base">{item.name}</h3>
-                            <p className="text-sm flex items-center">
+                             <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                            <p className="text-sm flex items-center mt-1">
                               <IndianRupee className="h-3.5 w-3.5 mr-1" />
                               {item.price.toFixed(2)}
                             </p>
