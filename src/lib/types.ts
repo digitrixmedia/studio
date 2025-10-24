@@ -92,7 +92,7 @@ export interface Table {
 export interface Ingredient {
   id: string;
   name: string;
-  unit: 'g' | 'ml' | 'pcs';
+  unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l';
   stock: number;
   minStock: number;
 }
@@ -104,6 +104,7 @@ export interface Vendor {
     contactPerson: string;
     phone: string;
     email: string;
+    gstin?: string;
 }
 
 export interface PurchaseOrderItem {
@@ -111,19 +112,31 @@ export interface PurchaseOrderItem {
     ingredientId: string;
     quantity: number;
     unitPrice: number;
-    totalPrice: number;
+    amount: number;
+    cgst: number;
+    sgst: number;
+    igst: number;
+    description?: string;
 }
 
 export type PurchaseOrderStatus = 'pending' | 'completed' | 'cancelled';
+export type PurchasePaymentStatus = 'paid' | 'unpaid';
 
 export interface PurchaseOrder {
     id: string;
     poNumber: string;
     vendorId: string;
     date: Date;
+    invoiceNumber?: string;
+    invoiceDate?: Date;
     items: PurchaseOrderItem[];
-    totalAmount: number;
+    subTotal: number;
+    totalDiscount: number;
+    otherCharges: number;
+    totalTaxes: number;
+    grandTotal: number;
     status: PurchaseOrderStatus;
+    paymentStatus: PurchasePaymentStatus;
 }
 
 

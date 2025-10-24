@@ -150,9 +150,9 @@ export const tables: Table[] = [
 ];
 
 export const ingredients: Ingredient[] = [
-  { id: 'ing-1', name: 'Coffee Beans', unit: 'g', stock: 800, minStock: 1000 },
-  { id: 'ing-2', name: 'Milk', unit: 'ml', stock: 5000, minStock: 2000 },
-  { id: 'ing-3', name: 'Sugar', unit: 'g', stock: 10000, minStock: 2000 },
+  { id: 'ing-1', name: 'Coffee Beans', unit: 'kg', stock: 800, minStock: 1000 },
+  { id: 'ing-2', name: 'Milk', unit: 'l', stock: 5000, minStock: 2000 },
+  { id: 'ing-3', name: 'Sugar', unit: 'kg', stock: 10000, minStock: 2000 },
   { id: 'ing-4', name: 'Bread Loaves', unit: 'pcs', stock: 8, minStock: 10 },
   { id: 'ing-5', name: 'Veggie Mix', unit: 'g', stock: 2000, minStock: 500 },
   { id: 'ing-6', name: 'Cheesecake Slice', unit: 'pcs', stock: 5, minStock: 4 },
@@ -230,9 +230,9 @@ export const hourlySalesData = Array.from({length: 12}, (_, i) => ({
 }));
 
 export const vendors: Vendor[] = [
-    { id: 'vendor-1', name: 'Fresh Veggies Co.', contactPerson: 'Rajesh Kumar', phone: '9876543210', email: 'rajesh@freshveg.com' },
-    { id: 'vendor-2', name: 'Daily Dairy Supply', contactPerson: 'Sunita Sharma', phone: '9876543211', email: 'sunita@dailydairy.com' },
-    { id: 'vendor-3', name: 'Beans & Co.', contactPerson: 'Amit Patel', phone: '9876543212', email: 'amit@beansco.com' },
+    { id: 'vendor-1', name: 'Fresh Veggies Co.', contactPerson: 'Rajesh Kumar', phone: '9876543210', email: 'rajesh@freshveg.com', gstin: '29ABCDE1234F1Z5' },
+    { id: 'vendor-2', name: 'Daily Dairy Supply', contactPerson: 'Sunita Sharma', phone: '9876543211', email: 'sunita@dailydairy.com', gstin: '27FGHIJ5678K2Z9' },
+    { id: 'vendor-3', name: 'Beans & Co.', contactPerson: 'Amit Patel', phone: '9876543212', email: 'amit@beansco.com', gstin: '24LMNOP9012Q3ZA' },
 ];
 
 export const purchaseOrders: PurchaseOrder[] = [
@@ -242,10 +242,15 @@ export const purchaseOrders: PurchaseOrder[] = [
         vendorId: 'vendor-1',
         date: subDays(new Date(), 5),
         items: [
-            { id: 'poi-1', ingredientId: 'ing-5', quantity: 10, unitPrice: 150, totalPrice: 1500 },
+            { id: 'poi-1', ingredientId: 'ing-5', quantity: 10, unitPrice: 150, amount: 1500, cgst: 2.5, sgst: 2.5, igst: 0 },
         ],
-        totalAmount: 1500,
+        subTotal: 1500,
+        totalDiscount: 0,
+        otherCharges: 0,
+        totalTaxes: 75,
+        grandTotal: 1575,
         status: 'completed',
+        paymentStatus: 'paid',
     },
     {
         id: 'po-2',
@@ -253,10 +258,15 @@ export const purchaseOrders: PurchaseOrder[] = [
         vendorId: 'vendor-2',
         date: subDays(new Date(), 2),
         items: [
-            { id: 'poi-2', ingredientId: 'ing-2', quantity: 20, unitPrice: 50, totalPrice: 1000 },
+            { id: 'poi-2', ingredientId: 'ing-2', quantity: 20, unitPrice: 50, amount: 1000, cgst: 0, sgst: 0, igst: 0 },
         ],
-        totalAmount: 1000,
+        subTotal: 1000,
+        totalDiscount: 50,
+        otherCharges: 0,
+        totalTaxes: 0,
+        grandTotal: 950,
         status: 'completed',
+        paymentStatus: 'paid',
     },
     {
         id: 'po-3',
@@ -264,10 +274,15 @@ export const purchaseOrders: PurchaseOrder[] = [
         vendorId: 'vendor-3',
         date: new Date(),
         items: [
-            { id: 'poi-3', ingredientId: 'ing-1', quantity: 5, unitPrice: 800, totalPrice: 4000 },
+            { id: 'poi-3', ingredientId: 'ing-1', quantity: 5, unitPrice: 800, amount: 4000, cgst: 9, sgst: 9, igst: 0 },
         ],
-        totalAmount: 4000,
+        subTotal: 4000,
+        totalDiscount: 0,
+        otherCharges: 0,
+        totalTaxes: 720,
+        grandTotal: 4720,
         status: 'pending',
+        paymentStatus: 'unpaid',
     },
 ];
 

@@ -12,7 +12,11 @@ export default function InventoryLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ') || 'Inventory';
+  let pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ') || 'Inventory';
+  
+  if (pageTitle === 'purchase') {
+    pageTitle = 'New Purchase Entry';
+  }
   
   const isDashboard = pathname === '/inventory';
 
