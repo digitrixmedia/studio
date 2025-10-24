@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import {
   Table,
@@ -20,7 +21,6 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,14 +30,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { vendors, ingredients } from '@/lib/data';
-import type { PurchaseOrder, PurchaseOrderItem } from '@/lib/types';
+import { vendors as initialVendors, ingredients } from '@/lib/data';
+import type { PurchaseOrder, PurchaseOrderItem, Vendor } from '@/lib/types';
 import { PlusCircle, Trash2, Save } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ScrollArea } from '../ui/scroll-area';
 
 interface NewPurchaseOrderDialogProps {
     isOpen: boolean;
@@ -55,6 +54,14 @@ const initialItemState: Omit<PurchaseOrderItem, 'id'> = {
     description: '',
 };
 
+const initialNewVendorState = {
+    name: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    gstin: ''
+};
+
 export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDialogProps) {
     const [po, setPo] = useState<Omit<PurchaseOrder, 'id' | 'status'>>({
         poNumber: `PO-${Date.now()}`,
@@ -70,6 +77,10 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
     });
     const [updateInventory, setUpdateInventory] = useState(true);
     const { toast } = useToast();
+    
+    const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
+    const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
+    const [newVendor, setNewVendor] = useState(initialNewVendorState);
 
     const selectedVendor = vendors.find(v => v.id === po.vendorId);
 
@@ -134,6 +145,29 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
 
     const getIngredientUnit = (id: string) => ingredients.find(i => i.id === id)?.unit || '';
 
+    const handleAddNewVendor = () => {
+        if (!newVendor.name || !newVendor.email || !newVendor.phone) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Information',
+                description: 'Please enter name, email, and phone for the new vendor.'
+            });
+            return;
+        }
+        const newVendorData: Vendor = {
+            id: `vendor-${Date.now()}`,
+            ...newVendor,
+        };
+        setVendors(prev => [...prev, newVendorData]);
+        setPo(prevPo => ({...prevPo, vendorId: newVendorData.id }));
+        setNewVendor(initialNewVendorState);
+        setIsAddVendorOpen(false);
+        toast({
+            title: 'Vendor Added',
+            description: `${newVendorData.name} has been added and selected.`
+        });
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
@@ -143,14 +177,52 @@ export function NewPurchaseOrderDialog({ isOpen, onClose }: NewPurchaseOrderDial
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto pr-6 space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-lg">
-                            <div className="space-y-1.5">
-                                <Label>Supplier</Label>
-                                <Select value={po.vendorId} onValueChange={vendorId => setPo(prev => ({ ...prev, vendorId }))}>
-                                    <SelectTrigger><SelectValue placeholder="Select Supplier" /></SelectTrigger>
-                                    <SelectContent>
-                                        {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                            <div className="space-y-1.5 flex items-end gap-2">
+                                <div className="flex-1">
+                                    <Label>Supplier</Label>
+                                    <Select value={po.vendorId} onValueChange={vendorId => setPo(prev => ({ ...prev, vendorId }))}>
+                                        <SelectTrigger><SelectValue placeholder="Select Supplier" /></SelectTrigger>
+                                        <SelectContent>
+                                            {vendors.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Dialog open={isAddVendorOpen} onOpenChange={setIsAddVendorOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="icon"><PlusCircle className="h-4 w-4" /></Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Add New Supplier</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="new-vendor-name">Name</Label>
+                                                <Input id="new-vendor-name" value={newVendor.name} onChange={(e) => setNewVendor(v => ({...v, name: e.target.value}))} />
+                                            </div>
+                                             <div className="space-y-2">
+                                                <Label htmlFor="new-vendor-contact">Contact Person</Label>
+                                                <Input id="new-vendor-contact" value={newVendor.contactPerson} onChange={(e) => setNewVendor(v => ({...v, contactPerson: e.target.value}))} />
+                                            </div>
+                                             <div className="space-y-2">
+                                                <Label htmlFor="new-vendor-phone">Phone</Label>
+                                                <Input id="new-vendor-phone" value={newVendor.phone} onChange={(e) => setNewVendor(v => ({...v, phone: e.target.value}))} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="new-vendor-email">Email</Label>
+                                                <Input id="new-vendor-email" type="email" value={newVendor.email} onChange={(e) => setNewVendor(v => ({...v, email: e.target.value}))} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="new-vendor-gstin">GSTIN</Label>
+                                                <Input id="new-vendor-gstin" value={newVendor.gstin} onChange={(e) => setNewVendor(v => ({...v, gstin: e.target.value}))} />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setIsAddVendorOpen(false)}>Cancel</Button>
+                                            <Button onClick={handleAddNewVendor}>Add Supplier</Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                             <div className="space-y-1.5">
                                 <Label>GST No.</Label>
