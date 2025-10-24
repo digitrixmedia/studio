@@ -142,9 +142,10 @@ export interface PurchaseOrder {
 export interface WastageItem {
     id: string;
     itemId: string; // can be ingredientId or menuItemId
+    name: string; // denormalized name for display
     quantity: number;
     unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l' | '';
-    purchasePrice: number;
+    purchasePrice?: number;
     amount: number;
     description?: string;
 }
