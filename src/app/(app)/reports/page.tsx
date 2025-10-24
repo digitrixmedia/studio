@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -21,7 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { addDays, format } from 'date-fns';
+import { addDays, format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -38,55 +38,11 @@ const chartConfig = {
   upi: { label: 'UPI', color: 'hsl(var(--chart-2))' },
   card: { label: 'Card', color: 'hsl(var(--chart-3))' },
   'dine-in': { label: 'Dine-In', color: 'hsl(var(--chart-1))' },
-  'takeaway': { label: 'Takeaway', color: 'hsl(var(--chart-2))' },
-  'delivery': { label: 'Delivery', color: 'hsl(var(--chart-3))' },
+  takeaway: { label: 'Takeaway', color: 'hsl(var(--chart-2))' },
+  delivery: { label: 'Delivery', color: 'hsl(var(--chart-3))' },
 };
 
-// Data processing should happen based on selected date range in a real app
-const completedOrders = orders.filter(o => o.status === 'completed');
-
-const totalSales = completedOrders.reduce((sum, order) => sum + order.total, 0);
-const totalOrders = completedOrders.length;
-const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-
-const itemWiseSales = menuItems
-  .map(item => {
-    const quantitySold = completedOrders.reduce((sum, order) => 
-      sum + order.items.reduce((itemSum, orderItem) => 
-        itemSum + (orderItem.id.startsWith(item.id) ? orderItem.quantity : 0), 0), 0);
-    return { name: item.name, sales: quantitySold * item.price };
-  })
-  .filter(item => item.sales > 0)
-  .sort((a, b) => b.sales - a.sales);
-
-const categorySales = menuCategories.map(category => {
-    const categoryItems = menuItems.filter(item => item.category === category.id);
-    const sales = categoryItems.reduce((catSum, item) => {
-        const itemSales = itemWiseSales.find(s => s.name === item.name)?.sales || 0;
-        return catSum + itemSales;
-    }, 0);
-    return { name: category.name, sales };
-}).filter(c => c.sales > 0);
-
-const paymentMethodSales = (completedOrders as Required<Order>[]).reduce((acc, order) => {
-    acc[order.paymentMethod] = (acc[order.paymentMethod] || 0) + order.total;
-    return acc;
-}, {} as Record<string, number>);
-
-const paymentMethodData = Object.entries(paymentMethodSales).map(([method, sales]) => ({
-  method,
-  sales,
-}));
-
-const orderTypeSales = completedOrders.reduce((acc, order) => {
-    acc[order.type] = (acc[order.type] || 0) + order.total;
-    return acc;
-}, {} as Record<string, number>);
-
-const orderTypeData = Object.entries(orderTypeSales).map(([type, sales]) => ({
-  type,
-  sales,
-}));
+const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
 
 
 export default function ReportsPage() {
@@ -98,34 +54,101 @@ export default function ReportsPage() {
   const [selectedDay, setSelectedDay] = useState<{ date: string; orders: Order[] } | null>(null);
   const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
 
+  const filteredCompletedOrders = useMemo(() => {
+    return orders.filter(o => {
+        const isCompleted = o.status === 'completed';
+        if (!date?.from || !isCompleted) return isCompleted;
+        const isInInterval = isWithinInterval(o.createdAt, {
+            start: startOfDay(date.from),
+            end: date.to ? endOfDay(date.to) : endOfDay(date.from)
+        });
+        return isInInterval;
+    });
+  }, [date]);
+
+  const totalSales = filteredCompletedOrders.reduce((sum, order) => sum + order.total, 0);
+  const totalOrders = filteredCompletedOrders.length;
+  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+  const itemWiseSales = menuItems
+    .map(item => {
+        const quantitySold = filteredCompletedOrders.reduce((sum, order) => 
+        sum + order.items.reduce((itemSum, orderItem) => 
+            itemSum + (orderItem.id.startsWith(item.id) ? orderItem.quantity : 0), 0), 0);
+        return { name: item.name, sales: quantitySold * item.price };
+    })
+    .filter(item => item.sales > 0)
+    .sort((a, b) => b.sales - a.sales);
+
+    const categorySales = menuCategories.map(category => {
+        const categoryItems = menuItems.filter(item => item.category === category.id);
+        const sales = categoryItems.reduce((catSum, item) => {
+            const itemSales = itemWiseSales.find(s => s.name === item.name)?.sales || 0;
+            return catSum + itemSales;
+        }, 0);
+        return { name: category.name, sales };
+    }).filter(c => c.sales > 0);
+
+    const paymentMethodSales = (filteredCompletedOrders as Required<Order>[]).reduce((acc, order) => {
+        acc[order.paymentMethod] = (acc[order.paymentMethod] || 0) + order.total;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const paymentMethodData = Object.entries(paymentMethodSales).map(([method, sales]) => ({
+      method,
+      sales,
+    }));
+
+    const orderTypeSales = filteredCompletedOrders.reduce((acc, order) => {
+        acc[order.type] = (acc[order.type] || 0) + order.total;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const orderTypeData = Object.entries(orderTypeSales).map(([type, sales]) => ({
+      type,
+      sales,
+    }));
+
+
   const handleExport = () => {
-    // This export logic can be expanded based on the active tab
-    const data = itemWiseSales;
-    const headers = ['Item Name', 'Total Sales'];
-    let filename = 'item-wise-sales.csv';
+    const headers = ['Order #', 'Date', 'Time', 'Customer Name', 'Customer Phone', 'Type', 'Cashier', 'Subtotal', 'Discount', 'Tax', 'Total'];
+    const rows = filteredCompletedOrders.map(order => 
+        [
+            order.orderNumber,
+            format(order.createdAt, 'yyyy-MM-dd'),
+            format(order.createdAt, 'p'),
+            order.customerName || 'N/A',
+            order.customerPhone || 'N/A',
+            order.type,
+            getUserName(order.createdBy),
+            order.subTotal.toFixed(2),
+            order.discount.toFixed(2),
+            order.tax.toFixed(2),
+            order.total.toFixed(2)
+        ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+    );
 
-    const rows = data.map(row => Object.values(row).map(value => `"${String(value).replace(/"/g, '""')}"`).join(','));
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(',') + "\n" 
-      + rows.join("\n");
-
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `sales_report_${format(date?.from || new Date(), 'yyyy-MM-dd')}_to_${format(date?.to || date?.from || new Date(), 'yyyy-MM-dd')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
   };
   
   const handleDayClick = (dayData: { date: string, orders: number }) => {
     // In a real app, you would fetch orders for the specific date.
     // Here, we simulate it by taking a slice of the mock orders.
-    const simulatedOrders = completedOrders.slice(0, dayData.orders);
+    const simulatedOrders = orders.filter(o => o.status === 'completed').slice(0, dayData.orders);
     setSelectedDay({ date: dayData.date, orders: simulatedOrders });
   };
-  
-  const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
   
   const handleExportDayDetails = () => {
     if (!selectedDay) return;
