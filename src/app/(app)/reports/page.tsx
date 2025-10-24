@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/card';
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
@@ -338,7 +340,7 @@ export default function ReportsPage() {
                         <CardTitle>Payment Methods</CardTitle>
                     </CardHeader>
                     <CardContent>
-                         <ChartContainer config={chartConfig} className="min-h-[250px] w-full">
+                         <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[250px]">
                             <PieChart>
                                 <ChartTooltip content={<ChartTooltipContent nameKey="sales" hideLabel formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`} />} />
                                 <Pie data={paymentMethodData} dataKey="sales" nameKey="method" innerRadius={50} paddingAngle={5}>
@@ -346,6 +348,7 @@ export default function ReportsPage() {
                                         <Cell key={entry.method} fill={`var(--color-${entry.method.toLowerCase()})`} />
                                     ))}
                                 </Pie>
+                                <ChartLegend content={<ChartLegendContent nameKey="method" />} />
                             </PieChart>
                         </ChartContainer>
                     </CardContent>
