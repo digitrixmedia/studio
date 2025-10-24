@@ -70,21 +70,27 @@ export default function ReportsPage() {
   const totalOrders = filteredCompletedOrders.length;
   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-  const itemWiseSales = menuItems
-    .map(item => {
+  const itemWiseSales = useMemo(() => {
+    return menuItems
+      .map(item => {
         const quantitySold = filteredCompletedOrders.reduce((sum, order) => 
-        sum + order.items.reduce((itemSum, orderItem) => 
+          sum + order.items.reduce((itemSum, orderItem) => 
             itemSum + (orderItem.id.startsWith(item.id) ? orderItem.quantity : 0), 0), 0);
-        return { name: item.name, sales: quantitySold * item.price };
-    })
-    .filter(item => item.sales > 0)
-    .sort((a, b) => b.sales - a.sales);
+        return { 
+          name: item.name, 
+          quantitySold: quantitySold,
+          sales: quantitySold * item.price 
+        };
+      })
+      .filter(item => item.sales > 0)
+      .sort((a, b) => b.sales - a.sales);
+  }, [filteredCompletedOrders]);
 
     const categorySales = menuCategories.map(category => {
         const categoryItems = menuItems.filter(item => item.category === category.id);
         const sales = categoryItems.reduce((catSum, item) => {
-            const itemSales = itemWiseSales.find(s => s.name === item.name)?.sales || 0;
-            return catSum + itemSales;
+            const itemSalesData = itemWiseSales.find(s => s.name === item.name);
+            return catSum + (itemSalesData?.sales || 0);
         }, 0);
         return { name: category.name, sales };
     }).filter(c => c.sales > 0);
@@ -388,7 +394,7 @@ export default function ReportsPage() {
                 <CardTitle>Item-wise Sales</CardTitle>
                 <CardDescription>Sales performance of individual items for the selected period.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className='space-y-6'>
                 <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
                 <BarChart data={itemWiseSales} layout="vertical" margin={{ left: 20, right: 20 }}>
                     <CartesianGrid horizontal={false} />
@@ -402,6 +408,29 @@ export default function ReportsPage() {
                     <Bar dataKey="sales" fill="var(--color-sales)" radius={4} />
                 </BarChart>
                 </ChartContainer>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item</TableHead>
+                      <TableHead className="text-right">Quantity Sold</TableHead>
+                      <TableHead className="text-right">Total Sales</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {itemWiseSales.map(item => (
+                      <TableRow key={item.name}>
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="text-right">{item.quantitySold}</TableCell>
+                        <TableCell className="text-right flex items-center justify-end">
+                          <IndianRupee className="h-4 w-4 mr-1" />
+                          {item.sales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
             </CardContent>
             </Card>
         </TabsContent>
@@ -554,4 +583,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
