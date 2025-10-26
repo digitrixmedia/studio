@@ -20,7 +20,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -193,6 +193,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         </div>
                     </>
                 )}
+                <span className="sr-only">
+                    <SheetTitle>Quick Access Panel</SheetTitle>
+                    <SheetDescription>
+                        A panel with quick access to common actions like dashboard, reports, and menu.
+                    </SheetDescription>
+                </span>
             </SheetContent>
         </Sheet>
       </SidebarInset>
