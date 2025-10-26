@@ -1,4 +1,5 @@
 
+
 import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog, Role, Vendor, PurchaseOrder } from '@/lib/types';
 import { addDays, subDays } from 'date-fns';
 
@@ -16,6 +17,8 @@ export const menuCategories: MenuCategory[] = [
   { id: 'cat-2', name: 'Cold Coffee' },
   { id: 'cat-3', name: 'Sandwiches' },
   { id: 'cat-4', name: 'Desserts' },
+  { id: 'cat-5', name: 'Sides' },
+  { id: 'cat-6', name: 'Beverages' },
 ];
 
 export const menuItems: MenuItem[] = [
@@ -98,6 +101,11 @@ export const menuItems: MenuItem[] = [
       { ingredientId: 'ing-4', quantity: 2 },
       { ingredientId: 'ing-5', quantity: 50 },
     ],
+    mealDeal: {
+        upsellPrice: 99,
+        sideCategoryIds: ['cat-5'],
+        drinkCategoryIds: ['cat-6'],
+    }
   },
   {
     id: 'item-6',
@@ -131,6 +139,30 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     imageUrl: 'https://picsum.photos/seed/croissant/400/300',
     imageHint: 'croissant pastry',
+    foodType: 'veg',
+    isAvailable: true,
+    ingredients: [],
+  },
+  {
+    id: 'item-9',
+    name: 'French Fries',
+    description: 'Classic crispy french fries.',
+    price: 120,
+    category: 'cat-5',
+    imageUrl: 'https://picsum.photos/seed/fries/400/300',
+    imageHint: 'french fries',
+    foodType: 'veg',
+    isAvailable: true,
+    ingredients: [],
+  },
+  {
+    id: 'item-10',
+    name: 'Coke',
+    description: 'Chilled Coca-cola.',
+    price: 60,
+    category: 'cat-6',
+    imageUrl: 'https://picsum.photos/seed/coke/400/300',
+    imageHint: 'coke can',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [],

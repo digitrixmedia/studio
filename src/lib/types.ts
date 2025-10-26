@@ -29,6 +29,12 @@ export interface MenuItemAddon {
   price: number;
 }
 
+export interface MealDeal {
+  upsellPrice: number;
+  sideCategoryIds: string[];
+  drinkCategoryIds: string[];
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -42,6 +48,7 @@ export interface MenuItem {
   addons?: MenuItemAddon[];
   isAvailable: boolean;
   ingredients: { ingredientId: string; quantity: number }[];
+  mealDeal?: MealDeal;
 }
 
 export interface OrderItem {
@@ -54,6 +61,8 @@ export interface OrderItem {
   notes?: string;
   totalPrice: number;
   isBogo?: boolean;
+  baseMenuItemId?: string; // ID of the MenuItem this OrderItem is derived from
+  isMealComponent?: boolean; // True if this item was added as part of a meal
 }
 
 export type OrderType = 'dine-in' | 'takeaway' | 'delivery';

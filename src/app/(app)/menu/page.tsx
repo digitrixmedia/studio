@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -40,19 +41,27 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ingredients, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
-import { PlusCircle, Edit, IndianRupee, Trash2, Save } from 'lucide-react';
+import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import type { MenuCategory, MenuItem, MenuItemVariation } from '@/lib/types';
+import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import {
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectItem,
+  MultiSelectTrigger,
+  MultiSelectValue
+} from '@/components/ui/multi-select';
 
-const initialFormState: Omit<MenuItem, 'id' | 'imageUrl' | 'imageHint' | 'isAvailable' | 'ingredients'> = {
+const initialFormState: Partial<MenuItem> = {
   name: '',
   price: 0,
   category: '',
   description: '',
   variations: [],
   addons: [],
+  mealDeal: undefined,
 };
 
 
@@ -66,10 +75,11 @@ export default function MenuPage() {
   const [formData, setFormData] = useState<Partial<MenuItem>>(initialFormState);
   const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
   const [hasCustomization, setHasCustomization] = useState(false);
+  const [isMealDeal, setIsMealDeal] = useState(false);
   
   const { toast } = useToast();
 
-  const handleInputChange = (field: keyof typeof initialFormState, value: string | number) => {
+  const handleInputChange = (field: keyof MenuItem, value: string | number | boolean | MealDeal | undefined) => {
     setFormData(prev => ({...prev, [field]: value}));
   };
 
@@ -90,6 +100,7 @@ export default function MenuPage() {
     const itemVariations = item.variations && item.variations.length > 0 ? item.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
     setVariations(itemVariations);
     setHasCustomization(!!item.variations && item.variations.length > 0);
+    setIsMealDeal(!!item.mealDeal);
     setIsFormOpen(true);
   };
   
@@ -98,6 +109,7 @@ export default function MenuPage() {
     setFormData(initialFormState);
     setVariations([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
     setHasCustomization(false);
+    setIsMealDeal(false);
     setIsFormOpen(true);
   };
 
@@ -176,6 +188,19 @@ export default function MenuPage() {
       priceModifier: v.priceModifier || 0,
       ingredients: v.ingredients || []
     }));
+    
+    let mealDealConfig: MealDeal | undefined = undefined;
+    if (isMealDeal) {
+      if (!formData.mealDeal?.upsellPrice || formData.mealDeal.upsellPrice <= 0) {
+         toast({
+          variant: "destructive",
+          title: "Invalid Meal Deal",
+          description: "Please set a valid upsell price for the meal deal.",
+        });
+        return;
+      }
+      mealDealConfig = formData.mealDeal;
+    }
 
     if (editingItem) {
       // Update existing item
@@ -184,6 +209,7 @@ export default function MenuPage() {
         ...formData,
         price: basePrice,
         variations: hasCustomization ? finalVariations : [],
+        mealDeal: mealDealConfig,
       };
       setMenuItems(menuItems.map(item => item.id === editingItem.id ? updatedItem : item));
       toast({ title: "Item Updated", description: `${formData.name} has been updated.` });
@@ -198,6 +224,7 @@ export default function MenuPage() {
         ...formData,
         price: Number(basePrice),
         variations: hasCustomization ? finalVariations : [],
+        mealDeal: mealDealConfig,
       };
       setMenuItems([newItem, ...menuItems]);
       toast({ title: "Item Created", description: `${formData.name} has been added to the menu.` });
@@ -220,6 +247,7 @@ export default function MenuPage() {
       const itemVariations = editingItem.variations && editingItem.variations.length > 0 ? editingItem.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
       setVariations(itemVariations);
       setHasCustomization(!!editingItem.variations && editingItem.variations.length > 0);
+      setIsMealDeal(!!editingItem.mealDeal);
     }
   }, [isFormOpen, editingItem]);
 
@@ -379,6 +407,69 @@ export default function MenuPage() {
                       </div>
                    </div>
                 )}
+                
+                 <div className="grid grid-cols-4 items-center gap-4 border-t pt-4">
+                   <div className="text-right flex flex-col items-end">
+                      <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
+                      <p className="text-xs text-muted-foreground">This item can be upsold as a meal.</p>
+                   </div>
+                   <div className="col-span-3">
+                     <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
+                   </div>
+                </div>
+                
+                {isMealDeal && (
+                  <div className="col-span-4 space-y-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="upsell-price" className="text-right">Upsell Price</Label>
+                      <div className="col-span-3 relative">
+                         <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="upsell-price"
+                          type="number"
+                          className="pl-10"
+                          placeholder="e.g., 99"
+                          value={formData.mealDeal?.upsellPrice || ''}
+                          onChange={e => handleInputChange('mealDeal', { ...formData.mealDeal, upsellPrice: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="side-categories" className="text-right">Side Categories</Label>
+                      <div className="col-span-3">
+                         <MultiSelect 
+                           value={formData.mealDeal?.sideCategoryIds || []} 
+                           onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, sideCategoryIds: v })}>
+                          <MultiSelectTrigger>
+                            <MultiSelectValue placeholder="Select categories for sides" />
+                          </MultiSelectTrigger>
+                          <MultiSelectContent>
+                            {menuCategories.map(cat => (
+                              <MultiSelectItem key={cat.id} value={cat.id}>{cat.name}</MultiSelectItem>
+                            ))}
+                          </MultiSelectContent>
+                        </MultiSelect>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="drink-categories" className="text-right">Drink Categories</Label>
+                      <div className="col-span-3">
+                        <MultiSelect 
+                          value={formData.mealDeal?.drinkCategoryIds || []} 
+                          onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, drinkCategoryIds: v })}>
+                          <MultiSelectTrigger>
+                            <MultiSelectValue placeholder="Select categories for drinks" />
+                          </MultiSelectTrigger>
+                          <MultiSelectContent>
+                            {menuCategories.map(cat => (
+                              <MultiSelectItem key={cat.id} value={cat.id}>{cat.name}</MultiSelectItem>
+                            ))}
+                          </MultiSelectContent>
+                        </MultiSelect>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <DialogClose asChild>
@@ -415,7 +506,10 @@ export default function MenuPage() {
                     data-ai-hint={item.imageHint}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="font-medium flex items-center gap-2">
+                    {item.name}
+                    {item.mealDeal && <Badge variant="outline" className="text-amber-600 border-amber-500"><Sparkles className="h-3 w-3 mr-1"/>Meal</Badge>}
+                </TableCell>
                 <TableCell>
                   <Badge variant="outline">
                     {menuCategories.find(c => c.id === item.category)?.name}
