@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { menuItems, menuCategories, tables } from '@/lib/data';
-import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon } from '@/lib/types';
+import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal } from '@/lib/types';
 import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
@@ -862,7 +862,7 @@ export default function OrdersPage() {
                             <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
                             <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
                         </TabsList>
-                        <CardDescription asChild className="space-y-2 pt-4">
+                        <CardDescription className="space-y-2 pt-4">
                             <div>
                                 {activeOrder.orderType === 'dine-in' && (
                                     <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
