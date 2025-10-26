@@ -60,8 +60,8 @@ const MultiSelectTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof PopoverTrigger>
 >(({ children, className, ...props }, ref) => {
   return (
-    <PopoverTrigger ref={ref} asChild className={className} {...props}>
-      {children}
+    <PopoverTrigger ref={ref} asChild {...props}>
+        <div className={className}>{children}</div>
     </PopoverTrigger>
   )
 })
