@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { menuItems, menuCategories, tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon } from '@/lib/types';
-import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, ShoppingBag, Tag, Truck, User, Utensils, X } from 'lucide-react';
+import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,12 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { generateSmsBill } from '@/ai/flows/generate-sms-bill-flow';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 
 export default function OrdersPage() {
@@ -57,6 +63,7 @@ export default function OrdersPage() {
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
   
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
+  const [mealUpsellParentItem, setMealUpsellParentItem] = useState<OrderItem | null>(null);
   const [noteEditingItem, setNoteEditingItem] = useState<OrderItem | null>(null);
   const [isHeldBillsOpen, setIsHeldBillsOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState('');
@@ -88,10 +95,12 @@ export default function OrdersPage() {
        } else {
          const newOrderItem: OrderItem = {
           id: uniqueCartId,
+          baseMenuItemId: item.id,
           name: item.name,
           quantity: parseInt(settings.defaultQuantity, 10) || 1,
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
+          isMealParent: !!item.mealDeal,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
@@ -124,17 +133,66 @@ export default function OrdersPage() {
     } else {
         const newOrderItem: OrderItem = {
           id: uniqueCartId,
+          baseMenuItemId: customizationItem.id,
           name: finalName,
           quantity: 1,
           price: basePrice,
           totalPrice: basePrice,
           variation: selectedVariation,
           notes: notes || undefined,
+          isMealParent: !!customizationItem.mealDeal,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
 
     setCustomizationItem(null);
+  };
+  
+    const handleAddMeal = (sideId: string, drinkId: string) => {
+    if (!mealUpsellParentItem || !activeOrder) return;
+
+    const parentItem = menuItems.find(m => m.id === mealUpsellParentItem.baseMenuItemId);
+    if (!parentItem || !parentItem.mealDeal) return;
+
+    const sideItem = menuItems.find(m => m.id === sideId);
+    const drinkItem = menuItems.find(m => m.id === drinkId);
+
+    if (!sideItem || !drinkItem) {
+        toast({ title: "Error", description: "Selected side or drink not found.", variant: "destructive" });
+        return;
+    }
+    
+    const mealItems: OrderItem[] = [
+        {
+            id: `meal-side-${Date.now()}`,
+            baseMenuItemId: sideItem.id,
+            name: sideItem.name,
+            quantity: 1,
+            price: 0, // Free as part of the meal
+            totalPrice: 0,
+        },
+        {
+            id: `meal-drink-${Date.now()}`,
+            baseMenuItemId: drinkItem.id,
+            name: drinkItem.name,
+            quantity: 1,
+            price: 0, // Free as part of the meal
+            totalPrice: 0,
+        }
+    ];
+
+    const updatedParentItem: OrderItem = {
+        ...mealUpsellParentItem,
+        price: mealUpsellParentItem.price + parentItem.mealDeal.upsellPrice,
+        totalPrice: (mealUpsellParentItem.price + parentItem.mealDeal.upsellPrice) * mealUpsellParentItem.quantity,
+        isMealParent: false, // Turn off the prompt
+        mealItems: mealItems, // Nest the meal items
+    };
+
+    const updatedCartItems = activeOrder.items.map(item => item.id === mealUpsellParentItem.id ? updatedParentItem : item);
+
+    updateActiveOrder(updatedCartItems);
+    setMealUpsellParentItem(null); // Close the selector
   };
   
   const openNoteEditor = (item: OrderItem) => {
@@ -840,56 +898,72 @@ export default function OrdersPage() {
                         ) : (
                         <div className="space-y-2">
                             {activeOrder.items.map(item => (
-                            <div key={item.id} className="flex items-start">
-                                <div className='flex-1 text-left'>
-                                    <button onClick={() => openNoteEditor(item)}>
-                                        <p className="font-semibold text-sm">{item.name}</p>
-                                    </button>
-                                     <div className="flex items-center gap-2">
-                                        <p className="text-sm text-muted-foreground flex items-center">
-                                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                            {item.price.toFixed(2)}
-                                        </p>
-                                        {item.quantity >= 2 && (
-                                            <div className="flex items-center space-x-1">
-                                                <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
-                                                <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
-                                            </div>
-                                        )}
-                                     </div>
-                                    {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
-                                </div>
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                <Button
+                            <div key={item.id}>
+                                <div className="flex items-start">
+                                    <div className='flex-1 text-left'>
+                                        <button onClick={() => openNoteEditor(item)}>
+                                            <p className="font-semibold text-sm">{item.name}</p>
+                                        </button>
+                                         <div className="flex items-center gap-2">
+                                            <p className="text-sm text-muted-foreground flex items-center">
+                                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                                {item.price.toFixed(2)}
+                                            </p>
+                                            {item.quantity >= 2 && (
+                                                <div className="flex items-center space-x-1">
+                                                    <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
+                                                    <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
+                                                </div>
+                                            )}
+                                         </div>
+                                        {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
+                                    </div>
+                                    <div className="flex items-center gap-1 sm:gap-2">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                    >
+                                        <MinusCircle className="h-4 w-4" />
+                                    </Button>
+                                    <span className='text-sm'>{item.quantity}</span>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6"
+                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                    >
+                                        <PlusCircle className="h-4 w-4" />
+                                    </Button>
+                                    </div>
+                                    <p className="w-20 text-right font-semibold flex items-center justify-end text-sm">
+                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                    {item.totalPrice.toFixed(2)}
+                                    </p>
+                                    <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                >
-                                    <MinusCircle className="h-4 w-4" />
-                                </Button>
-                                <span className='text-sm'>{item.quantity}</span>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                >
-                                    <PlusCircle className="h-4 w-4" />
-                                </Button>
+                                    className="h-6 w-6 ml-1 sm:ml-2 text-destructive"
+                                    onClick={() => removeFromCart(item.id)}
+                                    >
+                                    <X className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                <p className="w-20 text-right font-semibold flex items-center justify-end text-sm">
-                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                {item.totalPrice.toFixed(2)}
-                                </p>
-                                <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 ml-1 sm:ml-2 text-destructive"
-                                onClick={() => removeFromCart(item.id)}
-                                >
-                                <X className="h-4 w-4" />
-                                </Button>
+                                {item.isMealParent && (
+                                    <div className="pl-4 mt-1">
+                                        <Button size="sm" variant="outline" className="h-auto py-1" onClick={() => setMealUpsellParentItem(item)}>
+                                            <Sparkles className="h-3 w-3 mr-2 text-amber-500"/> Make it a Meal
+                                        </Button>
+                                    </div>
+                                )}
+                                {item.mealItems && (
+                                    <div className="pl-6 text-xs text-muted-foreground">
+                                        {item.mealItems.map(mealItem => (
+                                            <p key={mealItem.id}>+ {mealItem.name}</p>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             ))}
                         </div>
@@ -1014,6 +1088,13 @@ export default function OrdersPage() {
                 </div>
         </Card>
       </div>
+        
+        {/* Make a Meal Dialog */}
+        <MealUpsellDialog
+            parentItem={mealUpsellParentItem}
+            onClose={() => setMealUpsellParentItem(null)}
+            onAddMeal={handleAddMeal}
+        />
 
         {/* Customization Dialog */}
         <Dialog open={!!customizationItem} onOpenChange={() => setCustomizationItem(null)}>
@@ -1234,4 +1315,91 @@ export default function OrdersPage() {
 
     </div>
   );
+}
+
+interface MealUpsellDialogProps {
+  parentItem: OrderItem | null;
+  onClose: () => void;
+  onAddMeal: (sideId: string, drinkId: string) => void;
+}
+
+function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogProps) {
+    const parentMenuItem = useMemo(() => parentItem ? menuItems.find(m => m.id === parentItem.baseMenuItemId) : null, [parentItem]);
+    const mealDeal = parentMenuItem?.mealDeal;
+
+    const [selectedSide, setSelectedSide] = useState<string>('');
+    const [selectedDrink, setSelectedDrink] = useState<string>('');
+
+    const sideItems = useMemo(() => {
+        if (!mealDeal) return [];
+        return menuItems.filter(item => mealDeal.sideCategoryIds.includes(item.category));
+    }, [mealDeal]);
+
+    const drinkItems = useMemo(() => {
+        if (!mealDeal) return [];
+        return menuItems.filter(item => mealDeal.drinkCategoryIds.includes(item.category));
+    }, [mealDeal]);
+
+    useEffect(() => {
+        if (parentItem) {
+            // Pre-select if possible
+            if (sideItems.length > 0) setSelectedSide(sideItems[0].id);
+            if (drinkItems.length > 0) setSelectedDrink(drinkItems[0].id);
+        } else {
+            // Reset on close
+            setSelectedSide('');
+            setSelectedDrink('');
+        }
+    }, [parentItem, sideItems, drinkItems]);
+    
+    if (!parentItem || !mealDeal) return null;
+
+    const handleConfirm = () => {
+        if (!selectedSide || !selectedDrink) {
+            alert("Please select a side and a drink.");
+            return;
+        }
+        onAddMeal(selectedSide, selectedDrink);
+    }
+
+    return (
+        <Dialog open={!!parentItem} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Make it a Meal!</DialogTitle>
+                    <DialogDescription>
+                        Add a side and a drink to your {parentMenuItem?.name} for just <IndianRupee className="inline h-4 w-4"/>{mealDeal.upsellPrice} more.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div>
+                        <Label>Choose a Side</Label>
+                        <Select value={selectedSide} onValueChange={setSelectedSide}>
+                            <SelectTrigger><SelectValue placeholder="Select a side..." /></SelectTrigger>
+                            <SelectContent>
+                                {sideItems.map(item => (
+                                    <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label>Choose a Drink</Label>
+                         <Select value={selectedDrink} onValueChange={setSelectedDrink}>
+                            <SelectTrigger><SelectValue placeholder="Select a drink..." /></SelectTrigger>
+                            <SelectContent>
+                                {drinkItems.map(item => (
+                                    <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleConfirm} disabled={!selectedSide || !selectedDrink}>Add Meal</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
 }

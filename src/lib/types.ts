@@ -1,5 +1,4 @@
 
-
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -61,8 +60,10 @@ export interface OrderItem {
   notes?: string;
   totalPrice: number;
   isBogo?: boolean;
+  // --- Meal Deal Fields ---
   baseMenuItemId?: string; // ID of the MenuItem this OrderItem is derived from
-  isMealComponent?: boolean; // True if this item was added as part of a meal
+  isMealParent?: boolean; // True if this is the main item of a meal
+  mealItems?: OrderItem[]; // Holds the side and drink
 }
 
 export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
