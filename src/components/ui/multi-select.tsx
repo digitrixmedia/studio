@@ -14,11 +14,6 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { Button } from "./button"
 
 interface MultiSelectContextValue {
@@ -46,7 +41,8 @@ const MultiSelect = ({
   onValueChange: (value: string[]) => void
   children: React.ReactNode
 }) => {
-  const [open, setOpen] = React.useState(false)
+  const [isOpen, setIsOpen] = React.useState(false)
+  const wrapperRef = React.useRef<HTMLDivElement>(null)
 
   const options = React.Children.toArray(children)
     .filter((child): child is React.ReactElement<{ value: string, children: React.ReactNode }> => 
@@ -57,24 +53,54 @@ const MultiSelect = ({
         label: child.props.children
     }));
 
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [wrapperRef]);
 
   return (
     <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
-      <Popover open={open} onOpenChange={setOpen}>
-        {children}
-      </Popover>
+      <div ref={wrapperRef} className="relative">
+        <div onClick={() => setIsOpen(!isOpen)}>
+          {children}
+        </div>
+        {isOpen && (
+            <div className="absolute top-full z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95">
+                <Command>
+                    <CommandInput placeholder="Search..." />
+                    <CommandList>
+                        <CommandEmpty>No results found.</CommandEmpty>
+                        <CommandGroup>
+                        {options.map(option => (
+                           <MultiSelectItem key={option.value} value={option.value}>
+                            {option.label}
+                           </MultiSelectItem>
+                        ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </div>
+        )}
+      </div>
     </MultiSelectContext.Provider>
   )
 }
 
 const MultiSelectTrigger = React.forwardRef<
-  React.ElementRef<typeof PopoverTrigger>,
-  React.ComponentPropsWithoutRef<typeof PopoverTrigger>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ children, ...props }, ref) => {
   return (
-    <PopoverTrigger ref={ref} asChild {...props}>
+    <div ref={ref} {...props}>
       {children}
-    </PopoverTrigger>
+    </div>
   )
 })
 MultiSelectTrigger.displayName = "MultiSelectTrigger"
@@ -91,13 +117,11 @@ const MultiSelectValue = React.forwardRef<
 
   return (
     <Button
-      ref={ref as React.Ref<HTMLButtonElement>}
       variant="outline"
       className={cn(
         "flex h-auto min-h-10 w-full items-center justify-between whitespace-normal",
         className
       )}
-      {...props}
     >
       {contextValue.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1">
@@ -131,35 +155,15 @@ const MultiSelectValue = React.forwardRef<
 })
 MultiSelectValue.displayName = "MultiSelectValue"
 
-const MultiSelectContent = React.forwardRef<
-  React.ElementRef<typeof PopoverContent>,
-  React.ComponentPropsWithoutRef<typeof PopoverContent>
->(({ children, className, ...props }, ref) => {
-  return (
-    <PopoverContent
-      ref={ref}
-      className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
-      {...props}
-    >
-      <Command>
-        <CommandInput placeholder="Search..." />
-        <CommandList>
-          <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup>
-            {children}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  )
-})
-MultiSelectContent.displayName = "MultiSelectContent"
 
+const MultiSelectContent: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
+  return null; // This is now handled inside the main MultiSelect component
+};
 
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, value, onSelect, ...props }, ref) => {
+>(({ children, className, value, ...props }, ref) => {
   const { value: selectedValues, onValueChange } = useMultiSelect();
   const isSelected = selectedValues.includes(value || '');
 

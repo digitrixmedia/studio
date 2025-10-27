@@ -430,41 +430,47 @@ export default function MenuPage() {
                           className="pl-10"
                           placeholder="e.g., 99"
                           value={formData.mealDeal?.upsellPrice || ''}
-                          onChange={e => handleInputChange('mealDeal', { ...formData.mealDeal, upsellPrice: Number(e.target.value) })}
+                          onChange={e => handleInputChange('mealDeal', { ...(formData.mealDeal!), upsellPrice: Number(e.target.value) })}
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="side-items" className="text-right">Side Items</Label>
                       <div className="col-span-3">
-                         <MultiSelect 
-                           value={formData.mealDeal?.sideItemIds || []} 
-                           onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, sideItemIds: v })}>
+                        <MultiSelect
+                          value={formData.mealDeal?.sideItemIds || []}
+                          onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), sideItemIds: v })}
+                        >
                           <MultiSelectTrigger>
                             <MultiSelectValue placeholder="Select items for sides" />
                           </MultiSelectTrigger>
-                          <MultiSelectContent>
-                            {menuItems.filter(item => item.id !== formData.id).map(item => (
-                              <MultiSelectItem key={item.id} value={item.id}>{item.name}</MultiSelectItem>
+                          {menuItems
+                            .filter((item) => item.id !== formData.id)
+                            .map((item) => (
+                              <MultiSelectItem key={item.id} value={item.id}>
+                                {item.name}
+                              </MultiSelectItem>
                             ))}
-                          </MultiSelectContent>
                         </MultiSelect>
                       </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="drink-items" className="text-right">Drink Items</Label>
                       <div className="col-span-3">
-                        <MultiSelect 
-                          value={formData.mealDeal?.drinkItemIds || []} 
-                          onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, drinkItemIds: v })}>
+                        <MultiSelect
+                          value={formData.mealDeal?.drinkItemIds || []}
+                          onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), drinkItemIds: v })}
+                        >
                           <MultiSelectTrigger>
                             <MultiSelectValue placeholder="Select items for drinks" />
                           </MultiSelectTrigger>
-                          <MultiSelectContent>
-                             {menuItems.filter(item => item.id !== formData.id).map(item => (
-                              <MultiSelectItem key={item.id} value={item.id}>{item.name}</MultiSelectItem>
+                          {menuItems
+                            .filter((item) => item.id !== formData.id)
+                            .map((item) => (
+                              <MultiSelectItem key={item.id} value={item.id}>
+                                {item.name}
+                              </MultiSelectItem>
                             ))}
-                          </MultiSelectContent>
                         </MultiSelect>
                       </div>
                     </div>
