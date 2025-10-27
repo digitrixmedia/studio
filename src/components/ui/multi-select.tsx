@@ -97,7 +97,6 @@ const MultiSelectValue = React.forwardRef<
         "flex h-auto min-h-10 w-full items-center justify-between whitespace-normal",
         className
       )}
-      onClick={() => {}}
       {...props}
     >
       {contextValue.length > 0 ? (
@@ -160,19 +159,22 @@ MultiSelectContent.displayName = "MultiSelectContent"
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, value = "", onSelect, ...props }, ref) => {
+>(({ children, className, value, onSelect, ...props }, ref) => {
   const { value: selectedValues, onValueChange } = useMultiSelect();
-  const isSelected = selectedValues.includes(value);
+  const isSelected = selectedValues.includes(value || '');
 
   return (
     <CommandItem
       ref={ref}
       value={value}
-      onSelect={() => {
+      onSelect={(currentValue) => {
+        if (onSelect) {
+            onSelect(currentValue)
+        }
         if (isSelected) {
           onValueChange(selectedValues.filter((v) => v !== value));
         } else {
-          onValueChange([...selectedValues, value]);
+          onValueChange([...selectedValues, value || '']);
         }
       }}
       className={cn(
