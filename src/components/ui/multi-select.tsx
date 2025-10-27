@@ -48,21 +48,19 @@ const MultiSelect = ({
 }) => {
   const [open, setOpen] = React.useState(false)
 
-  const options = React.Children.map(children, (child) => {
-    if (React.isValidElement(child) && child.type === MultiSelectItem) {
-      return {
+  const options = React.Children.toArray(children)
+    .filter((child): child is React.ReactElement<{ value: string, children: React.ReactNode }> => 
+        React.isValidElement(child) && child.type === MultiSelectItem
+    )
+    .map(child => ({
         value: child.props.value,
-        label: child.props.children,
-      };
-    }
-    return null;
-  })?.filter(Boolean) as { value: string; label: React.ReactNode }[];
+        label: child.props.children
+    }));
 
 
   return (
     <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
-
+      <Popover open={open} onOpenChange={setOpen}>
         {children}
       </Popover>
     </MultiSelectContext.Provider>
@@ -92,12 +90,14 @@ const MultiSelectValue = React.forwardRef<
   }
 
   return (
-    <div
+    <Button
       ref={ref}
+      variant="outline"
       className={cn(
-        "flex min-h-10 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-auto min-h-10 w-full items-center justify-between whitespace-normal",
         className
       )}
+      onClick={() => {}}
       {...props}
     >
       {contextValue.length > 0 ? (
@@ -107,6 +107,7 @@ const MultiSelectValue = React.forwardRef<
               {getLabel(value)}
               <button
                 aria-label={`Remove ${value} option`}
+                className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -118,7 +119,7 @@ const MultiSelectValue = React.forwardRef<
                   }
                 }}
               >
-                <X className="ml-1 h-3 w-3" />
+                <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
               </button>
             </Badge>
           ))}
@@ -126,7 +127,7 @@ const MultiSelectValue = React.forwardRef<
       ) : (
         <span className="text-muted-foreground">{placeholder}</span>
       )}
-    </div>
+    </Button>
   )
 })
 MultiSelectValue.displayName = "MultiSelectValue"
@@ -138,7 +139,7 @@ const MultiSelectContent = React.forwardRef<
   return (
     <PopoverContent
       ref={ref}
-      className={cn("w-full p-0", className)}
+      className={cn("w-[var(--radix-popover-trigger-width)] p-0", className)}
       {...props}
     >
       <Command>
@@ -163,22 +164,17 @@ const MultiSelectItem = React.forwardRef<
   const { value: selectedValues, onValueChange } = useMultiSelect();
   const isSelected = selectedValues.includes(value);
 
-  const handleSelect = (e: any) => {
-    e.preventDefault();
-    e.stopPropagation(); // ✅ important fix (prevents Radix from closing popover)
-    if (isSelected) {
-      onValueChange(selectedValues.filter((v) => v !== value));
-    } else {
-      onValueChange([...selectedValues, value]);
-    }
-    if (onSelect) onSelect(e);
-  };
-
   return (
     <CommandItem
       ref={ref}
       value={value}
-      onSelect={handleSelect}
+      onSelect={() => {
+        if (isSelected) {
+          onValueChange(selectedValues.filter((v) => v !== value));
+        } else {
+          onValueChange([...selectedValues, value]);
+        }
+      }}
       className={cn(
         "cursor-pointer flex items-center gap-2 px-2 py-1.5",
         className
