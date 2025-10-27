@@ -20,11 +20,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Button } from "./button"
-import { Separator } from "./separator"
 
 interface MultiSelectContextValue {
   value: string[]
   onValueChange: (value: string[]) => void
+  options: { value: string; label?: React.ReactNode }[]
 }
 
 const MultiSelectContext = React.createContext<MultiSelectContextValue>(
@@ -48,9 +48,28 @@ const MultiSelect = ({
   onValueChange: (value: string[]) => void
   children: React.ReactNode
 }) => {
+  const [open, setOpen] = React.useState(false)
+
+  // We map the children to extract the options and store them in a ref.
+  // This is so we can have access to the options and their labels
+  // when rendering the selected values.
+  const options = React.useMemo(() => {
+    const optionNodes = React.Children.toArray(children).filter(
+      (child) =>
+        React.isValidElement(child) && child.type === MultiSelectItem
+    ) as React.ReactElement[]
+
+    return optionNodes.map((child) => ({
+      value: child.props.value,
+      label: child.props.children,
+    }))
+  }, [children])
+
   return (
-    <MultiSelectContext.Provider value={{ value, onValueChange }}>
-      <Popover>{children}</Popover>
+    <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
+      <Popover open={open} onOpenChange={setOpen}>
+        {children}
+      </Popover>
     </MultiSelectContext.Provider>
   )
 }
@@ -61,7 +80,7 @@ const MultiSelectTrigger = React.forwardRef<
 >(({ children, className, ...props }, ref) => {
   return (
     <PopoverTrigger ref={ref} asChild {...props}>
-        <div className={className}>{children}</div>
+      <div className={className}>{children}</div>
     </PopoverTrigger>
   )
 })
@@ -71,13 +90,11 @@ const MultiSelectValue = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<"div"> & { placeholder?: string }
 >(({ className, placeholder, ...props }, ref) => {
-  const { value: contextValue } = useMultiSelect()
-  const { onValueChange } = useMultiSelect();
+  const { value: contextValue, options } = useMultiSelect()
+  const { onValueChange } = useMultiSelect()
 
   const getLabel = (value: string) => {
-    // This is a placeholder. In a real app, you'd have a map or lookup.
-    // For now, we just show the value.
-    return value;
+    return options.find((option) => option.value === value)?.label || value
   }
 
   return (
@@ -97,12 +114,12 @@ const MultiSelectValue = React.forwardRef<
               <button
                 aria-label={`Remove ${value} option`}
                 onClick={(e) => {
-                    e.preventDefault();
-                    onValueChange(contextValue.filter((v) => v !== value));
+                  e.preventDefault()
+                  onValueChange(contextValue.filter((v) => v !== value))
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    onValueChange(contextValue.filter((v) => v !== value));
+                    onValueChange(contextValue.filter((v) => v !== value))
                   }
                 }}
               >
@@ -146,18 +163,18 @@ MultiSelectContent.displayName = "MultiSelectContent"
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, onSelect, ...props }, ref) => {
-  const { value, onValueChange } = useMultiSelect()
-  const isSelected = value.includes(props.value || "")
+>(({ children, className, onSelect, value, ...props }, ref) => {
+  const { value: contextValue, onValueChange } = useMultiSelect()
+  const isSelected = contextValue.includes(value || "")
+
   return (
     <CommandItem
       ref={ref}
-      onSelect={(currentValue) => {
-        onSelect?.(currentValue);
+      onSelect={() => {
         if (isSelected) {
-          onValueChange(value.filter((v) => v !== props.value))
+          onValueChange(contextValue.filter((v) => v !== value))
         } else {
-          onValueChange([...value, props.value || ""])
+          onValueChange([...contextValue, value || ""])
         }
       }}
       className={cn("cursor-pointer", className)}
