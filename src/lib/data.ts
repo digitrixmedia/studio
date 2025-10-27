@@ -4,12 +4,12 @@ import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatu
 import { addDays, subDays } from 'date-fns';
 
 export const users: User[] = [
-  { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'admin', avatar: '/avatars/01.png', subscriptionId: 'sub-1' },
-  { id: 'user-2', name: 'Manoj Manager', email: 'manager@zappyy.com', role: 'manager', avatar: '/avatars/02.png', subscriptionId: 'sub-2' },
-  { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'cashier', avatar: '/avatars/03.png', subscriptionId: 'sub-2' },
-  { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'waiter', avatar: '/avatars/04.png', subscriptionId: 'sub-2' },
-  { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'kitchen', avatar: '/avatars/05.png', subscriptionId: 'sub-2' },
-  { id: 'user-6', name: 'Sonia Super', email: 'super@zappyy.com', role: 'super-admin', avatar: '/avatars/06.png' },
+  { id: 'user-1', name: 'Alia Admin', email: 'admin@zappyy.com', role: 'admin', subscriptionId: 'sub-1' },
+  { id: 'user-2', name: 'Manoj Manager', email: 'manager@zappyy.com', role: 'manager', subscriptionId: 'sub-2' },
+  { id: 'user-3', name: 'Chirag Cashier', email: 'cashier@zappyy.com', role: 'cashier', subscriptionId: 'sub-2' },
+  { id: 'user-4', name: 'Vicky Waiter', email: 'waiter@zappyy.com', role: 'waiter', subscriptionId: 'sub-2' },
+  { id: 'user-5', name: 'Karan Kitchen', email: 'kitchen@zappyy.com', role: 'kitchen', subscriptionId: 'sub-2' },
+  { id: 'user-6', name: 'Sonia Super', email: 'super@zappyy.com', role: 'super-admin' },
 ];
 
 export const menuCategories: MenuCategory[] = [
@@ -28,8 +28,6 @@ export const menuItems: MenuItem[] = [
     description: 'Classic Italian coffee drink with steamed milk foam.',
     price: 150,
     category: 'cat-1',
-    imageUrl: 'https://picsum.photos/seed/cappuccino/400/300',
-    imageHint: 'cappuccino coffee',
     foodType: 'veg',
     isAvailable: true,
     variations: [
@@ -52,8 +50,6 @@ export const menuItems: MenuItem[] = [
     description: 'A concentrated full-flavoured coffee shot.',
     price: 120,
     category: 'cat-1',
-    imageUrl: 'https://picsum.photos/seed/espresso/400/300',
-    imageHint: 'espresso shot',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [{ ingredientId: 'ing-1', quantity: 8 }],
@@ -64,8 +60,6 @@ export const menuItems: MenuItem[] = [
     description: 'A milk coffee that is a made up of one or two shots of espresso, steamed milk and a final, thin layer of frothed milk on top.',
     price: 160,
     category: 'cat-1',
-    imageUrl: 'https://picsum.photos/seed/latte/400/300',
-    imageHint: 'latte art',
     foodType: 'veg',
     isAvailable: false,
     ingredients: [
@@ -79,8 +73,6 @@ export const menuItems: MenuItem[] = [
     description: 'Espresso shots topped with cold water produce a light layer of crema, then served over ice.',
     price: 180,
     category: 'cat-2',
-    imageUrl: 'https://picsum.photos/seed/icedcoffee/400/300',
-    imageHint: 'iced coffee',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [
@@ -93,8 +85,6 @@ export const menuItems: MenuItem[] = [
     description: 'A healthy and delicious sandwich filled with fresh vegetables.',
     price: 220,
     category: 'cat-3',
-    imageUrl: 'https://picsum.photos/seed/sandwich/400/300',
-    imageHint: 'vegetable sandwich',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [
@@ -108,8 +98,6 @@ export const menuItems: MenuItem[] = [
     description: 'Creamy, dense, and smooth cheesecake with a graham cracker crust.',
     price: 250,
     category: 'cat-4',
-    imageUrl: 'https://picsum.photos/seed/cheesecake/400/300',
-    imageHint: 'cheesecake slice',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [{ ingredientId: 'ing-6', quantity: 1 }],
@@ -120,8 +108,6 @@ export const menuItems: MenuItem[] = [
     description: 'Rich and fudgy chocolate brownie, served warm.',
     price: 180,
     category: 'cat-4',
-    imageUrl: 'https://picsum.photos/seed/brownie/400/300',
-    imageHint: 'chocolate brownie',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [],
@@ -132,8 +118,6 @@ export const menuItems: MenuItem[] = [
     description: 'A classic French pastry, flaky and buttery.',
     price: 140,
     category: 'cat-4',
-    imageUrl: 'https://picsum.photos/seed/croissant/400/300',
-    imageHint: 'croissant pastry',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [],
@@ -144,8 +128,6 @@ export const menuItems: MenuItem[] = [
     description: 'Classic crispy french fries.',
     price: 120,
     category: 'cat-5',
-    imageUrl: 'https://picsum.photos/seed/fries/400/300',
-    imageHint: 'french fries',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [],
@@ -156,8 +138,6 @@ export const menuItems: MenuItem[] = [
     description: 'Chilled Coca-cola.',
     price: 60,
     category: 'cat-6',
-    imageUrl: 'https://picsum.photos/seed/coke/400/300',
-    imageHint: 'coke can',
     foodType: 'veg',
     isAvailable: true,
     ingredients: [],

@@ -7,7 +7,6 @@ export interface User {
   name: string;
   email: string;
   role: Role;
-  avatar: string;
   subscriptionId?: string;
 }
 
@@ -41,8 +40,6 @@ export interface MenuItem {
   description: string;
   price: number;
   category: string; // categoryId
-  imageUrl: string;
-  imageHint: string;
   foodType?: 'veg' | 'non-veg' | 'jain';
   variations?: MenuItemVariation[];
   addons?: MenuItemAddon[];

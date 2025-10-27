@@ -61,7 +61,8 @@ const MultiSelect = ({
 
   return (
     <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
+
         {children}
       </Popover>
     </MultiSelectContext.Provider>

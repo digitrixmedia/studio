@@ -76,7 +76,7 @@ export default function ProfilePage() {
     );
   }
 
-  const { name, email, avatar } = currentUser;
+  const { name, email } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
 
   const handleUpdateProfile = () => {
@@ -93,7 +93,6 @@ export default function ProfilePage() {
         <CardHeader>
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={avatar} alt={name} />
               <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
             </Avatar>
             <div>

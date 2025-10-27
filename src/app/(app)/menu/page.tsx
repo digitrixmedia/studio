@@ -42,7 +42,6 @@ import {
 } from '@/components/ui/select';
 import { ingredients, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
 import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles } from 'lucide-react';
-import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -168,7 +167,6 @@ export default function MenuPage() {
     newIngredients.splice(iIndex, 1);
     variation.ingredients = newIngredients;
     newVariations[vIndex] = variation;
-    setVariations(newVariations);
   }
 
   const getIngredientUnit = (id: string) => {
@@ -222,8 +220,6 @@ export default function MenuPage() {
       const newItem: MenuItem = {
         id: `item-${Date.now()}`,
         isAvailable: true,
-        imageUrl: 'https://picsum.photos/seed/newitem/400/300',
-        imageHint: 'food plate',
         ingredients: [],
         ...formData,
         price: Number(basePrice),
@@ -489,7 +485,6 @@ export default function MenuPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[80px]">Image</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Price</TableHead>
@@ -500,16 +495,6 @@ export default function MenuPage() {
           <TableBody>
             {menuItems.map(item => (
               <TableRow key={item.id}>
-                <TableCell>
-                  <Image
-                    src={item.imageUrl}
-                    alt={item.name}
-                    width={48}
-                    height={48}
-                    className="rounded-md object-cover"
-                    data-ai-hint={item.imageHint}
-                  />
-                </TableCell>
                 <TableCell className="font-medium flex items-center gap-2">
                     {item.name}
                     {item.mealDeal && <Badge variant="outline" className="text-amber-600 border-amber-500"><Sparkles className="h-3 w-3 mr-1"/>Meal</Badge>}

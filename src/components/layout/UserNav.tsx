@@ -27,7 +27,7 @@ export function UserNav() {
   const isSuperAdmin = currentUser.role === 'super-admin';
   const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'manager' : currentUser.role;
 
-  const { name, email, avatar } = currentUser;
+  const { name, email } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
 
   const profileLink = isSuperAdmin ? "/super-admin/profile" : "/profile";
@@ -37,7 +37,6 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={avatar} alt={name} />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
         </Button>
