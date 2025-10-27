@@ -90,8 +90,7 @@ const MultiSelectValue = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<"div"> & { placeholder?: string }
 >(({ className, placeholder, ...props }, ref) => {
-  const { value: contextValue, options } = useMultiSelect()
-  const { onValueChange } = useMultiSelect()
+  const { value: contextValue, options, onValueChange } = useMultiSelect()
 
   const getLabel = (value: string) => {
     return options.find((option) => option.value === value)?.label || value
@@ -170,10 +169,9 @@ const MultiSelectItem = React.forwardRef<
   return (
     <CommandItem
       ref={ref}
-      onSelect={(currentValue) => {
-        if (onSelect) {
-          onSelect(currentValue);
-        }
+      onSelect={(e) => {
+        if(onSelect) onSelect(e);
+        e.preventDefault(); // This is the fix
         if (isSelected) {
           onValueChange(contextValue.filter((v) => v !== value))
         } else {
