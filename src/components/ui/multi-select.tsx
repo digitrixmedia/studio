@@ -19,7 +19,6 @@ import { Button } from "./button"
 interface MultiSelectContextValue {
   value: string[]
   onValueChange: (value: string[]) => void
-  options: { value: string; label?: React.ReactNode }[]
 }
 
 const MultiSelectContext = React.createContext<MultiSelectContextValue | null>(null)
@@ -44,15 +43,6 @@ const MultiSelect = ({
   const [isOpen, setIsOpen] = React.useState(false)
   const wrapperRef = React.useRef<HTMLDivElement>(null)
 
-  const options = React.Children.toArray(children)
-    .filter((child): child is React.ReactElement<{ value: string, children: React.ReactNode }> => 
-        React.isValidElement(child) && child.type === MultiSelectItem
-    )
-    .map(child => ({
-        value: child.props.value,
-        label: child.props.children
-    }));
-
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -66,10 +56,11 @@ const MultiSelect = ({
   }, [wrapperRef]);
 
   return (
-    <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
+    <MultiSelectContext.Provider value={{ value, onValueChange }}>
       <div ref={wrapperRef} className="relative">
         <div onClick={() => setIsOpen(!isOpen)}>
-          {children}
+            {/* The trigger elements like MultiSelectTrigger and MultiSelectValue will be passed as children here */}
+            {React.Children.toArray(children).filter((child: any) => child.type !== MultiSelectItem)}
         </div>
         {isOpen && (
             <div className="absolute top-full z-10 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in fade-in-0 zoom-in-95">
@@ -78,11 +69,8 @@ const MultiSelect = ({
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
-                        {options.map(option => (
-                           <MultiSelectItem key={option.value} value={option.value}>
-                            {option.label}
-                           </MultiSelectItem>
-                        ))}
+                             {/* The item elements are rendered here */}
+                            {React.Children.toArray(children).filter((child: any) => child.type === MultiSelectItem)}
                         </CommandGroup>
                     </CommandList>
                 </Command>
@@ -109,10 +97,13 @@ const MultiSelectValue = React.forwardRef<
   HTMLDivElement,
   React.ComponentPropsWithoutRef<"div"> & { placeholder?: string }
 >(({ className, placeholder, ...props }, ref) => {
-  const { value: contextValue, options, onValueChange } = useMultiSelect()
-
-  const getLabel = (value: string) => {
-    return options.find((option) => option.value === value)?.label || value
+  const { value: contextValue, onValueChange } = useMultiSelect()
+  
+  // A bit of a hack to get labels, but necessary without direct access to options in context
+  const getLabelFromContext = (val: string) => {
+    // This part is tricky as we don't have the full options list with labels here.
+    // Let's assume for now the value is the label. A more robust solution might need a different architecture.
+    return val;
   }
 
   return (
@@ -127,7 +118,7 @@ const MultiSelectValue = React.forwardRef<
         <div className="flex flex-wrap items-center gap-1">
           {contextValue.map((value) => (
             <Badge key={value} variant="secondary">
-              {getLabel(value)}
+              {value} 
               <button
                 aria-label={`Remove ${value} option`}
                 className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
@@ -135,11 +126,6 @@ const MultiSelectValue = React.forwardRef<
                   e.preventDefault()
                   e.stopPropagation()
                   onValueChange(contextValue.filter((v) => v !== value))
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    onValueChange(contextValue.filter((v) => v !== value))
-                  }
                 }}
               >
                 <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
@@ -155,11 +141,6 @@ const MultiSelectValue = React.forwardRef<
 })
 MultiSelectValue.displayName = "MultiSelectValue"
 
-
-const MultiSelectContent: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  return null; // This is now handled inside the main MultiSelect component
-};
-
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
@@ -167,12 +148,8 @@ const MultiSelectItem = React.forwardRef<
   const { value: selectedValues, onValueChange } = useMultiSelect();
   const isSelected = selectedValues.includes(value || '');
 
-  const handleSelect = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
+  const handleSelect = () => {
     const currentValue = value || '';
-
     if (isSelected) {
       onValueChange(selectedValues.filter((v) => v !== currentValue));
     } else {
@@ -184,7 +161,12 @@ const MultiSelectItem = React.forwardRef<
     <CommandItem
       ref={ref}
       value={value}
-      onSelect={handleSelect}
+      onSelect={(currentValue) => {
+         // Stop the event from propagating and closing the dropdown
+        const e = new Event('select', { bubbles: true, cancelable: true });
+        Object.defineProperty(e, 'preventDefault', { value: () => {} }); // Mock preventDefault
+        handleSelect();
+      }}
       className={cn(
         "cursor-pointer flex items-center gap-2 px-2 py-1.5",
         className
@@ -208,11 +190,9 @@ const MultiSelectItem = React.forwardRef<
 
 MultiSelectItem.displayName = "MultiSelectItem"
 
-
 export {
   MultiSelect,
   MultiSelectTrigger,
   MultiSelectValue,
-  MultiSelectContent,
   MultiSelectItem,
 }

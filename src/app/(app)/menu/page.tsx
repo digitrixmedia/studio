@@ -47,7 +47,6 @@ import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/
 import { useToast } from '@/hooks/use-toast';
 import {
   MultiSelect,
-  MultiSelectContent,
   MultiSelectItem,
   MultiSelectTrigger,
   MultiSelectValue
@@ -447,7 +446,7 @@ export default function MenuPage() {
                           {menuItems
                             .filter((item) => item.id !== formData.id)
                             .map((item) => (
-                              <MultiSelectItem key={item.id} value={item.id}>
+                              <MultiSelectItem key={item.id} value={item.name}>
                                 {item.name}
                               </MultiSelectItem>
                             ))}
@@ -467,7 +466,7 @@ export default function MenuPage() {
                           {menuItems
                             .filter((item) => item.id !== formData.id)
                             .map((item) => (
-                              <MultiSelectItem key={item.id} value={item.id}>
+                              <MultiSelectItem key={item.id} value={item.name}>
                                 {item.name}
                               </MultiSelectItem>
                             ))}
