@@ -72,6 +72,14 @@ const MultiSelectValue = React.forwardRef<
   React.ComponentPropsWithoutRef<"div"> & { placeholder?: string }
 >(({ className, placeholder, ...props }, ref) => {
   const { value: contextValue } = useMultiSelect()
+  const { onValueChange } = useMultiSelect();
+
+  const getLabel = (value: string) => {
+    // This is a placeholder. In a real app, you'd have a map or lookup.
+    // For now, we just show the value.
+    return value;
+  }
+
   return (
     <div
       ref={ref}
@@ -85,7 +93,21 @@ const MultiSelectValue = React.forwardRef<
         <div className="flex flex-wrap items-center gap-1">
           {contextValue.map((value) => (
             <Badge key={value} variant="secondary">
-              {value}
+              {getLabel(value)}
+              <button
+                aria-label={`Remove ${value} option`}
+                onClick={(e) => {
+                    e.preventDefault();
+                    onValueChange(contextValue.filter((v) => v !== value));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    onValueChange(contextValue.filter((v) => v !== value));
+                  }
+                }}
+              >
+                <X className="ml-1 h-3 w-3" />
+              </button>
             </Badge>
           ))}
         </div>
@@ -107,7 +129,15 @@ const MultiSelectContent = React.forwardRef<
       className={cn("w-full p-0", className)}
       {...props}
     >
-      {children}
+      <Command>
+        <CommandInput placeholder="Search..." />
+        <CommandList>
+          <CommandEmpty>No results found.</CommandEmpty>
+          <CommandGroup>
+            {children}
+          </CommandGroup>
+        </CommandList>
+      </Command>
     </PopoverContent>
   )
 })
@@ -116,13 +146,14 @@ MultiSelectContent.displayName = "MultiSelectContent"
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, ...props }, ref) => {
+>(({ children, className, onSelect, ...props }, ref) => {
   const { value, onValueChange } = useMultiSelect()
   const isSelected = value.includes(props.value || "")
   return (
     <CommandItem
       ref={ref}
-      onSelect={() => {
+      onSelect={(currentValue) => {
+        onSelect?.(currentValue);
         if (isSelected) {
           onValueChange(value.filter((v) => v !== props.value))
         } else {
