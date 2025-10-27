@@ -101,11 +101,6 @@ export const menuItems: MenuItem[] = [
       { ingredientId: 'ing-4', quantity: 2 },
       { ingredientId: 'ing-5', quantity: 50 },
     ],
-    mealDeal: {
-        upsellPrice: 99,
-        sideItemIds: ['item-9'],
-        drinkItemIds: ['item-10'],
-    }
   },
   {
     id: 'item-6',
