@@ -2,10 +2,11 @@
 "use client"
 
 import * as React from "react"
-import { Check, X, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Command,
   CommandEmpty,
@@ -14,8 +15,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { Button } from "./button"
-import { Popover, PopoverContent, PopoverTrigger } from "./popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 export interface Option {
   value: string;
@@ -23,108 +27,65 @@ export interface Option {
   icon?: React.ComponentType<{ className?: string }>;
 }
 
-interface MultiSelectContextValue {
+interface MultiSelectProps {
+  options: Option[];
   value: string[];
   onValueChange: (value: string[]) => void;
-  options: Option[];
+  placeholder?: string;
+  className?: string;
 }
 
-const MultiSelectContext = React.createContext<MultiSelectContextValue | null>(null);
-
-const useMultiSelect = () => {
-  const context = React.useContext(MultiSelectContext);
-  if (!context) {
-    throw new Error("useMultiSelect must be used within a MultiSelect");
-  }
-  return context;
-};
-
-const MultiSelect = ({
+function MultiSelect({
   options,
   value,
   onValueChange,
-  children,
-}: {
-  options: Option[];
-  value: string[];
-  onValueChange: (value: string[]) => void;
-  children: React.ReactNode;
-}) => {
-  const [isOpen, setIsOpen] = React.useState(false);
+  placeholder = "Select options...",
+  className,
+}: MultiSelectProps) {
+  const [open, setOpen] = React.useState(false);
 
-  return (
-    <MultiSelectContext.Provider value={{ options, value, onValueChange }}>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        {children}
-      </Popover>
-    </MultiSelectContext.Provider>
-  );
-};
+  const handleSelect = (selectedValue: string) => {
+    onValueChange(
+      value.includes(selectedValue)
+        ? value.filter((v) => v !== selectedValue)
+        : [...value, selectedValue]
+    );
+  };
 
-const MultiSelectTrigger = React.forwardRef<
-  React.ElementRef<typeof PopoverTrigger>,
-  React.ComponentPropsWithoutRef<typeof PopoverTrigger>
->(({ children, className, ...props }, ref) => {
-  const { value, options } = useMultiSelect();
   const selectedOptions = options.filter(option => value.includes(option.value));
 
   return (
-    <PopoverTrigger ref={ref} asChild>
-      <Button
-        variant="outline"
-        className={cn(
-          "flex h-auto min-h-10 w-full items-center justify-between whitespace-normal",
-          className
-        )}
-        {...props}
-      >
-        <div className="flex flex-wrap items-center gap-1">
-          {selectedOptions.length > 0 ? (
-            selectedOptions.map((option) => (
-              <Badge key={option.value} variant="secondary">
-                {option.label}
-              </Badge>
-            ))
-          ) : (
-            <span className="text-muted-foreground">{children}</span>
-          )}
-        </div>
-        <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-      </Button>
-    </PopoverTrigger>
-  );
-});
-MultiSelectTrigger.displayName = "MultiSelectTrigger";
-
-const MultiSelectContent = ({ children, className, ...props }: React.ComponentPropsWithoutRef<typeof PopoverContent>) => {
-    return (
-        <PopoverContent
-          className={cn("w-full p-0", className)}
-          align="start"
-          {...props}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className={cn("w-full justify-between h-auto min-h-10 whitespace-normal", className)}
+          onClick={() => setOpen(!open)}
         >
-          {children}
-        </PopoverContent>
-    )
-}
-
-const MultiSelectList = React.forwardRef<
-  React.ElementRef<typeof CommandList>,
-  React.ComponentPropsWithoutRef<typeof CommandList>
->(({ children, ...props }, ref) => {
-    const { options, value, onValueChange } = useMultiSelect();
-    
-    const handleSelect = (selectedValue: string) => {
-        const newValues = value.includes(selectedValue)
-        ? value.filter((v) => v !== selectedValue)
-        : [...value, selectedValue];
-        onValueChange(newValues);
-    }
-    
-    return (
+          <div className="flex flex-wrap items-center gap-1">
+            {selectedOptions.length > 0 ? (
+              selectedOptions.map((option) => (
+                <Badge
+                  key={option.value}
+                  variant="secondary"
+                  className="mr-1"
+                >
+                  {option.label}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
+          </div>
+          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
           <CommandInput placeholder="Search..." />
-          <CommandList ref={ref} {...props}>
+          <CommandList>
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
@@ -134,31 +95,33 @@ const MultiSelectList = React.forwardRef<
                     key={option.value}
                     onSelect={() => handleSelect(option.value)}
                   >
-                    <div
+                    <Check
                       className={cn(
-                        "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                        isSelected
-                          ? "bg-primary text-primary-foreground"
-                          : "opacity-50 [&_svg]:invisible"
+                        "mr-2 h-4 w-4",
+                        isSelected ? "opacity-100" : "opacity-0"
                       )}
-                    >
-                      <Check className={cn("h-4 w-4")} />
-                    </div>
-                    {option.icon && (
-                      <option.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span>{option.label}</span>
+                    />
+                    {option.label}
                   </CommandItem>
                 );
               })}
             </CommandGroup>
-            {children}
           </CommandList>
         </Command>
-    );
-});
-MultiSelectList.displayName = "MultiSelectList"
+      </PopoverContent>
+    </Popover>
+  );
+}
 
+const MultiSelectTrigger = ({ children }: { children: React.ReactNode }) => {
+    return <div>{children}</div>
+}
+const MultiSelectContent = ({ children }: { children: React.ReactNode }) => {
+    return <div>{children}</div>
+}
+const MultiSelectList = ({ children }: { children: React.ReactNode }) => {
+    return <div>{children}</div>
+}
 
 export {
   MultiSelect,
