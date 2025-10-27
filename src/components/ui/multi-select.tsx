@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -21,14 +21,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-export interface Option {
+export interface MultiSelectOption {
   value: string;
   label: string;
   icon?: React.ComponentType<{ className?: string }>;
 }
 
 interface MultiSelectProps {
-  options: Option[];
+  options: MultiSelectOption[];
   value: string[];
   onValueChange: (value: string[]) => void;
   placeholder?: string;
@@ -37,22 +37,20 @@ interface MultiSelectProps {
 
 function MultiSelect({
   options,
-  value,
+  value: selectedValues,
   onValueChange,
   placeholder = "Select options...",
   className,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
 
-  const handleSelect = (selectedValue: string) => {
-    onValueChange(
-      value.includes(selectedValue)
-        ? value.filter((v) => v !== selectedValue)
-        : [...value, selectedValue]
-    );
+  const handleUnselect = (e: React.MouseEvent, valueToRemove: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onValueChange(selectedValues.filter((v) => v !== valueToRemove));
   };
-
-  const selectedOptions = options.filter(option => value.includes(option.value));
+  
+  const selectedOptions = options.filter(option => selectedValues.includes(option.value));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -61,7 +59,7 @@ function MultiSelect({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className={cn("w-full justify-between h-auto min-h-10 whitespace-normal", className)}
+          className={cn("w-full justify-between h-auto", className)}
           onClick={() => setOpen(!open)}
         >
           <div className="flex flex-wrap items-center gap-1">
@@ -73,6 +71,13 @@ function MultiSelect({
                   className="mr-1"
                 >
                   {option.label}
+                   <button
+                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    onMouseDown={(e) => e.preventDefault()} // Prevent popover from closing
+                    onClick={(e) => handleUnselect(e, option.value)}
+                  >
+                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                  </button>
                 </Badge>
               ))
             ) : (
@@ -89,11 +94,17 @@ function MultiSelect({
             <CommandEmpty>No results found.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
-                const isSelected = value.includes(option.value);
+                const isSelected = selectedValues.includes(option.value);
                 return (
                   <CommandItem
                     key={option.value}
-                    onSelect={() => handleSelect(option.value)}
+                    onSelect={() => {
+                       if (isSelected) {
+                        onValueChange(selectedValues.filter((v) => v !== option.value));
+                      } else {
+                        onValueChange([...selectedValues, option.value]);
+                      }
+                    }}
                   >
                     <Check
                       className={cn(
@@ -128,5 +139,4 @@ export {
   MultiSelectTrigger,
   MultiSelectContent,
   MultiSelectList,
-  type Option as MultiSelectOption,
 };
