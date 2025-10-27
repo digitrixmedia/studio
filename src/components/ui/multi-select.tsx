@@ -27,9 +27,7 @@ interface MultiSelectContextValue {
   options: { value: string; label?: React.ReactNode }[]
 }
 
-const MultiSelectContext = React.createContext<MultiSelectContextValue>(
-  {} as MultiSelectContextValue
-)
+const MultiSelectContext = React.createContext<MultiSelectContextValue | null>(null)
 
 const useMultiSelect = () => {
   const context = React.useContext(MultiSelectContext)
@@ -50,22 +48,20 @@ const MultiSelect = ({
 }) => {
   const [open, setOpen] = React.useState(false)
 
-  const options = React.useMemo(() => {
-    const optionNodes = React.Children.toArray(children).filter(
-      (child) =>
-        React.isValidElement(child) && child.type === MultiSelectItem
-    ) as React.ReactElement[]
+  const options = React.Children.map(children, (child) => {
+    if (React.isValidElement(child) && child.type === MultiSelectItem) {
+      return {
+        value: child.props.value,
+        label: child.props.children,
+      };
+    }
+    return null;
+  })?.filter(Boolean) as { value: string; label: React.ReactNode }[];
 
-    return optionNodes.map((child) => ({
-      value: child.props.value,
-      label: child.props.children,
-    }))
-  }, [children])
 
   return (
     <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
       <Popover open={open} onOpenChange={setOpen}>
-        {/* The children passed to Popover are the trigger and content */}
         {children}
       </Popover>
     </MultiSelectContext.Provider>
@@ -162,23 +158,26 @@ MultiSelectContent.displayName = "MultiSelectContent"
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, value, onSelect, ...props }, ref) => {
+>(({ children, className, value = "", onSelect, ...props }, ref) => {
   const { value: selectedValues, onValueChange } = useMultiSelect();
-  const isSelected = selectedValues.includes(value || '');
+  const isSelected = selectedValues.includes(value);
+
+  const handleSelect = (e: any) => {
+    e.preventDefault();
+    e.stopPropagation(); // ✅ important fix (prevents Radix from closing popover)
+    if (isSelected) {
+      onValueChange(selectedValues.filter((v) => v !== value));
+    } else {
+      onValueChange([...selectedValues, value]);
+    }
+    if (onSelect) onSelect(e);
+  };
 
   return (
     <CommandItem
       ref={ref}
       value={value}
-      onSelect={(currentValue) => {
-        if(onSelect) onSelect(currentValue);
-        const isCurrentlySelected = selectedValues.includes(currentValue);
-        if (isCurrentlySelected) {
-          onValueChange(selectedValues.filter(v => v !== currentValue));
-        } else {
-          onValueChange([...selectedValues, currentValue]);
-        }
-      }}
+      onSelect={handleSelect}
       className={cn(
         "cursor-pointer flex items-center gap-2 px-2 py-1.5",
         className
@@ -199,6 +198,7 @@ const MultiSelectItem = React.forwardRef<
     </CommandItem>
   );
 });
+
 MultiSelectItem.displayName = "MultiSelectItem"
 
 
