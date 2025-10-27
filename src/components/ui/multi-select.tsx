@@ -91,7 +91,7 @@ const MultiSelectValue = React.forwardRef<
 
   return (
     <Button
-      ref={ref}
+      ref={ref as React.Ref<HTMLButtonElement>}
       variant="outline"
       className={cn(
         "flex h-auto min-h-10 w-full items-center justify-between whitespace-normal",
@@ -163,20 +163,24 @@ const MultiSelectItem = React.forwardRef<
   const { value: selectedValues, onValueChange } = useMultiSelect();
   const isSelected = selectedValues.includes(value || '');
 
+  const handleSelect = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const currentValue = value || '';
+
+    if (isSelected) {
+      onValueChange(selectedValues.filter((v) => v !== currentValue));
+    } else {
+      onValueChange([...selectedValues, currentValue]);
+    }
+  };
+
   return (
     <CommandItem
       ref={ref}
       value={value}
-      onSelect={(currentValue) => {
-        if (onSelect) {
-            onSelect(currentValue)
-        }
-        if (isSelected) {
-          onValueChange(selectedValues.filter((v) => v !== value));
-        } else {
-          onValueChange([...selectedValues, value || '']);
-        }
-      }}
+      onSelect={handleSelect}
       className={cn(
         "cursor-pointer flex items-center gap-2 px-2 py-1.5",
         className
