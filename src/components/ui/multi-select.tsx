@@ -162,41 +162,53 @@ MultiSelectContent.displayName = "MultiSelectContent"
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, onSelect, value, ...props }, ref) => {
-  const { value: contextValue, onValueChange } = useMultiSelect()
-  const isSelected = contextValue.includes(value || "")
+>(({ children, className, value = "", onSelect, ...props }, ref) => {
+  const { value: selectedValues, onValueChange } = useMultiSelect();
+  const isSelected = selectedValues.includes(value);
+
+  const handleSelect = (e: Event | React.SyntheticEvent) => {
+    e.preventDefault();
+    e.stopPropagation(); // ✅ important fix (prevents Radix from closing popover)
+    if (isSelected) {
+      onValueChange(selectedValues.filter((v) => v !== value));
+    } else {
+      onValueChange([...selectedValues, value]);
+    }
+    if (onSelect) {
+      // The original onSelect from cmdk expects a string argument.
+      // We are not really using it here but calling it to be safe.
+      const cmkdEvent = new CustomEvent('select', { detail: { value } });
+      onSelect(cmkdEvent as unknown as Event);
+    }
+  };
 
   return (
     <CommandItem
       ref={ref}
-      onSelect={(e) => {
-        if(onSelect) onSelect(e);
-        e.preventDefault(); // This is the fix
-        if (isSelected) {
-          onValueChange(contextValue.filter((v) => v !== value))
-        } else {
-          onValueChange([...contextValue, value || ""])
-        }
-      }}
-      className={cn("cursor-pointer", className)}
+      value={value}
+      onSelect={handleSelect}
+      className={cn(
+        "cursor-pointer flex items-center gap-2 px-2 py-1.5",
+        className
+      )}
       {...props}
     >
       <div
         className={cn(
-          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+          "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
           isSelected
             ? "bg-primary text-primary-foreground"
             : "opacity-50 [&_svg]:invisible"
         )}
       >
-        <Check className={cn("h-4 w-4")} />
+        <Check className="h-3.5 w-3.5" />
       </div>
-      {children}
+      <span>{children}</span>
     </CommandItem>
-  )
-})
-
+  );
+});
 MultiSelectItem.displayName = "MultiSelectItem"
+
 
 export {
   MultiSelect,
