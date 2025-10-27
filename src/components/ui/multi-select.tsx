@@ -77,10 +77,10 @@ const MultiSelect = ({
 const MultiSelectTrigger = React.forwardRef<
   React.ElementRef<typeof PopoverTrigger>,
   React.ComponentPropsWithoutRef<typeof PopoverTrigger>
->(({ children, className, ...props }, ref) => {
+>(({ children, ...props }, ref) => {
   return (
     <PopoverTrigger ref={ref} asChild {...props}>
-      <div className={className}>{children}</div>
+      {children}
     </PopoverTrigger>
   )
 })
@@ -166,19 +166,13 @@ const MultiSelectItem = React.forwardRef<
   const { value: selectedValues, onValueChange } = useMultiSelect();
   const isSelected = selectedValues.includes(value);
 
-  const handleSelect = (e: Event | React.SyntheticEvent) => {
+  const handleSelect = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // ✅ important fix (prevents Radix from closing popover)
+    e.stopPropagation(); 
     if (isSelected) {
       onValueChange(selectedValues.filter((v) => v !== value));
     } else {
       onValueChange([...selectedValues, value]);
-    }
-    if (onSelect) {
-      // The original onSelect from cmdk expects a string argument.
-      // We are not really using it here but calling it to be safe.
-      const cmkdEvent = new CustomEvent('select', { detail: { value } });
-      onSelect(cmkdEvent as unknown as Event);
     }
   };
 
