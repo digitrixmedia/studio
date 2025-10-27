@@ -61,7 +61,11 @@ const initialFormState: Partial<MenuItem> = {
   description: '',
   variations: [],
   addons: [],
-  mealDeal: undefined,
+  mealDeal: {
+    upsellPrice: 0,
+    sideItemIds: [],
+    drinkItemIds: [],
+  },
 };
 
 
@@ -435,34 +439,34 @@ export default function MenuPage() {
                       </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="side-categories" className="text-right">Side Categories</Label>
+                      <Label htmlFor="side-items" className="text-right">Side Items</Label>
                       <div className="col-span-3">
                          <MultiSelect 
-                           value={formData.mealDeal?.sideCategoryIds || []} 
-                           onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, sideCategoryIds: v })}>
+                           value={formData.mealDeal?.sideItemIds || []} 
+                           onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, sideItemIds: v })}>
                           <MultiSelectTrigger>
-                            <MultiSelectValue placeholder="Select categories for sides" />
+                            <MultiSelectValue placeholder="Select items for sides" />
                           </MultiSelectTrigger>
                           <MultiSelectContent>
-                            {menuCategories.map(cat => (
-                              <MultiSelectItem key={cat.id} value={cat.id}>{cat.name}</MultiSelectItem>
+                            {menuItems.filter(item => item.id !== formData.id).map(item => (
+                              <MultiSelectItem key={item.id} value={item.id}>{item.name}</MultiSelectItem>
                             ))}
                           </MultiSelectContent>
                         </MultiSelect>
                       </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="drink-categories" className="text-right">Drink Categories</Label>
+                      <Label htmlFor="drink-items" className="text-right">Drink Items</Label>
                       <div className="col-span-3">
                         <MultiSelect 
-                          value={formData.mealDeal?.drinkCategoryIds || []} 
-                          onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, drinkCategoryIds: v })}>
+                          value={formData.mealDeal?.drinkItemIds || []} 
+                          onValueChange={v => handleInputChange('mealDeal', { ...formData.mealDeal, drinkItemIds: v })}>
                           <MultiSelectTrigger>
-                            <MultiSelectValue placeholder="Select categories for drinks" />
+                            <MultiSelectValue placeholder="Select items for drinks" />
                           </MultiSelectTrigger>
                           <MultiSelectContent>
-                            {menuCategories.map(cat => (
-                              <MultiSelectItem key={cat.id} value={cat.id}>{cat.name}</MultiSelectItem>
+                             {menuItems.filter(item => item.id !== formData.id).map(item => (
+                              <MultiSelectItem key={item.id} value={item.id}>{item.name}</MultiSelectItem>
                             ))}
                           </MultiSelectContent>
                         </MultiSelect>

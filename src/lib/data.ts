@@ -103,8 +103,8 @@ export const menuItems: MenuItem[] = [
     ],
     mealDeal: {
         upsellPrice: 99,
-        sideCategoryIds: ['cat-5'],
-        drinkCategoryIds: ['cat-6'],
+        sideItemIds: ['item-9'],
+        drinkItemIds: ['item-10'],
     }
   },
   {

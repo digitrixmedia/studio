@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -862,33 +863,33 @@ export default function OrdersPage() {
                             <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
                             <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
                         </TabsList>
-                        <CardDescription className="space-y-2 pt-4">
-                            <div>
-                                {activeOrder.orderType === 'dine-in' && (
-                                    <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select Table" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {tables.map(table => (
-                                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
-                                                    {table.name} ({table.status})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                                    <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input placeholder="Customer Name" className="pl-10" value={activeOrder.customer.name} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, name: e.target.value}})} />
-                                    </div>
-                                    <div className="relative">
-                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input placeholder="Phone Number" className="pl-10" value={activeOrder.customer.phone} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, phone: e.target.value}})} />
-                                    </div>
-                                </div>
-                            </div>
+                        <CardDescription>
+                          <div className='py-4 space-y-2'>
+                              {activeOrder.orderType === 'dine-in' && (
+                                  <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
+                                      <SelectTrigger>
+                                          <SelectValue placeholder="Select Table" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          {tables.map(table => (
+                                              <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
+                                                  {table.name} ({table.status})
+                                              </SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
+                              )}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <div className="relative">
+                                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input placeholder="Customer Name" className="pl-10" value={activeOrder.customer.name} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, name: e.target.value}})} />
+                                  </div>
+                                  <div className="relative">
+                                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input placeholder="Phone Number" className="pl-10" value={activeOrder.customer.phone} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, phone: e.target.value}})} />
+                                  </div>
+                              </div>
+                          </div>
                         </CardDescription>
                         </Tabs>
                     </div>
@@ -1332,12 +1333,12 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
     const sideItems = useMemo(() => {
         if (!mealDeal) return [];
-        return menuItems.filter(item => mealDeal.sideCategoryIds.includes(item.category));
+        return menuItems.filter(item => mealDeal.sideItemIds.includes(item.id));
     }, [mealDeal]);
 
     const drinkItems = useMemo(() => {
         if (!mealDeal) return [];
-        return menuItems.filter(item => mealDeal.drinkCategoryIds.includes(item.category));
+        return menuItems.filter(item => mealDeal.drinkItemIds.includes(item.id));
     }, [mealDeal]);
 
     useEffect(() => {

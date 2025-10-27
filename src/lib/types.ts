@@ -1,4 +1,5 @@
 
+
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -30,8 +31,8 @@ export interface MenuItemAddon {
 
 export interface MealDeal {
   upsellPrice: number;
-  sideCategoryIds: string[];
-  drinkCategoryIds: string[];
+  sideItemIds: string[];
+  drinkItemIds: string[];
 }
 
 export interface MenuItem {
