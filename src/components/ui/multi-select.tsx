@@ -170,7 +170,10 @@ const MultiSelectItem = React.forwardRef<
   return (
     <CommandItem
       ref={ref}
-      onSelect={() => {
+      onSelect={(currentValue) => {
+        if (onSelect) {
+          onSelect(currentValue);
+        }
         if (isSelected) {
           onValueChange(contextValue.filter((v) => v !== value))
         } else {
