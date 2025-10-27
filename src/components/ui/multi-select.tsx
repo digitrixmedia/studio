@@ -50,9 +50,6 @@ const MultiSelect = ({
 }) => {
   const [open, setOpen] = React.useState(false)
 
-  // We map the children to extract the options and store them in a ref.
-  // This is so we can have access to the options and their labels
-  // when rendering the selected values.
   const options = React.useMemo(() => {
     const optionNodes = React.Children.toArray(children).filter(
       (child) =>
@@ -68,6 +65,7 @@ const MultiSelect = ({
   return (
     <MultiSelectContext.Provider value={{ value, onValueChange, options }}>
       <Popover open={open} onOpenChange={setOpen}>
+        {/* The children passed to Popover are the trigger and content */}
         {children}
       </Popover>
     </MultiSelectContext.Provider>
@@ -114,6 +112,7 @@ const MultiSelectValue = React.forwardRef<
                 aria-label={`Remove ${value} option`}
                 onClick={(e) => {
                   e.preventDefault()
+                  e.stopPropagation()
                   onValueChange(contextValue.filter((v) => v !== value))
                 }}
                 onKeyDown={(e) => {
@@ -159,28 +158,27 @@ const MultiSelectContent = React.forwardRef<
 })
 MultiSelectContent.displayName = "MultiSelectContent"
 
+
 const MultiSelectItem = React.forwardRef<
   React.ElementRef<typeof CommandItem>,
   React.ComponentPropsWithoutRef<typeof CommandItem>
->(({ children, className, value = "", onSelect, ...props }, ref) => {
+>(({ children, className, value, onSelect, ...props }, ref) => {
   const { value: selectedValues, onValueChange } = useMultiSelect();
-  const isSelected = selectedValues.includes(value);
-
-  const handleSelect = (e: React.MouseEvent | React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation(); 
-    if (isSelected) {
-      onValueChange(selectedValues.filter((v) => v !== value));
-    } else {
-      onValueChange([...selectedValues, value]);
-    }
-  };
+  const isSelected = selectedValues.includes(value || '');
 
   return (
     <CommandItem
       ref={ref}
       value={value}
-      onSelect={handleSelect}
+      onSelect={(currentValue) => {
+        if(onSelect) onSelect(currentValue);
+        const isCurrentlySelected = selectedValues.includes(currentValue);
+        if (isCurrentlySelected) {
+          onValueChange(selectedValues.filter(v => v !== currentValue));
+        } else {
+          onValueChange([...selectedValues, currentValue]);
+        }
+      }}
       className={cn(
         "cursor-pointer flex items-center gap-2 px-2 py-1.5",
         className
