@@ -1,5 +1,4 @@
 
-
 'use client'
 
 import {
@@ -78,7 +77,7 @@ export default function SuperAdminReportsPage() {
 
   const handleExport = () => {
     const headers = ['Franchise Name', 'Outlet Name', 'Status', 'Storage Used (MB)', 'Start Date', 'End Date', 'Admin Name', 'Admin Email', 'Total Reads', 'Total Writes'];
-    const rows = filteredSubscriptions.map(s => 
+    const rows = allSubscriptions.map(s => 
       [
         s.franchiseName,
         s.outletName,
@@ -93,17 +92,19 @@ export default function SuperAdminReportsPage() {
       ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
     );
 
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(',') + "\n" 
-      + rows.join("\n");
-
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "detailed_subscriptions_report.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (link.download !== undefined) { // feature detection
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "full_subscriptions_report.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
   };
   
     const getStatusVariant = (status: SubscriptionStatus) => {
