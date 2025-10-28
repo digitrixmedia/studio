@@ -30,6 +30,17 @@ import {
   DialogTrigger,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -73,6 +84,7 @@ export default function MenuPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null);
 
   const [formData, setFormData] = useState<Partial<MenuItem>>(initialFormState);
   const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
@@ -239,6 +251,17 @@ export default function MenuPage() {
         description: `${itemName} has been marked as ${isAvailable ? 'available' : 'unavailable'}.`
     });
   };
+
+  const handleDeleteItem = () => {
+    if (!itemToDelete) return;
+    setMenuItems(prev => prev.filter(item => item.id !== itemToDelete.id));
+    toast({
+      variant: "destructive",
+      title: "Item Removed",
+      description: `${itemToDelete.name} has been removed from the menu.`,
+    });
+    setItemToDelete(null);
+  }
 
   const handleBulkUploadSuccess = (newItems: Omit<MenuItem, 'id' | 'isAvailable' | 'ingredients'>[]) => {
     const newMenuItems: MenuItem[] = newItems.map(item => {
@@ -539,6 +562,27 @@ export default function MenuPage() {
                   <Button variant="ghost" size="icon" onClick={() => openEditForm(item)}>
                     <Edit className="h-4 w-4" />
                   </Button>
+                   <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                       <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete "{item.name}" from the menu. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => setItemToDelete(item)} className="bg-destructive hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
@@ -550,6 +594,23 @@ export default function MenuPage() {
         onClose={() => setIsBulkUploadOpen(false)}
         onSuccess={handleBulkUploadSuccess}
       />
+      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{itemToDelete?.name}"?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">
+              Confirm Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
+
