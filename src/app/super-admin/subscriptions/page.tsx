@@ -30,12 +30,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -44,7 +38,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -74,13 +67,8 @@ export default function SubscriptionsPage() {
   const [formData, setFormData] = useState(initialFormState);
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const defaultAccordionValue = searchParams.get('franchise') || undefined;
+  const franchiseQuery = searchParams.get('franchise');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-  };
-  
   const openNewDialog = () => {
     setEditingSub(null);
     setFormData(initialFormState);
@@ -198,148 +186,152 @@ export default function SubscriptionsPage() {
     return acc;
   }, {} as Record<string, Subscription[]>);
 
+  const filteredFranchiseEntries = Object.entries(groupedSubscriptions).filter(([franchiseName]) => 
+    !franchiseQuery || franchiseName === franchiseQuery
+  );
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>Subscriptions Management</CardTitle>
-            <CardDescription>
-              Manage all franchise and outlet subscriptions.
-            </CardDescription>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Subscriptions Management</CardTitle>
+              <CardDescription>
+                Manage all franchise and outlet subscriptions.
+              </CardDescription>
+            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openNewDialog}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Subscription
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <form onSubmit={handleFormSubmit}>
+                  <DialogHeader>
+                    <DialogTitle>{editingSub ? 'Edit' : 'Add New'} Subscription</DialogTitle>
+                    <DialogDescription>
+                      Fill in the details for the outlet.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="franchiseName" className="text-right">Franchise</Label>
+                      <Input id="franchiseName" value={formData.franchiseName} onChange={(e) => setFormData(prev => ({...prev, franchiseName: e.target.value}))} className="col-span-3" required/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="outletName" className="text-right">Outlet</Label>
+                      <Input id="outletName" value={formData.outletName} onChange={(e) => setFormData(prev => ({...prev, outletName: e.target.value}))} className="col-span-3" required/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="adminName" className="text-right">Admin Name</Label>
+                      <Input id="adminName" value={formData.adminName} onChange={(e) => setFormData(prev => ({...prev, adminName: e.target.value}))} className="col-span-3" required/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="adminEmail" className="text-right">Admin Email</Label>
+                      <Input id="adminEmail" type="email" value={formData.adminEmail} onChange={(e) => setFormData(prev => ({...prev, adminEmail: e.target.value}))} className="col-span-3" required/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="adminPassword" className="text-right">Password</Label>
+                      <Input id="adminPassword" type="password" placeholder={editingSub ? 'Unchanged' : '••••••••'} value={formData.adminPassword} onChange={(e) => setFormData(prev => ({...prev, adminPassword: e.target.value}))} required={!editingSub}/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="startDate" className="text-right">Start Date</Label>
+                      <Input id="startDate" type="date" value={formData.startDate} onChange={(e) => setFormData(prev => ({...prev, startDate: e.target.value}))} className="col-span-3" required/>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="endDate" className="text-right">End Date</Label>
+                      <Input id="endDate" type="date" value={formData.endDate} onChange={(e) => setFormData(prev => ({...prev, endDate: e.target.value}))} className="col-span-3" required/>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">{editingSub ? 'Save Changes' : 'Create Subscription'}</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openNewDialog}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add Subscription
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handleFormSubmit}>
-                <DialogHeader>
-                  <DialogTitle>{editingSub ? 'Edit' : 'Add New'} Subscription</DialogTitle>
-                  <DialogDescription>
-                    Fill in the details for the outlet.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="franchiseName" className="text-right">Franchise</Label>
-                    <Input id="franchiseName" value={formData.franchiseName} onChange={handleInputChange} className="col-span-3" required/>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="outletName" className="text-right">Outlet</Label>
-                    <Input id="outletName" value={formData.outletName} onChange={handleInputChange} className="col-span-3" required/>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="adminName" className="text-right">Admin Name</Label>
-                    <Input id="adminName" value={formData.adminName} onChange={handleInputChange} className="col-span-3" required/>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="adminEmail" className="text-right">Admin Email</Label>
-                    <Input id="adminEmail" type="email" value={formData.adminEmail} onChange={handleInputChange} className="col-span-3" required/>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="adminPassword" className="text-right">Password</Label>
-                    <Input id="adminPassword" type="password" placeholder={editingSub ? 'Unchanged' : '••••••••'} value={formData.adminPassword} onChange={handleInputChange} required={!editingSub}/>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="startDate" className="text-right">Start Date</Label>
-                    <Input id="startDate" type="date" value={formData.startDate} onChange={handleInputChange} className="col-span-3" required/>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="endDate" className="text-right">End Date</Label>
-                    <Input id="endDate" type="date" value={formData.endDate} onChange={handleInputChange} className="col-span-3" required/>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit">{editingSub ? 'Save Changes' : 'Create Subscription'}</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Accordion type="single" collapsible className="w-full" defaultValue={defaultAccordionValue}>
-          {Object.entries(groupedSubscriptions).map(([franchiseName, subs]) => (
-            <AccordionItem value={franchiseName} key={franchiseName}>
-              <AccordionTrigger className="text-lg font-medium hover:no-underline">
-                <div className='flex items-center gap-4'>
-                    <span>{franchiseName}</span>
-                    <Badge variant="secondary">{subs.length} Outlet(s)</Badge>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Outlet</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Storage</TableHead>
-                      <TableHead>Active</TableHead>
-                      <TableHead>Actions</TableHead>
+        </CardHeader>
+      </Card>
+      
+      <div className="space-y-4">
+        {filteredFranchiseEntries.map(([franchiseName, subs]) => (
+          <Card key={franchiseName}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-4">
+                <span>{franchiseName}</span>
+                <Badge variant="secondary">{subs.length} Outlet(s)</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Outlet</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Storage</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subs.map(sub => {
+                    const isExpired = new Date(sub.endDate) < new Date();
+                    let status = sub.status;
+                    if (isExpired && status !== 'suspended') {
+                        status = 'expired';
+                    }
+                    
+                    return (
+                    <TableRow key={sub.id} className={cn(status === 'expired' && 'bg-red-500/5')}>
+                      <TableCell className="font-medium">{sub.outletName}</TableCell>
+                      <TableCell>{format(new Date(sub.endDate), 'dd MMM, yyyy')}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(status)} className="capitalize">
+                          {status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={status === 'active'}
+                          onCheckedChange={() => toggleSubscriptionStatus(sub.id, status)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(sub)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className='text-destructive hover:text-destructive'>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      This action cannot be undone. This will permanently delete the subscription for {sub.outletName} and all its data.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteSubscription(sub.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {subs.map(sub => {
-                      const isExpired = new Date(sub.endDate) < new Date();
-                      let status = sub.status;
-                      if (isExpired && status !== 'suspended') {
-                          status = 'expired';
-                      }
-                      
-                      return (
-                      <TableRow key={sub.id} className={cn(status === 'expired' && 'bg-red-500/10')}>
-                        <TableCell className="font-medium">{sub.outletName}</TableCell>
-                        <TableCell>{format(new Date(sub.endDate), 'dd/MM/yyyy')}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusVariant(status)} className="capitalize">
-                            {status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
-                        <TableCell>
-                          <Switch
-                            checked={status === 'active'}
-                            onCheckedChange={() => toggleSubscriptionStatus(sub.id, status)}
-                          />
-                        </TableCell>
-                        <TableCell className="flex gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => openEditDialog(sub)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className='text-destructive hover:text-destructive'>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This action cannot be undone. This will permanently delete the subscription for {sub.outletName} and all its data.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteSubscription(sub.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
-                      </TableRow>
-                    )})}
-                  </TableBody>
-                </Table>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </CardContent>
-    </Card>
+                  )})}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }
