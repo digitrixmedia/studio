@@ -24,6 +24,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '
 import { useAppContext } from '@/contexts/AppContext';
 import type { Role } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RecentOrders } from '@/components/layout/RecentOrders';
 
 type NavItem = {
   href: string;
@@ -51,15 +52,15 @@ type QuickAccessItem = {
     id: 'dashboard' | 'operations' | 'reports' | 'menu' | 'inventory';
     label: string;
     icon: React.ElementType;
-    // component: React.ComponentType; // This was causing the issue
+    component: React.ComponentType;
 };
 
 const quickAccessItems: QuickAccessItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'operations', label: 'Recent Orders', icon: ClipboardList },
-    { id: 'reports', label: 'Reports', icon: BarChart2 },
-    { id: 'menu', label: 'Menu', icon: Book },
-    { id: 'inventory', label: 'Inventory', icon: Box },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, component: () => <p>Dashboard Content</p> },
+    { id: 'operations', label: 'Recent Orders', icon: ClipboardList, component: RecentOrders },
+    { id: 'reports', label: 'Reports', icon: BarChart2, component: () => <p>Reports Content</p> },
+    { id: 'menu', label: 'Menu', icon: Book, component: () => <p>Menu Content</p> },
+    { id: 'inventory', label: 'Inventory', icon: Box, component: () => <p>Inventory Content</p> },
 ]
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -100,9 +101,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   
   const pageTitle = pathname.split('/').pop()?.replace(/-/g, ' ');
   
-  // The rendering logic for sidebar content will need to be adjusted
-  // For now, we will disable the content inside the sheet to fix the crash.
-  const CurrentSidebarComponent = null;
+  const CurrentSidebarComponent = sidebarContent ? sidebarContent.component : null;
 
   return (
     <SidebarProvider>
@@ -157,7 +156,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                         {quickAccessItems.map(item => (
                             <Tooltip key={item.id}>
                                 <TooltipTrigger asChild>
-                                    <Button variant={sidebarContent?.id === item.id ? 'secondary' : 'ghost'} size="icon" onClick={() => setSidebarContent(item)}>
+                                    <Button variant={sidebarContent?.id === item.id ? 'secondary' : 'ghost'} size="icon" onClick={() => setSidebarContent(sidebarContent?.id === item.id ? null : item)}>
                                         <item.icon className='h-5 w-5'/>
                                     </Button>
                                 </TooltipTrigger>
@@ -187,9 +186,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                 {sidebarContent.label}
                             </SheetTitle>
                         </SheetHeader>
-                        <div className="overflow-y-auto h-[calc(100vh-6rem)] p-6">
-                            {/* {CurrentSidebarComponent && <CurrentSidebarComponent />} */}
-                            <p>Content for {sidebarContent.label} would go here.</p>
+                        <div className="overflow-y-auto h-[calc(100vh-4.5rem)] p-6">
+                            {CurrentSidebarComponent && <CurrentSidebarComponent />}
                         </div>
                     </>
                 )}
