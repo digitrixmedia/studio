@@ -58,7 +58,6 @@ type QuickAccessItem = {
 const quickAccessItems: QuickAccessItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, component: () => <p>Dashboard Content</p> },
     { id: 'operations', label: 'Recent Orders', icon: ClipboardList, component: RecentOrders },
-    { id: 'reports', label: 'Reports', icon: BarChart2, component: () => <p>Reports Content</p> },
     { id: 'menu', label: 'Menu', icon: Book, component: () => <p>Menu Content</p> },
     { id: 'inventory', label: 'Inventory', icon: Box, component: () => <p>Inventory Content</p> },
 ]
