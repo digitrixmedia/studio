@@ -41,7 +41,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ingredients, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
-import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles } from 'lucide-react';
+import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles, Upload } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +49,7 @@ import {
   MultiSelect,
   type MultiSelectOption,
 } from '@/components/ui/multi-select';
+import { BulkUploadDialog } from '@/components/menu/BulkUploadDialog';
 
 const initialFormState: Partial<MenuItem> = {
   name: '',
@@ -71,6 +72,7 @@ export default function MenuPage() {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
 
   const [formData, setFormData] = useState<Partial<MenuItem>>(initialFormState);
   const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
@@ -238,6 +240,30 @@ export default function MenuPage() {
     });
   };
 
+  const handleBulkUploadSuccess = (newItems: Omit<MenuItem, 'id' | 'isAvailable' | 'ingredients'>[]) => {
+    const newMenuItems: MenuItem[] = newItems.map(item => {
+      // Check if category exists, if not, create it
+      let category = menuCategories.find(c => c.name.toLowerCase() === item.category.toLowerCase());
+      if (!category) {
+        category = { id: `cat-${Date.now()}-${item.category.replace(' ', '-')}`, name: item.category };
+        setMenuCategories(prev => [...prev, category!]);
+      }
+
+      return {
+        id: `item-${Date.now()}-${item.name.replace(' ', '-')}`,
+        isAvailable: true,
+        ingredients: [],
+        ...item,
+        category: category.id,
+      };
+    });
+    setMenuItems(prev => [...prev, ...newMenuItems]);
+    toast({
+      title: "Menu Imported",
+      description: `${newItems.length} items have been successfully added to your menu.`,
+    });
+  };
+
   const menuItemOptions: MultiSelectOption[] = useMemo(() => {
     return menuItems
       .filter((item) => item.id !== formData.id)
@@ -265,211 +291,216 @@ export default function MenuPage() {
               Create, edit, and manage your cafe's menu items.
             </CardDescription>
           </div>
-          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openNewForm}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>{editingItem ? 'Edit' : 'Add New'} Menu Item</DialogTitle>
-                <DialogDescription>
-                  Fill in the details for the menu item.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="name" className="text-right">Name</Label>
-                  <Input id="name" value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} className="col-span-3" />
-                </div>
-
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="price" className="text-right">Base Price</Label>
-                  <div className="col-span-3 relative">
-                      <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)}>
+              <Upload className="mr-2 h-4 w-4" /> Bulk Upload Menu
+            </Button>
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={openNewForm}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingItem ? 'Edit' : 'Add New'} Menu Item</DialogTitle>
+                  <DialogDescription>
+                    Fill in the details for the menu item.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-6 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">Name</Label>
+                    <Input id="name" value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} className="col-span-3" />
                   </div>
-                </div>
 
-                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="category" className="text-right">Category</Label>
-                   <div className="col-span-3 flex items-center gap-2">
-                    <Select value={formData.category || ''} onValueChange={value => handleInputChange('category', value)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {menuCategories.map(cat => (
-                           <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                     <Dialog>
-                        <DialogTrigger asChild>
-                           <Button variant="outline" size="icon"><PlusCircle className="h-4 w-4" /></Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Add New Category</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <Label htmlFor="new-category-name">Category Name</Label>
-                            <Input 
-                              id="new-category-name" 
-                              value={newCategoryName}
-                              onChange={(e) => setNewCategoryName(e.target.value)}
-                            />
-                          </div>
-                          <DialogFooter>
-                             <DialogClose asChild>
-                              <Button onClick={handleAddCategory}>Add Category</Button>
-                             </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                     </Dialog>
-                   </div>
-                </div>
-                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="description" className="text-right">Description</Label>
-                  <Textarea id="description" className="col-span-3" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
-                </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="price" className="text-right">Base Price</Label>
+                    <div className="col-span-3 relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
+                    </div>
+                  </div>
 
-                <div className="grid grid-cols-4 items-center gap-4">
-                   <Label htmlFor="customization-toggle" className="text-right">Customization</Label>
-                   <div className="col-span-3">
-                     <Switch id="customization-toggle" checked={hasCustomization} onCheckedChange={setHasCustomization} />
-                   </div>
-                </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="category" className="text-right">Category</Label>
+                    <div className="col-span-3 flex items-center gap-2">
+                      <Select value={formData.category || ''} onValueChange={value => handleInputChange('category', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {menuCategories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="icon"><PlusCircle className="h-4 w-4" /></Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Add New Category</DialogTitle>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                              <Label htmlFor="new-category-name">Category Name</Label>
+                              <Input 
+                                id="new-category-name" 
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                              />
+                            </div>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button onClick={handleAddCategory}>Add Category</Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                      </Dialog>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="description" className="text-right">Description</Label>
+                    <Textarea id="description" className="col-span-3" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
+                  </div>
 
-                {hasCustomization && (
-                   <div className="col-span-4 border-t pt-4">
-                      <h4 className="text-md font-semibold mb-2">Item Variations</h4>
-                      <div className="space-y-4">
-                          {variations.map((variation, vIndex) => (
-                             <Card key={vIndex} className="p-4 bg-muted/50">
-                                <div className="flex items-end gap-4 mb-4">
-                                  <div className="flex-1 space-y-2">
-                                    <Label>Variation Name</Label>
-                                    <Input placeholder="e.g., Large" value={variation.name || ''} onChange={e => handleVariationChange(vIndex, 'name', e.target.value)} />
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="customization-toggle" className="text-right">Customization</Label>
+                    <div className="col-span-3">
+                      <Switch id="customization-toggle" checked={hasCustomization} onCheckedChange={setHasCustomization} />
+                    </div>
+                  </div>
+
+                  {hasCustomization && (
+                    <div className="col-span-4 border-t pt-4">
+                        <h4 className="text-md font-semibold mb-2">Item Variations</h4>
+                        <div className="space-y-4">
+                            {variations.map((variation, vIndex) => (
+                              <Card key={vIndex} className="p-4 bg-muted/50">
+                                  <div className="flex items-end gap-4 mb-4">
+                                    <div className="flex-1 space-y-2">
+                                      <Label>Variation Name</Label>
+                                      <Input placeholder="e.g., Large" value={variation.name || ''} onChange={e => handleVariationChange(vIndex, 'name', e.target.value)} />
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                      <Label>Price Modifier (₹)</Label>
+                                      <Input type="number" placeholder="e.g., 20" value={variation.priceModifier || ''} onChange={e => handleVariationChange(vIndex, 'priceModifier', e.target.value)} />
+                                    </div>
+                                    <div>
+                                      <Button variant="destructive" size="icon" onClick={() => handleRemoveVariation(vIndex)}>
+                                          <Trash2 className="h-4 w-4" />
+                                          <span className="sr-only">Remove</span>
+                                      </Button>
+                                    </div>
                                   </div>
-                                   <div className="flex-1 space-y-2">
-                                    <Label>Price Modifier (₹)</Label>
-                                    <Input type="number" placeholder="e.g., 20" value={variation.priceModifier || ''} onChange={e => handleVariationChange(vIndex, 'priceModifier', e.target.value)} />
-                                  </div>
-                                  <div>
-                                    <Button variant="destructive" size="icon" onClick={() => handleRemoveVariation(vIndex)}>
-                                        <Trash2 className="h-4 w-4" />
-                                        <span className="sr-only">Remove</span>
+                                  <h5 className="text-sm font-medium mb-2">Recipe for {variation.name || 'this variation'}</h5>
+                                  <div className="p-2 border rounded-md text-center text-muted-foreground text-sm bg-background">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Ingredient</TableHead>
+                                          <TableHead className='w-[120px]'>Quantity</TableHead>
+                                          <TableHead className="w-[50px] text-right"></TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {(variation.ingredients || []).map((ing, iIndex) => (
+                                          <TableRow key={iIndex}>
+                                            <TableCell>
+                                              <Select value={ing.ingredientId} onValueChange={value => handleVariationIngredientChange(vIndex, iIndex, 'ingredientId', value)}>
+                                                <SelectTrigger><SelectValue placeholder="Select ingredient" /></SelectTrigger>
+                                                <SelectContent>
+                                                  {ingredients.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
+                                                </SelectContent>
+                                              </Select>
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-2">
+                                                <Input type="number" value={ing.quantity} onChange={e => handleVariationIngredientChange(vIndex, iIndex, 'quantity', e.target.value)} className="w-20"/>
+                                                <span>{getIngredientUnit(ing.ingredientId)}</span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                              <Button variant="ghost" size="icon" onClick={() => removeIngredientFromVariation(vIndex, iIndex)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                              </Button>
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                    <Button size="sm" variant="outline" className="mt-2" onClick={() => addIngredientToVariation(vIndex)}>
+                                      <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
                                     </Button>
                                   </div>
-                                </div>
-                                <h5 className="text-sm font-medium mb-2">Recipe for {variation.name || 'this variation'}</h5>
-                                <div className="p-2 border rounded-md text-center text-muted-foreground text-sm bg-background">
-                                   <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead>Ingredient</TableHead>
-                                        <TableHead className='w-[120px]'>Quantity</TableHead>
-                                        <TableHead className="w-[50px] text-right"></TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {(variation.ingredients || []).map((ing, iIndex) => (
-                                        <TableRow key={iIndex}>
-                                          <TableCell>
-                                            <Select value={ing.ingredientId} onValueChange={value => handleVariationIngredientChange(vIndex, iIndex, 'ingredientId', value)}>
-                                              <SelectTrigger><SelectValue placeholder="Select ingredient" /></SelectTrigger>
-                                              <SelectContent>
-                                                {ingredients.map(i => <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>)}
-                                              </SelectContent>
-                                            </Select>
-                                          </TableCell>
-                                          <TableCell>
-                                            <div className="flex items-center gap-2">
-                                              <Input type="number" value={ing.quantity} onChange={e => handleVariationIngredientChange(vIndex, iIndex, 'quantity', e.target.value)} className="w-20"/>
-                                              <span>{getIngredientUnit(ing.ingredientId)}</span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => removeIngredientFromVariation(vIndex, iIndex)}>
-                                              <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                  <Button size="sm" variant="outline" className="mt-2" onClick={() => addIngredientToVariation(vIndex)}>
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Ingredient
-                                  </Button>
-                                </div>
-                             </Card>
-                          ))}
-                           <Button variant="outline" onClick={handleAddVariation}><PlusCircle className="mr-2 h-4 w-4" /> Add Variation</Button>
-                      </div>
-                   </div>
-                )}
-                
-                 <div className="grid grid-cols-4 items-center gap-4 border-t pt-4">
-                   <div className="text-right flex flex-col items-end">
-                      <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
-                      <p className="text-xs text-muted-foreground">This item can be upsold as a meal.</p>
-                   </div>
-                   <div className="col-span-3">
-                     <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
-                   </div>
-                </div>
-                
-                {isMealDeal && (
-                  <div className="col-span-4 space-y-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="upsell-price" className="text-right">Upsell Price</Label>
-                      <div className="col-span-3 relative">
-                         <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="upsell-price"
-                          type="number"
-                          className="pl-10"
-                          placeholder="e.g., 99"
-                          value={formData.mealDeal?.upsellPrice || ''}
-                          onChange={e => handleInputChange('mealDeal', { ...(formData.mealDeal!), upsellPrice: Number(e.target.value) })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="side-items" className="text-right pt-2">Side Items</Label>
-                        <div className="col-span-3">
-                            <MultiSelect
-                                options={menuItemOptions}
-                                value={formData.mealDeal?.sideItemIds || []}
-                                onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), sideItemIds: v })}
-                                placeholder="Select items for sides"
-                            />
+                              </Card>
+                            ))}
+                            <Button variant="outline" onClick={handleAddVariation}><PlusCircle className="mr-2 h-4 w-4" /> Add Variation</Button>
                         </div>
                     </div>
-                     <div className="grid grid-cols-4 items-start gap-4">
-                        <Label htmlFor="drink-items" className="text-right pt-2">Drink Items</Label>
-                        <div className="col-span-3">
-                            <MultiSelect
-                                options={menuItemOptions}
-                                value={formData.mealDeal?.drinkItemIds || []}
-                                onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), drinkItemIds: v })}
-                                placeholder="Select items for drinks"
-                            />
-                        </div>
+                  )}
+                  
+                  <div className="grid grid-cols-4 items-center gap-4 border-t pt-4">
+                    <div className="text-right flex flex-col items-end">
+                        <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
+                        <p className="text-xs text-muted-foreground">This item can be upsold as a meal.</p>
+                    </div>
+                    <div className="col-span-3">
+                      <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
                     </div>
                   </div>
-                )}
-              </div>
-              <DialogFooter>
-                <DialogClose asChild>
-                   <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="button" onClick={handleSaveItem}><Save className="mr-2 h-4 w-4" /> {editingItem ? 'Save Changes' : 'Save Item'}</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                  
+                  {isMealDeal && (
+                    <div className="col-span-4 space-y-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="upsell-price" className="text-right">Upsell Price</Label>
+                        <div className="col-span-3 relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="upsell-price"
+                            type="number"
+                            className="pl-10"
+                            placeholder="e.g., 99"
+                            value={formData.mealDeal?.upsellPrice || ''}
+                            onChange={e => handleInputChange('mealDeal', { ...(formData.mealDeal!), upsellPrice: Number(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-4 items-start gap-4">
+                          <Label htmlFor="side-items" className="text-right pt-2">Side Items</Label>
+                          <div className="col-span-3">
+                              <MultiSelect
+                                  options={menuItemOptions}
+                                  value={formData.mealDeal?.sideItemIds || []}
+                                  onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), sideItemIds: v })}
+                                  placeholder="Select items for sides"
+                              />
+                          </div>
+                      </div>
+                      <div className="grid grid-cols-4 items-start gap-4">
+                          <Label htmlFor="drink-items" className="text-right pt-2">Drink Items</Label>
+                          <div className="col-span-3">
+                              <MultiSelect
+                                  options={menuItemOptions}
+                                  value={formData.mealDeal?.drinkItemIds || []}
+                                  onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), drinkItemIds: v })}
+                                  placeholder="Select items for drinks"
+                              />
+                          </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button type="button" onClick={handleSaveItem}><Save className="mr-2 h-4 w-4" /> {editingItem ? 'Save Changes' : 'Save Item'}</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -514,6 +545,11 @@ export default function MenuPage() {
           </TableBody>
         </Table>
       </CardContent>
+       <BulkUploadDialog
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        onSuccess={handleBulkUploadSuccess}
+      />
     </Card>
   );
 }

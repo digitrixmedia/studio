@@ -1,2 +1,3 @@
 // Flows will be imported for their side effects in this file.
 import '@/ai/flows/generate-sms-bill-flow';
+import '@/ai/flows/extract-menu-items-flow';
