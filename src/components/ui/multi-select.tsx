@@ -1,30 +1,21 @@
 
-"use client"
+"use client";
 
-import * as React from "react"
-import { Check, ChevronsUpDown, X } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+import * as React from "react";
+import { Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export interface MultiSelectOption {
   value: string;
   label: string;
-  icon?: React.ComponentType<{ className?: string }>;
 }
 
 interface MultiSelectProps {
@@ -35,22 +26,30 @@ interface MultiSelectProps {
   className?: string;
 }
 
-function MultiSelect({
+export function MultiSelect({
   options,
-  value: selectedValues,
+  value,
   onValueChange,
-  placeholder = "Select options...",
+  placeholder = "Select...",
   className,
 }: MultiSelectProps) {
   const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
 
-  const handleUnselect = (e: React.MouseEvent, valueToRemove: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onValueChange(selectedValues.filter((v) => v !== valueToRemove));
+  // Filter options by search text (optional feature)
+  const filteredOptions = React.useMemo(() => {
+    return options.filter((opt) =>
+      opt.label.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [options, search]);
+
+  const toggleValue = (val: string) => {
+    if (value.includes(val)) {
+      onValueChange(value.filter((v) => v !== val));
+    } else {
+      onValueChange([...value, val]);
+    }
   };
-  
-  const selectedOptions = options.filter(option => selectedValues.includes(option.value));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -58,85 +57,75 @@ function MultiSelect({
         <Button
           variant="outline"
           role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between h-auto", className)}
-          onClick={() => setOpen(!open)}
+          className={cn(
+            "w-full justify-between text-left font-normal h-auto min-h-10 whitespace-normal",
+            className
+          )}
         >
-          <div className="flex flex-wrap items-center gap-1">
-            {selectedOptions.length > 0 ? (
-              selectedOptions.map((option) => (
-                <Badge
-                  key={option.value}
-                  variant="secondary"
-                  className="mr-1"
-                >
-                  {option.label}
-                   <button
-                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    onMouseDown={(e) => e.preventDefault()} // Prevent popover from closing
-                    onClick={(e) => handleUnselect(e, option.value)}
+          <div className="flex flex-wrap gap-1">
+            {value.length > 0 ? (
+              value.map((val) => {
+                const opt = options.find((o) => o.value === val);
+                return (
+                  <Badge
+                    key={val}
+                    variant="secondary"
+                    className="flex items-center"
                   >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
-                </Badge>
-              ))
+                    {opt?.label ?? val}
+                    <X
+                      className="ml-1 h-3 w-3 cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleValue(val);
+                      }}
+                    />
+                  </Badge>
+                );
+              })
             ) : (
               <span className="text-muted-foreground">{placeholder}</span>
             )}
           </div>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
-          <CommandInput placeholder="Search..." />
-          <CommandList>
-            <CommandEmpty>No results found.</CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => {
-                const isSelected = selectedValues.includes(option.value);
-                return (
-                  <CommandItem
-                    key={option.value}
-                    onSelect={() => {
-                       if (isSelected) {
-                        onValueChange(selectedValues.filter((v) => v !== option.value));
-                      } else {
-                        onValueChange([...selectedValues, option.value]);
-                      }
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        isSelected ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                    {option.label}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-2">
+        <Input
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="mb-2"
+        />
+        <div className="max-h-56 overflow-y-auto space-y-1">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((opt) => {
+              const isSelected = value.includes(opt.value);
+              return (
+                <div
+                  key={opt.value}
+                  onClick={() => toggleValue(opt.value)}
+                  className={cn(
+                    "cursor-pointer flex items-center gap-2 rounded-sm px-3 py-1.5 hover:bg-accent",
+                    isSelected && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <Check
+                    className={cn(
+                      "h-4 w-4",
+                      isSelected ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span>{opt.label}</span>
+                </div>
+              );
+            })
+          ) : (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              No results found.
+            </div>
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
 }
-
-const MultiSelectTrigger = ({ children }: { children: React.ReactNode }) => {
-    return <div>{children}</div>
-}
-const MultiSelectContent = ({ children }: { children: React.ReactNode }) => {
-    return <div>{children}</div>
-}
-const MultiSelectList = ({ children }: { children: React.ReactNode }) => {
-    return <div>{children}</div>
-}
-
-export {
-  MultiSelect,
-  MultiSelectTrigger,
-  MultiSelectContent,
-  MultiSelectList,
-};
