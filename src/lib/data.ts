@@ -349,14 +349,19 @@ export const superAdminStats = {
     totalWrites: subscriptions.reduce((acc, s) => acc + s.totalWrites, 0),
 };
 
-export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => ({
-    id: f.id,
-    name: f.name,
-    totalSales: Math.floor(Math.random() * 500000) + 100000,
-    totalOutlets: subscriptions.filter(s => s.franchiseName === f.name).length,
-    totalStorage: (subscriptions.filter(s => s.franchiseName === f.name).reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024),
-    lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-})).sort((a, b) => b.totalSales - a.sales);
+export const topFranchisesBySales: Franchise[] = franchisesMock.map(f => {
+    const franchiseSubs = subscriptions.filter(s => s.franchiseName === f.name);
+    return {
+        id: f.id,
+        name: f.name,
+        totalSales: Math.floor(Math.random() * 500000) + 100000,
+        totalOutlets: franchiseSubs.length,
+        totalStorage: (franchiseSubs.reduce((acc, s) => acc + s.storageUsedMB, 0) / 1024),
+        lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+        totalReads: franchiseSubs.reduce((acc, s) => acc + s.totalReads, 0),
+        totalWrites: franchiseSubs.reduce((acc, s) => acc + s.totalWrites, 0),
+    }
+}).sort((a, b) => b.totalSales - a.totalSales);
 
 
 export const dailyActiveOutlets = [
@@ -401,3 +406,5 @@ export const auditLogs: AuditLog[] = [
     { id: 'log-4', user: { name: 'Sonia Super', role: 'super-admin' }, action: 'subscription-suspended', target: 'Mocha Magic - Outlet 2', status: 'warning', ipAddress: '103.22.45.1', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000) },
     { id: 'log-5', user: { name: 'Unknown', role: 'manager' }, action: 'failed-login', target: 'System', status: 'failure', ipAddress: '203.11.10.5', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
 ];
+
+  

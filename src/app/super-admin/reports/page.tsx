@@ -1,4 +1,5 @@
 
+
 'use client'
 
 import {
@@ -211,9 +212,11 @@ export default function SuperAdminReportsPage() {
                 <TableHeader>
                     <TableRow>
                         <TableHead>Franchise</TableHead>
-                        <TableHead className='text-right'>Total Outlets</TableHead>
+                        <TableHead className='text-right'>Outlets</TableHead>
                         <TableHead className='text-right'>Total Sales</TableHead>
-                        <TableHead className='text-right'>Total Storage (GB)</TableHead>
+                        <TableHead className='text-right'>Storage</TableHead>
+                        <TableHead className='text-right'>Total Reads</TableHead>
+                        <TableHead className='text-right'>Total Writes</TableHead>
                         <TableHead className='text-right'>Last Active</TableHead>
                     </TableRow>
                 </TableHeader>
@@ -229,6 +232,8 @@ export default function SuperAdminReportsPage() {
                                 </div>
                             </TableCell>
                             <TableCell className='text-right'>{f.totalStorage.toFixed(2)} GB</TableCell>
+                            <TableCell className='text-right'>{(f.totalReads / 1000000).toFixed(2)}M</TableCell>
+                            <TableCell className='text-right'>{(f.totalWrites / 1000000).toFixed(2)}M</TableCell>
                             <TableCell className='text-right'>{new Date(f.lastActive).toLocaleDateString()}</TableCell>
                         </TableRow>
                     ))}
@@ -306,3 +311,6 @@ export default function SuperAdminReportsPage() {
     
 
     
+
+
+  

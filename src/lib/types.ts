@@ -180,6 +180,8 @@ export interface Franchise {
   totalOutlets: number;
   totalStorage: number;
   lastActive: Date;
+  totalReads: number;
+  totalWrites: number;
 }
 export interface Subscription {
   id: string;
@@ -258,3 +260,5 @@ export interface AppOrder {
   tableId: string;
   discount: number;
 }
+
+  
