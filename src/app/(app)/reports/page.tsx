@@ -18,16 +18,16 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users } from '@/lib/data';
+import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users, purchaseOrders, vendors } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent } from 'lucide-react';
+import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent, Truck } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Order } from '@/lib/types';
+import type { Order, PurchaseOrder } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
@@ -45,6 +45,7 @@ const chartConfig = {
 };
 
 const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
+const getVendorName = (vendorId: string) => vendors.find(v => v.id === vendorId)?.name || 'Unknown Vendor';
 
 
 export default function ReportsPage() {
@@ -55,6 +56,7 @@ export default function ReportsPage() {
   });
   const [selectedDay, setSelectedDay] = useState<{ date: Date; orders: Order[] } | null>(null);
   const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
+  const [viewedPurchaseOrder, setViewedPurchaseOrder] = useState<PurchaseOrder | null>(null);
 
   const filteredCompletedOrders = useMemo(() => {
     return orders.filter(o => {
@@ -67,10 +69,27 @@ export default function ReportsPage() {
         return isInInterval;
     });
   }, [date]);
+  
+  const filteredPurchaseOrders = useMemo(() => {
+    return purchaseOrders.filter(po => {
+      if(!date?.from) return true;
+      return isWithinInterval(po.date, {
+        start: startOfDay(date.from),
+        end: date.to ? endOfDay(date.to) : endOfDay(date.from),
+      });
+    });
+  }, [date]);
 
+
+  // Sales metrics
   const totalSales = filteredCompletedOrders.reduce((sum, order) => sum + order.total, 0);
   const totalOrders = filteredCompletedOrders.length;
   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+  
+  // Purchase metrics
+  const totalPurchases = filteredPurchaseOrders.reduce((sum, po) => sum + po.grandTotal, 0);
+  const totalPurchaseOrders = filteredPurchaseOrders.length;
+  const uniqueVendors = new Set(filteredPurchaseOrders.map(po => po.vendorId)).size;
 
   const itemWiseSales = useMemo(() => {
     return menuItems
@@ -145,6 +164,21 @@ export default function ReportsPage() {
       };
     }).filter(d => d.orders > 0);
   }, [filteredCompletedOrders]);
+  
+  const vendorWisePurchases = useMemo(() => {
+    const vendorMap = new Map<string, { name: string, total: number, orders: number }>();
+    filteredPurchaseOrders.forEach(po => {
+      const vendorName = getVendorName(po.vendorId);
+      const existing = vendorMap.get(po.vendorId);
+      if (existing) {
+        existing.total += po.grandTotal;
+        existing.orders += 1;
+      } else {
+        vendorMap.set(po.vendorId, { name: vendorName, total: po.grandTotal, orders: 1 });
+      }
+    });
+    return Array.from(vendorMap.values()).sort((a,b) => b.total - a.total);
+  }, [filteredPurchaseOrders]);
 
 
   const handleExport = () => {
@@ -266,7 +300,7 @@ export default function ReportsPage() {
             </div>
             <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
-                Export Detailed Report
+                Export Sales Report
             </Button>
         </CardContent>
       </Card>
@@ -311,12 +345,13 @@ export default function ReportsPage() {
       </div>
 
        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="daily-sales">Daily Sales</TabsTrigger>
           <TabsTrigger value="item-wise">Item Sales</TabsTrigger>
           <TabsTrigger value="category">Category Sales</TabsTrigger>
           <TabsTrigger value="hourly">Hourly Sales</TabsTrigger>
+          <TabsTrigger value="purchases">Purchases</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className='mt-6'>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -556,6 +591,110 @@ export default function ReportsPage() {
             </CardContent>
             </Card>
         </TabsContent>
+        <TabsContent value="purchases" className="mt-6 space-y-6">
+          <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                  <CardHeader className='flex-row items-center justify-between pb-2'>
+                      <CardTitle className='text-sm font-medium'>Total Purchases</CardTitle>
+                      <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold flex items-center">
+                          <IndianRupee className="h-6 w-6 mr-1" />
+                          {totalPurchases.toLocaleString('en-IN')}
+                      </div>
+                      <p className="text-xs text-muted-foreground">For the selected period</p>
+                  </CardContent>
+              </Card>
+              <Card>
+                  <CardHeader className='flex-row items-center justify-between pb-2'>
+                      <CardTitle className='text-sm font-medium'>Purchase Orders</CardTitle>
+                      <Truck className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">{totalPurchaseOrders}</div>
+                      <p className="text-xs text-muted-foreground">in selected period</p>
+                  </CardContent>
+              </Card>
+              <Card>
+                  <CardHeader className='flex-row items-center justify-between pb-2'>
+                      <CardTitle className='text-sm font-medium'>Unique Suppliers</CardTitle>
+                      <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                      <div className="text-2xl font-bold">{uniqueVendors}</div>
+                      <p className="text-xs text-muted-foreground">in selected period</p>
+                  </CardContent>
+              </Card>
+          </div>
+
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vendor-wise Purchases</CardTitle>
+                <CardDescription>Breakdown of purchase amounts by supplier.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead className="text-right">Total Orders</TableHead>
+                      <TableHead className="text-right">Total Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vendorWisePurchases.map(vendor => (
+                      <TableRow key={vendor.name}>
+                        <TableCell className="font-medium">{vendor.name}</TableCell>
+                        <TableCell className="text-right">{vendor.orders}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end">
+                            <IndianRupee className="h-4 w-4 mr-1" />
+                            {vendor.total.toLocaleString('en-IN')}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Purchase Order Log</CardTitle>
+                <CardDescription>Detailed log of all purchase entries. Click to view details.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>PO Number</TableHead>
+                        <TableHead>Vendor</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredPurchaseOrders.map(po => (
+                        <TableRow key={po.id} onClick={() => setViewedPurchaseOrder(po)} className="cursor-pointer">
+                          <TableCell className="font-medium">{po.poNumber}</TableCell>
+                          <TableCell>{getVendorName(po.vendorId)}</TableCell>
+                          <TableCell>{format(po.date, 'dd MMM, yyyy')}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end">
+                              <IndianRupee className="h-4 w-4 mr-1" />
+                              {po.grandTotal.toFixed(2)}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
       
       <Dialog open={!!selectedDay} onOpenChange={() => setSelectedDay(null)}>
@@ -652,6 +791,65 @@ export default function ReportsPage() {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+    
+    <Dialog open={!!viewedPurchaseOrder} onOpenChange={() => setViewedPurchaseOrder(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Purchase Order: {viewedPurchaseOrder?.poNumber}</DialogTitle>
+          <DialogDescription>
+            Vendor: {viewedPurchaseOrder ? getVendorName(viewedPurchaseOrder.vendorId) : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4 max-h-[60vh] overflow-y-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item</TableHead>
+                <TableHead>Qty</TableHead>
+                <TableHead className="text-right">Price</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {viewedPurchaseOrder?.items.map(item => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.ingredientId}</TableCell>
+                  <TableCell>{item.quantity}</TableCell>
+                  <TableCell className="text-right">{item.unitPrice.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">{item.amount.toFixed(2)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <div className='mt-4 pt-4 border-t space-y-2 text-sm'>
+            <div className="flex justify-between">
+              <span>Subtotal</span>
+              <span>{viewedPurchaseOrder?.subTotal.toFixed(2)}</span>
+            </div>
+             <div className="flex justify-between">
+              <span>Discount</span>
+              <span className="text-destructive">- {viewedPurchaseOrder?.totalDiscount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Other Charges</span>
+              <span>{viewedPurchaseOrder?.otherCharges.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Taxes</span>
+              <span>{viewedPurchaseOrder?.totalTaxes.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-bold text-base pt-2 border-t">
+              <span>Grand Total</span>
+              <span>{viewedPurchaseOrder?.grandTotal.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setViewedPurchaseOrder(null)}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </div>
   );
 }
+
