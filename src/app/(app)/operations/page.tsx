@@ -48,11 +48,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders } from '@/lib/data';
-import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound } from 'lucide-react';
-import { useState } from 'react';
-import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users } from '@/lib/data';
+import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer } from '@/lib/types';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -62,13 +62,6 @@ import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useRouter } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
-
-type CustomerSummary = {
-    phone: string;
-    name: string;
-    totalOrders: number;
-    totalSpent: number;
-}
 
 const initialReservationState = {
     name: '',
@@ -101,6 +94,7 @@ export default function OperationsPage() {
     });
     
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
+    const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
     const [isReservationOpen, setIsReservationOpen] = useState(false);
     const [newReservation, setNewReservation] = useState(initialReservationState);
 
@@ -219,18 +213,42 @@ export default function OperationsPage() {
 
     const kots = orders.filter(o => o.status === 'new' || o.status === 'preparing');
 
-    const customerSummary = orders.reduce((acc, order) => {
-        if (order.customerPhone) {
-            if (!acc[order.customerPhone]) {
-                acc[order.customerPhone] = { phone: order.customerPhone, name: order.customerName || 'Unknown', totalOrders: 0, totalSpent: 0 };
-            }
-            acc[order.customerPhone].totalOrders += 1;
-            acc[order.customerPhone].totalSpent += order.total;
-        }
-        return acc;
-    }, {} as Record<string, CustomerSummary>);
+    const customerList = useMemo(() => {
+        const customerMap = new Map<string, Customer>();
 
-    const customerList = Object.values(customerSummary).sort((a,b) => b.totalSpent - a.totalSpent);
+        orders.forEach(order => {
+            if (order.customerPhone) {
+                let customer = customerMap.get(order.customerPhone);
+                if (!customer) {
+                    customer = {
+                        id: `cust-${order.customerPhone}`,
+                        name: order.customerName || 'Unknown',
+                        phone: order.customerPhone,
+                        totalOrders: 0,
+                        totalSpent: 0,
+                        loyaltyPoints: 0,
+                        firstVisit: order.createdAt,
+                        lastVisit: order.createdAt,
+                        tier: 'New',
+                    };
+                }
+                
+                customer.totalOrders += 1;
+                customer.totalSpent += order.total;
+                if (order.createdAt < customer.firstVisit) customer.firstVisit = order.createdAt;
+                if (order.createdAt > customer.lastVisit) customer.lastVisit = order.createdAt;
+                
+                // Simple loyalty logic
+                customer.loyaltyPoints = Math.floor(customer.totalSpent / 10);
+                if (customer.totalSpent > 5000) customer.tier = 'VIP';
+                else if (customer.totalOrders > 5) customer.tier = 'Regular';
+
+                customerMap.set(order.customerPhone, customer);
+            }
+        });
+
+        return Array.from(customerMap.values()).sort((a,b) => b.totalSpent - a.totalSpent);
+    }, [orders]);
     
     const liveViewOrders = {
         'new': orders.filter(o => o.status === 'new'),
@@ -291,6 +309,12 @@ export default function OperationsPage() {
     };
     
     const totalForOrder = (items: OrderItem[]) => items.reduce((sum, item) => sum + item.totalPrice, 0);
+    
+    const getTierBadgeVariant = (tier: 'New' | 'Regular' | 'VIP'): 'secondary' | 'default' | 'destructive' => {
+        if (tier === 'VIP') return 'destructive';
+        if (tier === 'Regular') return 'default';
+        return 'secondary';
+    }
 
   return (
     <>
@@ -473,25 +497,29 @@ export default function OperationsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Customer Directory</CardTitle>
-                        <CardDescription>Overview of your customer base.</CardDescription>
+                        <CardDescription>Overview of your customer base. Click on a row to view details.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Customer</TableHead>
-                                    <TableHead>Total Orders</TableHead>
+                                    <TableHead>Tier</TableHead>
+                                    <TableHead className='text-right'>Total Orders</TableHead>
                                     <TableHead className="text-right">Total Spent</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {customerList.map(customer => (
-                                    <TableRow key={customer.phone}>
+                                    <TableRow key={customer.phone} onClick={() => setViewCustomer(customer)} className="cursor-pointer">
                                         <TableCell>
                                             <div className="font-medium">{customer.name}</div>
                                             <div className="text-sm text-muted-foreground">{customer.phone}</div>
                                         </TableCell>
-                                        <TableCell>{customer.totalOrders}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getTierBadgeVariant(customer.tier)}>{customer.tier}</Badge>
+                                        </TableCell>
+                                        <TableCell className='text-right'>{customer.totalOrders}</TableCell>
                                         <TableCell className="text-right flex items-center justify-end">
                                             <IndianRupee className="h-4 w-4 mr-1" />
                                             {customer.totalSpent.toFixed(2)}
@@ -708,6 +736,71 @@ export default function OperationsPage() {
             </div>
              <DialogFooter>
                 <Button variant="outline" onClick={() => setViewOrder(null)}>Close</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    {/* Dialog for viewing a customer */}
+    <Dialog open={!!viewCustomer} onOpenChange={() => setViewCustomer(null)}>
+        <DialogContent className="max-w-3xl">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <User /> {viewCustomer?.name}
+                    <Badge variant={getTierBadgeVariant(viewCustomer?.tier || 'New')}>{viewCustomer?.tier}</Badge>
+                </DialogTitle>
+                <DialogDescription>
+                    {viewCustomer?.phone}
+                </DialogDescription>
+            </DialogHeader>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-center py-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="font-bold text-lg flex items-center justify-center gap-1"><Star className="h-5 w-5 text-yellow-500" />{viewCustomer?.loyaltyPoints}</p>
+                    <p className="text-muted-foreground">Loyalty Points</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="font-bold text-lg">{viewCustomer?.totalOrders}</p>
+                    <p className="text-muted-foreground">Total Orders</p>
+                </div>
+                <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="font-bold text-lg flex items-center justify-center"><IndianRupee className="h-4 w-4" />{viewCustomer?.totalSpent.toFixed(2)}</p>
+                    <p className="text-muted-foreground">Total Spent</p>
+                </div>
+                 <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="font-bold text-lg">{format(viewCustomer?.lastVisit || new Date(), 'dd MMM yyyy')}</p>
+                    <p className="text-muted-foreground">Last Visit</p>
+                </div>
+            </div>
+            <div>
+                 <h4 className="font-semibold mb-2 flex items-center gap-2"><History/> Order History</h4>
+                 <ScrollArea className="h-64">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Order #</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead className='text-right'>Total</TableHead>
+                                <TableHead className='text-right'>Action</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {orders.filter(o => o.customerPhone === viewCustomer?.phone).map(order => (
+                                <TableRow key={order.id}>
+                                    <TableCell>#{order.orderNumber}</TableCell>
+                                    <TableCell>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</TableCell>
+                                    <TableCell className='text-right flex items-center justify-end'><IndianRupee className="h-4 w-4 mr-1" />{order.total.toFixed(2)}</TableCell>
+                                    <TableCell className='text-right'>
+                                        <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}>
+                                            <Eye className="h-4 w-4"/>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+            </div>
+             <DialogFooter>
+                <Button variant="outline" onClick={() => setViewCustomer(null)}>Close</Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

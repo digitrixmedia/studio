@@ -1,5 +1,6 @@
 
 
+
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -254,6 +255,18 @@ export interface DeliveryBoy {
     phone: string;
     status: 'available' | 'on-a-delivery' | 'offline';
     currentOrder?: string;
+}
+
+export interface Customer {
+    id: string;
+    name: string;
+    phone: string;
+    totalOrders: number;
+    totalSpent: number;
+    loyaltyPoints: number;
+    tier: 'New' | 'Regular' | 'VIP';
+    firstVisit: Date;
+    lastVisit: Date;
 }
 
 // App-specific type for orders being built in the POS
