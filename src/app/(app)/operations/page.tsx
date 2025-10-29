@@ -50,8 +50,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -62,6 +62,7 @@ import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useRouter } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
+import { Textarea } from '@/components/ui/textarea';
 
 const initialReservationState = {
     name: '',
@@ -105,6 +106,19 @@ export default function OperationsPage() {
     
     const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
     const [password, setPassword] = useState('');
+    
+    const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+    const [customerFormData, setCustomerFormData] = useState<Partial<Customer>>({});
+
+    useEffect(() => {
+        if (viewCustomer) {
+            setCustomerFormData({
+                name: viewCustomer.name,
+                phone: viewCustomer.phone,
+                // Add other editable fields here if necessary
+            });
+        }
+    }, [viewCustomer]);
 
 
     const filteredOrders = orders.filter(order => {
@@ -314,6 +328,21 @@ export default function OperationsPage() {
         if (tier === 'VIP') return 'destructive';
         if (tier === 'Regular') return 'default';
         return 'secondary';
+    }
+
+    const handleSaveCustomer = () => {
+        if (!viewCustomer) return;
+        // Here you would save the data to your backend
+        console.log("Saving customer:", customerFormData);
+
+        // For demo purposes, we update the viewCustomer state to reflect changes
+        setViewCustomer(prev => prev ? { ...prev, ...customerFormData } as Customer : null);
+        
+        toast({
+            title: "Customer Updated",
+            description: `${customerFormData.name}'s details have been saved.`
+        });
+        setIsEditingCustomer(false);
     }
 
   return (
@@ -741,66 +770,105 @@ export default function OperationsPage() {
     </Dialog>
 
     {/* Dialog for viewing a customer */}
-    <Dialog open={!!viewCustomer} onOpenChange={() => setViewCustomer(null)}>
+    <Dialog open={!!viewCustomer} onOpenChange={(open) => { if (!open) { setViewCustomer(null); setIsEditingCustomer(false); } }}>
         <DialogContent className="max-w-3xl">
             <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                    <User /> {viewCustomer?.name}
-                    <Badge variant={getTierBadgeVariant(viewCustomer?.tier || 'New')}>{viewCustomer?.tier}</Badge>
-                </DialogTitle>
-                <DialogDescription>
-                    {viewCustomer?.phone}
-                </DialogDescription>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <DialogTitle className="flex items-center gap-2">
+                            <User /> {isEditingCustomer ? 'Edit Customer' : viewCustomer?.name}
+                            {!isEditingCustomer && <Badge variant={getTierBadgeVariant(viewCustomer?.tier || 'New')}>{viewCustomer?.tier}</Badge>}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {isEditingCustomer ? 'Update customer details below.' : viewCustomer?.phone}
+                        </DialogDescription>
+                    </div>
+                    {!isEditingCustomer && (
+                        <Button variant="outline" size="sm" onClick={() => setIsEditingCustomer(true)}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                        </Button>
+                    )}
+                </div>
             </DialogHeader>
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-center py-4">
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="font-bold text-lg flex items-center justify-center gap-1"><Star className="h-5 w-5 text-yellow-500" />{viewCustomer?.loyaltyPoints}</p>
-                    <p className="text-muted-foreground">Loyalty Points</p>
+
+            {isEditingCustomer ? (
+                <div className="py-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="cust-name">Name</Label>
+                            <Input id="cust-name" value={customerFormData.name || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, name: e.target.value}))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="cust-phone">Phone</Label>
+                            <Input id="cust-phone" value={customerFormData.phone || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, phone: e.target.value}))} />
+                        </div>
+                    </div>
+                    {/* Add more editable fields here if needed, e.g., notes */}
+                    <div className="space-y-2">
+                        <Label htmlFor="cust-notes">Notes</Label>
+                        <Textarea id="cust-notes" placeholder="Add personal notes about the customer..." />
+                    </div>
                 </div>
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="font-bold text-lg">{viewCustomer?.totalOrders}</p>
-                    <p className="text-muted-foreground">Total Orders</p>
-                </div>
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="font-bold text-lg flex items-center justify-center"><IndianRupee className="h-4 w-4" />{viewCustomer?.totalSpent.toFixed(2)}</p>
-                    <p className="text-muted-foreground">Total Spent</p>
-                </div>
-                 <div className="p-4 bg-muted/50 rounded-lg">
-                    <p className="font-bold text-lg">{format(viewCustomer?.lastVisit || new Date(), 'dd MMM yyyy')}</p>
-                    <p className="text-muted-foreground">Last Visit</p>
-                </div>
-            </div>
-            <div>
-                 <h4 className="font-semibold mb-2 flex items-center gap-2"><History/> Order History</h4>
-                 <ScrollArea className="h-64">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Order #</TableHead>
-                                <TableHead>Date</TableHead>
-                                <TableHead className='text-right'>Total</TableHead>
-                                <TableHead className='text-right'>Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {orders.filter(o => o.customerPhone === viewCustomer?.phone).map(order => (
-                                <TableRow key={order.id}>
-                                    <TableCell>#{order.orderNumber}</TableCell>
-                                    <TableCell>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</TableCell>
-                                    <TableCell className='text-right flex items-center justify-end'><IndianRupee className="h-4 w-4 mr-1" />{order.total.toFixed(2)}</TableCell>
-                                    <TableCell className='text-right'>
-                                        <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}>
-                                            <Eye className="h-4 w-4"/>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </ScrollArea>
-            </div>
+            ) : (
+                <>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-center py-4">
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="font-bold text-lg flex items-center justify-center gap-1"><Star className="h-5 w-5 text-yellow-500" />{viewCustomer?.loyaltyPoints}</p>
+                            <p className="text-muted-foreground">Loyalty Points</p>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="font-bold text-lg">{viewCustomer?.totalOrders}</p>
+                            <p className="text-muted-foreground">Total Orders</p>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="font-bold text-lg flex items-center justify-center"><IndianRupee className="h-4 w-4" />{viewCustomer?.totalSpent.toFixed(2)}</p>
+                            <p className="text-muted-foreground">Total Spent</p>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg">
+                            <p className="font-bold text-lg">{format(viewCustomer?.lastVisit || new Date(), 'dd MMM yyyy')}</p>
+                            <p className="text-muted-foreground">Last Visit</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 className="font-semibold mb-2 flex items-center gap-2"><History/> Order History</h4>
+                        <ScrollArea className="h-64">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Order #</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead className='text-right'>Total</TableHead>
+                                        <TableHead className='text-right'>Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {orders.filter(o => o.customerPhone === viewCustomer?.phone).map(order => (
+                                        <TableRow key={order.id}>
+                                            <TableCell>#{order.orderNumber}</TableCell>
+                                            <TableCell>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</TableCell>
+                                            <TableCell className='text-right flex items-center justify-end'><IndianRupee className="h-4 w-4 mr-1" />{order.total.toFixed(2)}</TableCell>
+                                            <TableCell className='text-right'>
+                                                <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}>
+                                                    <Eye className="h-4 w-4"/>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </div>
+                </>
+            )}
              <DialogFooter>
-                <Button variant="outline" onClick={() => setViewCustomer(null)}>Close</Button>
+                {isEditingCustomer ? (
+                    <>
+                        <Button variant="outline" onClick={() => setIsEditingCustomer(false)}>Cancel</Button>
+                        <Button onClick={handleSaveCustomer}>Save Changes</Button>
+                    </>
+                ) : (
+                    <Button variant="outline" onClick={() => { setViewCustomer(null); setIsEditingCustomer(false); }}>Close</Button>
+                )}
             </DialogFooter>
         </DialogContent>
     </Dialog>
