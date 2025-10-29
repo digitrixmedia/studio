@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -90,7 +91,7 @@ export default function InventoryStockPage() {
 
     toast({
         title: "Stock Updated",
-        description: `${quantityToAdd} ${stockUpdateIngredient.unit} added to ${stockUpdateIngredient.name}.`,
+        description: `${quantityToAdd} ${stockUpdateIngredient.baseUnit} added to ${stockUpdateIngredient.name}.`,
     });
 
     setStockUpdateIngredient(null);
@@ -152,7 +153,7 @@ export default function InventoryStockPage() {
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="unit" className="text-right">
-                    Unit
+                    Base Unit
                     </Label>
                     <Input
                     id="unit"
@@ -192,14 +193,14 @@ export default function InventoryStockPage() {
                     <TableCell>
                     {isLowStock ? (
                         <Badge variant="destructive">
-                        {item.stock} {item.unit}
+                        {item.stock} {item.baseUnit}
                         </Badge>
                     ) : (
-                        `${item.stock} ${item.unit}`
+                        `${item.stock} ${item.baseUnit}`
                     )}
                     </TableCell>
                     <TableCell>
-                    {item.minStock} {item.unit}
+                    {item.minStock} {item.baseUnit}
                     </TableCell>
                     <TableCell>
                     <Progress
@@ -232,11 +233,11 @@ export default function InventoryStockPage() {
         <DialogHeader>
           <DialogTitle>Add Stock for {stockUpdateIngredient?.name}</DialogTitle>
           <DialogDescription>
-            Current stock: {stockUpdateIngredient?.stock} {stockUpdateIngredient?.unit}
+            Current stock: {stockUpdateIngredient?.stock} {stockUpdateIngredient?.baseUnit}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <Label htmlFor="stock-quantity">Quantity to Add ({stockUpdateIngredient?.unit})</Label>
+          <Label htmlFor="stock-quantity">Quantity to Add ({stockUpdateIngredient?.baseUnit})</Label>
           <Input 
             id="stock-quantity"
             type="number"

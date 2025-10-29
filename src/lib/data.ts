@@ -161,12 +161,12 @@ export const tables: Table[] = [
 ];
 
 export const ingredients: Ingredient[] = [
-  { id: 'ing-1', name: 'Coffee Beans', unit: 'g', stock: 800000, minStock: 1000 },
-  { id: 'ing-2', name: 'Milk', unit: 'ml', stock: 5000, minStock: 2000 },
-  { id: 'ing-3', name: 'Sugar', unit: 'g', stock: 10000, minStock: 2000 },
-  { id: 'ing-4', name: 'Bread Loaves', unit: 'pcs', stock: 8, minStock: 10 },
-  { id: 'ing-5', name: 'Veggie Mix', unit: 'g', stock: 2000, minStock: 500 },
-  { id: 'ing-6', name: 'Cheesecake Slice', unit: 'pcs', stock: 5, minStock: 4 },
+  { id: 'ing-1', name: 'Coffee Beans', baseUnit: 'g', stock: 800000, minStock: 1000, purchaseUnits: [{ unit: 'kg', factor: 1000 }, { unit: 'g', factor: 1 }] },
+  { id: 'ing-2', name: 'Milk', baseUnit: 'ml', stock: 5000, minStock: 2000, purchaseUnits: [{ unit: 'l', factor: 1000 }, { unit: 'ml', factor: 1 }] },
+  { id: 'ing-3', name: 'Sugar', baseUnit: 'g', stock: 10000, minStock: 2000, purchaseUnits: [{ unit: 'kg', factor: 1000 }, { unit: 'g', factor: 1 }] },
+  { id: 'ing-4', name: 'Bread Loaves', baseUnit: 'pcs', stock: 8, minStock: 10, purchaseUnits: [{ unit: 'pcs', factor: 1 }] },
+  { id: 'ing-5', name: 'Veggie Mix', baseUnit: 'g', stock: 2000, minStock: 500, purchaseUnits: [{ unit: 'kg', factor: 1000 }, { unit: 'g', factor: 1 }] },
+  { id: 'ing-6', name: 'Cheesecake Slice', baseUnit: 'pcs', stock: 5, minStock: 4, purchaseUnits: [{ unit: 'pcs', factor: 1 }] },
 ];
 
 const orderStatuses: OrderStatus[] = ['new', 'preparing', 'ready', 'out-for-delivery', 'completed', 'cancelled'];
@@ -253,7 +253,7 @@ export const purchaseOrders: PurchaseOrder[] = [
         vendorId: 'vendor-1',
         date: subDays(new Date(), 5),
         items: [
-            { id: 'poi-1', ingredientId: 'ing-5', quantity: 10, unitPrice: 150, amount: 1500, cgst: 2.5, sgst: 2.5, igst: 0 },
+            { id: 'poi-1', ingredientId: 'ing-5', quantity: 10, purchaseUnit: 'kg', unitPrice: 150, amount: 1500, cgst: 2.5, sgst: 2.5, igst: 0 },
         ],
         subTotal: 1500,
         totalDiscount: 0,
@@ -269,7 +269,7 @@ export const purchaseOrders: PurchaseOrder[] = [
         vendorId: 'vendor-2',
         date: subDays(new Date(), 2),
         items: [
-            { id: 'poi-2', ingredientId: 'ing-2', quantity: 20, unitPrice: 50, amount: 1000, cgst: 0, sgst: 0, igst: 0 },
+            { id: 'poi-2', ingredientId: 'ing-2', quantity: 20, purchaseUnit: 'l', unitPrice: 50, amount: 1000, cgst: 0, sgst: 0, igst: 0 },
         ],
         subTotal: 1000,
         totalDiscount: 50,
@@ -285,7 +285,7 @@ export const purchaseOrders: PurchaseOrder[] = [
         vendorId: 'vendor-3',
         date: new Date(),
         items: [
-            { id: 'poi-3', ingredientId: 'ing-1', quantity: 5, unitPrice: 800, amount: 4000, cgst: 9, sgst: 9, igst: 0 },
+            { id: 'poi-3', ingredientId: 'ing-1', quantity: 5, purchaseUnit: 'kg', unitPrice: 800, amount: 4000, cgst: 9, sgst: 9, igst: 0 },
         ],
         subTotal: 4000,
         totalDiscount: 0,

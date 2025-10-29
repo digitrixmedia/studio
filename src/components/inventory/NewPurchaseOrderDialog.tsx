@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -31,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { vendors as initialVendors, ingredients } from '@/lib/data';
-import type { PurchaseOrder, PurchaseOrderItem, Vendor, Ingredient } from '@/lib/types';
+import type { PurchaseOrder, PurchaseOrderItem, Vendor, Ingredient, Unit } from '@/lib/types';
 import { PlusCircle, Trash2, Save, Tag } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +51,7 @@ interface NewPurchaseOrderDialogProps {
 const initialItemState: Omit<PurchaseOrderItem, 'id'> = {
     ingredientId: '',
     quantity: 1,
+    purchaseUnit: 'g', // Default to a base unit
     unitPrice: 0,
     amount: 0,
     cgst: 0,
@@ -105,12 +107,20 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
         const updatedItems = [...po.items];
         const currentItem = { ...updatedItems[index] };
         
-        const numericValue = typeof value === 'string' && field !== 'ingredientId' && field !== 'description' ? parseFloat(value) || 0 : value;
+        const numericValue = typeof value === 'string' && !['ingredientId', 'description', 'purchaseUnit'].includes(field) ? parseFloat(value) || 0 : value;
 
-        if (field === 'ingredientId' || field === 'description') {
+        if (field === 'ingredientId' || field === 'description' || field === 'purchaseUnit') {
             (currentItem as any)[field] = value;
         } else {
             (currentItem as any)[field] = numericValue;
+        }
+        
+        if (field === 'ingredientId') {
+            const ingredient = ingredients.find(i => i.id === value);
+            if (ingredient) {
+                // When ingredient changes, set purchase unit to its base unit by default
+                currentItem.purchaseUnit = ingredient.baseUnit;
+            }
         }
         
         if (field === 'quantity' || field === 'unitPrice') {
@@ -179,7 +189,11 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
             newOrder.items.forEach(item => {
               const ingIndex = newIngredients.findIndex(ing => ing.id === item.ingredientId);
               if (ingIndex > -1) {
-                newIngredients[ingIndex].stock += item.quantity;
+                const ingredient = newIngredients[ingIndex];
+                const conversion = ingredient.purchaseUnits.find(u => u.unit === item.purchaseUnit);
+                const conversionFactor = conversion?.factor || 1;
+                const quantityInBaseUnit = item.quantity * conversionFactor;
+                newIngredients[ingIndex].stock += quantityInBaseUnit;
               }
             });
             return newIngredients;
@@ -195,7 +209,10 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
         onClose();
     };
 
-    const getIngredientUnit = (id: string) => ingredients.find(i => i.id === id)?.unit || '';
+    const getPurchaseUnitsForIngredient = (ingredientId: string): { unit: Unit, factor: number }[] => {
+        const ingredient = ingredients.find(i => i.id === ingredientId);
+        return ingredient?.purchaseUnits || [];
+    };
 
     const handleAddNewVendor = () => {
         if (!newVendor.name || !newVendor.email || !newVendor.phone) {
@@ -234,7 +251,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     return (
         <>
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+            <DialogContent className="max-w-7xl h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>New Purchase Entry</DialogTitle>
                     <DialogDescription>Enter the details of the raw material purchase.</DialogDescription>
@@ -317,7 +334,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                                 <TableHead className="min-w-[250px]">Name</TableHead>
                                                 <TableHead>Quantity</TableHead>
                                                 <TableHead>Unit</TableHead>
-                                                <TableHead>Price (₹)</TableHead>
+                                                <TableHead>Price/Unit (₹)</TableHead>
                                                 <TableHead>Amount (₹)</TableHead>
                                                 <TableHead className="min-w-[120px] text-center">CGST %</TableHead>
                                                 <TableHead className="min-w-[120px] text-center">SGST %</TableHead>
@@ -338,7 +355,20 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                                                         </Select>
                                                     </TableCell>
                                                     <TableCell><Input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} className="w-20" /></TableCell>
-                                                    <TableCell>{getIngredientUnit(item.ingredientId) || 'Unit'}</TableCell>
+                                                    <TableCell>
+                                                        <Select
+                                                            value={item.purchaseUnit}
+                                                            onValueChange={(val) => handleItemChange(index, 'purchaseUnit', val as Unit)}
+                                                            disabled={!item.ingredientId}
+                                                        >
+                                                            <SelectTrigger className='w-24'><SelectValue placeholder="Unit" /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {getPurchaseUnitsForIngredient(item.ingredientId).map(u => (
+                                                                    <SelectItem key={u.unit} value={u.unit}>{u.unit}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </TableCell>
                                                     <TableCell><Input type="number" value={item.unitPrice} onChange={e => handleItemChange(index, 'unitPrice', e.target.value)} className="w-24" /></TableCell>
                                                     <TableCell>{item.amount.toFixed(2)}</TableCell>
                                                     <TableCell>

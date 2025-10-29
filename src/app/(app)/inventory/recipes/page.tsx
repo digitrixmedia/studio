@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -82,7 +83,7 @@ export default function InventoryRecipesPage() {
   };
   
   const getIngredientUnit = (id: string) => {
-    return ingredients.find(i => i.id === id)?.unit || '';
+    return ingredients.find(i => i.id === id)?.baseUnit || '';
   };
   
 

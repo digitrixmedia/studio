@@ -97,12 +97,20 @@ export interface Table {
   currentOrderId?: string;
 }
 
+export type Unit = 'g' | 'ml' | 'pcs' | 'kg' | 'l';
+
+export interface UnitConversion {
+  unit: Unit;
+  factor: number; // How many base units are in this unit (e.g., for kg, factor is 1000 if base is g)
+}
+
 export interface Ingredient {
   id: string;
   name: string;
-  unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l' | '';
-  stock: number;
-  minStock: number;
+  baseUnit: Unit; // The smallest unit for inventory tracking
+  stock: number; // in baseUnit
+  minStock: number; // in baseUnit
+  purchaseUnits: UnitConversion[]; // Available units for purchasing
 }
 
 // Inventory & Purchase Types
@@ -119,8 +127,9 @@ export interface PurchaseOrderItem {
     id: string;
     ingredientId: string;
     quantity: number;
-    unitPrice: number;
-    amount: number;
+    purchaseUnit: Unit;
+    unitPrice: number; // Price per purchaseUnit
+    amount: number; // quantity * unitPrice
     cgst: number;
     sgst: number;
     igst: number;
