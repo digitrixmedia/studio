@@ -50,7 +50,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -115,7 +115,10 @@ export default function OperationsPage() {
             setCustomerFormData({
                 name: viewCustomer.name,
                 phone: viewCustomer.phone,
-                // Add other editable fields here if necessary
+                address: viewCustomer.address || '',
+                birthday: viewCustomer.birthday || '',
+                anniversary: viewCustomer.anniversary || '',
+                notes: viewCustomer.notes || '',
             });
         }
     }, [viewCustomer]);
@@ -793,7 +796,7 @@ export default function OperationsPage() {
 
             {isEditingCustomer ? (
                 <div className="py-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="cust-name">Name</Label>
                             <Input id="cust-name" value={customerFormData.name || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, name: e.target.value}))} />
@@ -802,11 +805,22 @@ export default function OperationsPage() {
                             <Label htmlFor="cust-phone">Phone</Label>
                             <Input id="cust-phone" value={customerFormData.phone || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, phone: e.target.value}))} />
                         </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="cust-bday">Birthday</Label>
+                            <Input id="cust-bday" type="date" value={customerFormData.birthday || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, birthday: e.target.value}))} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="cust-anniversary">Anniversary</Label>
+                            <Input id="cust-anniversary" type="date" value={customerFormData.anniversary || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, anniversary: e.target.value}))} />
+                        </div>
                     </div>
-                    {/* Add more editable fields here if needed, e.g., notes */}
+                    <div className="space-y-2">
+                        <Label htmlFor="cust-address">Address</Label>
+                        <Textarea id="cust-address" placeholder="Customer's address" value={customerFormData.address || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, address: e.target.value}))} />
+                    </div>
                     <div className="space-y-2">
                         <Label htmlFor="cust-notes">Notes</Label>
-                        <Textarea id="cust-notes" placeholder="Add personal notes about the customer..." />
+                        <Textarea id="cust-notes" placeholder="Add personal notes about the customer..." value={customerFormData.notes || ''} onChange={(e) => setCustomerFormData(prev => ({...prev, notes: e.target.value}))} />
                     </div>
                 </div>
             ) : (
@@ -828,6 +842,35 @@ export default function OperationsPage() {
                             <p className="font-bold text-lg">{format(viewCustomer?.lastVisit || new Date(), 'dd MMM yyyy')}</p>
                             <p className="text-muted-foreground">Last Visit</p>
                         </div>
+                    </div>
+                    <div className="space-y-4 text-sm">
+                         <h4 className="font-semibold mb-2">Customer Details</h4>
+                         <div className="grid grid-cols-2 gap-4">
+                            {viewCustomer?.birthday && (
+                                <div className="flex items-center gap-2">
+                                    <Cake className="h-4 w-4 text-muted-foreground"/>
+                                    <span>Birthday: {format(new Date(viewCustomer.birthday), 'dd MMM')}</span>
+                                </div>
+                            )}
+                             {viewCustomer?.anniversary && (
+                                <div className="flex items-center gap-2">
+                                    <Gift className="h-4 w-4 text-muted-foreground"/>
+                                    <span>Anniversary: {format(new Date(viewCustomer.anniversary), 'dd MMM')}</span>
+                                </div>
+                            )}
+                             {viewCustomer?.address && (
+                                <div className="flex items-start col-span-2 gap-2">
+                                    <Home className="h-4 w-4 text-muted-foreground mt-1"/>
+                                    <span>Address: {viewCustomer.address}</span>
+                                </div>
+                            )}
+                             {viewCustomer?.notes && (
+                                <div className="flex items-start col-span-2 gap-2">
+                                    <MessageSquare className="h-4 w-4 text-muted-foreground mt-1"/>
+                                    <span>Notes: {viewCustomer.notes}</span>
+                                </div>
+                            )}
+                         </div>
                     </div>
                     <div>
                         <h4 className="font-semibold mb-2 flex items-center gap-2"><History/> Order History</h4>
@@ -1018,5 +1061,3 @@ export default function OperationsPage() {
     </>
   );
 }
-
-    

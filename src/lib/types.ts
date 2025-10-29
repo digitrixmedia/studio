@@ -1,6 +1,5 @@
 
 
-
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -267,6 +266,10 @@ export interface Customer {
     tier: 'New' | 'Regular' | 'VIP';
     firstVisit: Date;
     lastVisit: Date;
+    address?: string;
+    birthday?: string; // Storing as string 'YYYY-MM-DD'
+    anniversary?: string; // Storing as string 'YYYY-MM-DD'
+    notes?: string;
 }
 
 // App-specific type for orders being built in the POS
@@ -282,5 +285,3 @@ export interface AppOrder {
   tableId: string;
   discount: number;
 }
-
-  
