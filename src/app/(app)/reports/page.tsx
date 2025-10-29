@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users, purchaseOrders, vendors } from '@/lib/data';
+import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users, purchaseOrders, vendors, ingredients } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent, Truck } from 'lucide-react';
@@ -46,6 +46,7 @@ const chartConfig = {
 
 const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
 const getVendorName = (vendorId: string) => vendors.find(v => v.id === vendorId)?.name || 'Unknown Vendor';
+const getIngredientName = (ingredientId: string) => ingredients.find(i => i.id === ingredientId)?.name || 'Unknown Ingredient';
 
 
 export default function ReportsPage() {
@@ -207,6 +208,54 @@ export default function ReportsPage() {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
         link.setAttribute("download", `sales_report_${format(date?.from || new Date(), 'yyyy-MM-dd')}_to_${format(date?.to || date?.from || new Date(), 'yyyy-MM-dd')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+  };
+
+  const handleExportPurchaseLogs = () => {
+    const headers = [
+      'PO Number', 'PO Date', 'Vendor', 'PO Status', 'Payment Status', 'Invoice Number', 'Invoice Date',
+      'Item Name', 'Item Quantity', 'Item Unit Price', 'Item Amount', 'Item CGST %', 'Item SGST %', 'Item IGST %', 'Item Description',
+      'PO Subtotal', 'PO Discount', 'PO Other Charges', 'PO Total Taxes', 'PO Grand Total'
+    ];
+
+    const rows = filteredPurchaseOrders.flatMap(po => 
+      po.items.map(item => 
+        [
+          po.poNumber,
+          format(po.date, 'yyyy-MM-dd'),
+          getVendorName(po.vendorId),
+          po.status,
+          po.paymentStatus,
+          po.invoiceNumber || '',
+          po.invoiceDate ? format(po.invoiceDate, 'yyyy-MM-dd') : '',
+          getIngredientName(item.ingredientId),
+          item.quantity,
+          item.unitPrice.toFixed(2),
+          item.amount.toFixed(2),
+          item.cgst,
+          item.sgst,
+          item.igst,
+          item.description || '',
+          po.subTotal.toFixed(2),
+          po.totalDiscount.toFixed(2),
+          po.otherCharges.toFixed(2),
+          po.totalTaxes.toFixed(2),
+          po.grandTotal.toFixed(2)
+        ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
+      )
+    );
+    
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `purchase_report_${format(date?.from || new Date(), 'yyyy-MM-dd')}_to_${format(date?.to || date?.from || new Date(), 'yyyy-MM-dd')}.csv`);
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -662,8 +711,15 @@ export default function ReportsPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Purchase Order Log</CardTitle>
-                <CardDescription>Detailed log of all purchase entries. Click to view details.</CardDescription>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>Purchase Order Log</CardTitle>
+                        <CardDescription>Detailed log of all purchase entries. Click to view details.</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleExportPurchaseLogs}>
+                        <Download className="mr-2 h-4 w-4" /> Export Purchases
+                    </Button>
+                </div>
               </CardHeader>
               <CardContent>
                  <Table>
@@ -813,7 +869,7 @@ export default function ReportsPage() {
             <TableBody>
               {viewedPurchaseOrder?.items.map(item => (
                 <TableRow key={item.id}>
-                  <TableCell>{item.ingredientId}</TableCell>
+                  <TableCell>{getIngredientName(item.ingredientId)}</TableCell>
                   <TableCell>{item.quantity}</TableCell>
                   <TableCell className="text-right">{item.unitPrice.toFixed(2)}</TableCell>
                   <TableCell className="text-right">{item.amount.toFixed(2)}</TableCell>
