@@ -206,7 +206,7 @@ const generateOrders = (count: number): Order[] => {
       total,
       status: status,
       customerName: status !== 'cancelled' ? customerNames[customerIndex] : undefined,
-      customerPhone: status !== 'cancelled' ? `98765432${String(customerIndex).padStart(2,'0')}` : undefined,
+      customerPhone: status !== 'cancelled' ? `987654320${customerIndex}` : undefined,
       paymentMethod: status === 'completed' ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)] : undefined,
       createdAt: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000),
       createdBy: users[Math.floor(Math.random() * 3) + 2].id, // Cashier or Waiter

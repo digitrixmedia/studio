@@ -50,9 +50,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
-import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow } from 'date-fns';
+import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow, differenceInDays, getYear, setYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -247,6 +247,7 @@ export default function OperationsPage() {
                         firstVisit: order.createdAt,
                         lastVisit: order.createdAt,
                         tier: 'New',
+                        birthday: order.customerPhone === '9876543200' ? '1990-11-15' : undefined,
                     };
                 }
                 
@@ -347,6 +348,21 @@ export default function OperationsPage() {
         });
         setIsEditingCustomer(false);
     }
+
+    const isDateUpcoming = (dateString: string | undefined): boolean => {
+        if (!dateString) return false;
+        
+        const today = new Date();
+        const eventDate = new Date(dateString);
+        
+        // Set the event's year to the current year to check for upcoming anniversary/birthday
+        const thisYearsEvent = setYear(eventDate, getYear(today));
+        
+        const diff = differenceInDays(thisYearsEvent, today);
+        
+        // Check if the event is within the next 30 days but not in the past
+        return diff >= 0 && diff <= 30;
+    };
 
   return (
     <>
@@ -850,12 +866,14 @@ export default function OperationsPage() {
                                 <div className="flex items-center gap-2">
                                     <Cake className="h-4 w-4 text-muted-foreground"/>
                                     <span>Birthday: {format(new Date(viewCustomer.birthday), 'dd MMM')}</span>
+                                    {isDateUpcoming(viewCustomer.birthday) && <Badge variant="secondary">Upcoming</Badge>}
                                 </div>
                             )}
                              {viewCustomer?.anniversary && (
                                 <div className="flex items-center gap-2">
                                     <Gift className="h-4 w-4 text-muted-foreground"/>
                                     <span>Anniversary: {format(new Date(viewCustomer.anniversary), 'dd MMM')}</span>
+                                     {isDateUpcoming(viewCustomer.anniversary) && <Badge variant="secondary">Upcoming</Badge>}
                                 </div>
                             )}
                              {viewCustomer?.address && (
