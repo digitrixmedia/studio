@@ -193,7 +193,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     }, [po.items, discountValue, discountType, otherCharge]);
 
     const handleSave = () => {
-        if (!po.vendorId || po.items.some(i => !i.itemId)) {
+        if (!po.vendorId || po.items.some(i => !i.ingredientId)) {
             toast({
                 variant: 'destructive',
                 title: 'Missing Information',
