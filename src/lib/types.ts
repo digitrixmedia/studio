@@ -8,6 +8,7 @@ export interface User {
   email: string;
   role: Role;
   subscriptionId?: string;
+  avatar?: string;
 }
 
 export interface MenuCategory {

@@ -180,7 +180,7 @@ export default function MenuPage() {
   }
 
   const getIngredientUnit = (id: string) => {
-    return ingredients.find(i => i.id === id)?.unit || '';
+    return ingredients.find(i => i.id === id)?.baseUnit || '';
   };
   
   const handleSaveItem = () => {
@@ -417,7 +417,7 @@ export default function MenuPage() {
                                       </Button>
                                     </div>
                                   </div>
-                                  <h5 className="text-sm font-medium mb-2">Recipe for {variation.name || 'this variation'}</h5>
+                                  <h5 className="text-sm font-medium mb-2">Recipe for {variation.name || 'this variation'} (in base units)</h5>
                                   <div className="p-2 border rounded-md text-center text-muted-foreground text-sm bg-background">
                                     <Table>
                                       <TableHeader>
@@ -613,4 +613,3 @@ export default function MenuPage() {
     </Card>
   );
 }
-
