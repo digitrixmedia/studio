@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -44,8 +43,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 interface NewPurchaseOrderDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (newOrder: PurchaseOrder) => void;
+    onSave: (order: PurchaseOrder) => void;
     setIngredients: React.Dispatch<React.SetStateAction<Ingredient[]>>;
+    editingOrder: PurchaseOrder | null;
 }
 
 const initialItemState: Omit<PurchaseOrderItem, 'id'> = {
@@ -75,7 +75,7 @@ interface OtherCharge {
     sgst: number;
 }
 
-export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients }: NewPurchaseOrderDialogProps) {
+export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients, editingOrder }: NewPurchaseOrderDialogProps) {
     const [po, setPo] = useState<Omit<PurchaseOrder, 'id' | 'status'>>({
         poNumber: `PO-${Date.now()}`,
         vendorId: '',
@@ -102,6 +102,31 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     const [newVendor, setNewVendor] = useState(initialNewVendorState);
 
     const selectedVendor = vendors.find(v => v.id === po.vendorId);
+    
+    useEffect(() => {
+        if (editingOrder) {
+            setPo({
+                ...editingOrder,
+                date: new Date(editingOrder.date) // Ensure date is a Date object
+            });
+            // You might want to recalculate discount from totalDiscount if stored that way
+        } else {
+             setPo({
+                poNumber: `PO-${Date.now()}`,
+                vendorId: '',
+                date: new Date(),
+                items: [{...initialItemState, id: `item-${Date.now()}`}],
+                subTotal: 0,
+                totalDiscount: 0,
+                otherCharges: 0,
+                totalTaxes: 0,
+                grandTotal: 0,
+                paymentStatus: 'unpaid',
+            });
+            setDiscountValue(0);
+            setDiscountType('fixed');
+        }
+    }, [editingOrder, isOpen]);
 
     const handleItemChange = (index: number, field: keyof Omit<PurchaseOrderItem, 'id'>, value: string | number) => {
         const updatedItems = [...po.items];
@@ -168,7 +193,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     }, [po.items, discountValue, discountType, otherCharge]);
 
     const handleSave = () => {
-        if (!po.vendorId || po.items.some(i => !i.ingredientId)) {
+        if (!po.vendorId || po.items.some(i => !i.itemId)) {
             toast({
                 variant: 'destructive',
                 title: 'Missing Information',
@@ -177,16 +202,16 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
             return;
         }
         
-        const newOrder: PurchaseOrder = {
+        const finalOrder: PurchaseOrder = {
+            id: editingOrder?.id || `po-${Date.now()}`,
+            status: editingOrder?.status || 'completed',
             ...po,
-            id: `po-${Date.now()}`,
-            status: 'completed',
         };
 
-        if (updateInventory) {
+        if (updateInventory && !editingOrder) { // Only auto-update stock on new orders
           setIngredients(prevIngredients => {
             const newIngredients = [...prevIngredients];
-            newOrder.items.forEach(item => {
+            finalOrder.items.forEach(item => {
               const ingIndex = newIngredients.findIndex(ing => ing.id === item.ingredientId);
               if (ingIndex > -1) {
                 const ingredient = newIngredients[ingIndex];
@@ -200,11 +225,11 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
           });
         }
 
-        onSave(newOrder);
+        onSave(finalOrder);
 
         toast({
-            title: 'Purchase Entry Saved',
-            description: `Entry for PO #${po.poNumber} has been saved.`,
+            title: `Purchase Entry ${editingOrder ? 'Updated' : 'Saved'}`,
+            description: `Entry for PO #${po.poNumber} has been ${editingOrder ? 'updated' : 'saved'}.`,
         });
         onClose();
     };
@@ -253,7 +278,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-7xl h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>New Purchase Entry</DialogTitle>
+                    <DialogTitle>{editingOrder ? 'Edit' : 'New'} Purchase Entry</DialogTitle>
                     <DialogDescription>Enter the details of the raw material purchase.</DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-y-auto pr-6 space-y-4">
@@ -394,10 +419,12 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="update-inventory" checked={updateInventory} onCheckedChange={checked => setUpdateInventory(Boolean(checked))} />
-                                    <Label htmlFor="update-inventory">Update Inventory Stock</Label>
-                                </div>
+                                {!editingOrder && (
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox id="update-inventory" checked={updateInventory} onCheckedChange={checked => setUpdateInventory(Boolean(checked))} />
+                                        <Label htmlFor="update-inventory">Update Inventory Stock upon saving</Label>
+                                    </div>
+                                )}
                             </div>
 
                             <Card>
@@ -463,7 +490,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
                 </div>
                  <DialogFooter className="border-t pt-4">
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> Save</Button>
+                    <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/> {editingOrder ? 'Update' : 'Save'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

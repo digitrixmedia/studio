@@ -29,14 +29,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { purchaseOrders as initialPurchaseOrders, vendors, ingredients as initialIngredients } from '@/lib/data';
 import type { PurchaseOrder, Ingredient } from '@/lib/types';
-import { PlusCircle, IndianRupee } from 'lucide-react';
+import { PlusCircle, IndianRupee, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { NewPurchaseOrderDialog } from '@/components/inventory/NewPurchaseOrderDialog';
 
 export default function PurchaseOrdersPage() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(initialPurchaseOrders);
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [viewingOrder, setViewingOrder] = useState<PurchaseOrder | null>(null);
 
   const getVendorName = (vendorId: string) => {
@@ -59,9 +60,32 @@ export default function PurchaseOrdersPage() {
     return status === 'paid' ? 'default' : 'destructive';
   }
 
-  const handleNewOrder = (newOrder: PurchaseOrder) => {
-    setPurchaseOrders(prev => [newOrder, ...prev]);
+  const handleSaveOrder = (order: PurchaseOrder) => {
+    if (editingOrder) {
+      // Update existing order
+      setPurchaseOrders(prev => prev.map(po => po.id === order.id ? order : po));
+    } else {
+      // Add new order
+      setPurchaseOrders(prev => [order, ...prev]);
+    }
   };
+
+  const openEditDialog = (order: PurchaseOrder) => {
+    setEditingOrder(order);
+    setIsNewOrderDialogOpen(true);
+    setViewingOrder(null);
+  };
+  
+  const openNewDialog = () => {
+    setEditingOrder(null);
+    setIsNewOrderDialogOpen(true);
+  }
+
+  const handleDialogClose = () => {
+    setIsNewOrderDialogOpen(false);
+    setEditingOrder(null);
+  }
+
 
   return (
     <>
@@ -74,7 +98,7 @@ export default function PurchaseOrdersPage() {
                 A log of all your raw material purchases. Click a row to view details.
               </CardDescription>
             </div>
-            <Button onClick={() => setIsDialogOpen(true)}>
+            <Button onClick={openNewDialog}>
               <PlusCircle className="mr-2 h-4 w-4" /> New Purchase Entry
             </Button>
           </div>
@@ -116,10 +140,11 @@ export default function PurchaseOrdersPage() {
         </CardContent>
       </Card>
       <NewPurchaseOrderDialog 
-        isOpen={isDialogOpen} 
-        onClose={() => setIsDialogOpen(false)} 
-        onSave={handleNewOrder}
+        isOpen={isNewOrderDialogOpen} 
+        onClose={handleDialogClose} 
+        onSave={handleSaveOrder}
         setIngredients={setIngredients}
+        editingOrder={editingOrder}
       />
        <Dialog open={!!viewingOrder} onOpenChange={() => setViewingOrder(null)}>
         <DialogContent className="max-w-3xl">
@@ -185,6 +210,11 @@ export default function PurchaseOrdersPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewingOrder(null)}>Close</Button>
+            {viewingOrder && (
+              <Button onClick={() => openEditDialog(viewingOrder)}>
+                <Edit className="mr-2 h-4 w-4" /> Edit
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
