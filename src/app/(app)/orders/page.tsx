@@ -482,8 +482,8 @@ export default function OrdersPage() {
           <div class="container">
             <div class="header">
               <h2>${settings.printCafeName}</h2>
-              <p>${settings.printAddress.replace(/\n/g, '<br>')}</p>
-              ${settings.printCustomDetails ? `<p>${settings.printCustomDetails.replace(/\n/g, '<br>')}</p>` : ''}
+              <p>${settings.printAddress.replace(/\\n/g, '<br>')}</p>
+              ${settings.printCustomDetails ? `<p>${settings.printCustomDetails.replace(/\\n/g, '<br>')}</p>` : ''}
               <p>Ph: ${settings.printPhone}</p>
             </div>
             
@@ -518,7 +518,7 @@ export default function OrdersPage() {
                 ${activeOrder.items.map((item, index) => `
                   <tr>
                     <td>${index + 1}</td>
-                    <td class="col-item">${item.name.replace(/\s\(.*\)/, '')}</td>
+                    <td class="col-item">${item.name.replace(/\\s\\(.*\\)/, '')}</td>
                     <td class="col-qty">${item.quantity}</td>
                     <td class="col-price">${item.price.toFixed(2)}</td>
                     <td class="col-amount">${item.totalPrice.toFixed(2)}</td>
@@ -656,7 +656,7 @@ export default function OrdersPage() {
                   <tr>
                     <td class="col-qty">${item.quantity}x</td>
                     <td class="col-item">
-                      <div class="item-name">${item.name.replace(/\s\(.*\)/, '')}</div>
+                      <div class="item-name">${item.name.replace(/\\s\\(.*\\)/, '')}</div>
                       ${item.variation && item.variation.name !== 'Regular' ? `<div class="item-variation">(${item.variation.name})</div>` : ''}
                       ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
                     </td>
@@ -1024,8 +1024,8 @@ export default function OrdersPage() {
                                                   value={settings.discountType}
                                                   onValueChange={(value: 'fixed' | 'percentage') => value && setSetting('discountType', value)}
                                                 >
-                                                  <ToggleGroupItem value="fixed" aria-label="Fixed amount">Fixed</ToggleGroupItem>
-                                                  <ToggleGroupItem value="percentage" aria-label="Percentage">Percentage</ToggleGroupItem>
+                                                  <ToggleGroupItem value="fixed">Fixed</ToggleGroupItem>
+                                                  <ToggleGroupItem value="percentage">Percentage</ToggleGroupItem>
                                                 </ToggleGroup>
                                               </div>
                                                <div className="flex items-center space-x-2 pt-2">
@@ -1101,7 +1101,7 @@ export default function OrdersPage() {
                                 <Button variant="secondary" onClick={() => holdOrder(activeOrder.id)}><PauseCircle className="mr-2 h-4 w-4" /> Hold</Button>
                                 <Button variant="outline" onClick={handleSendToKitchen}><Send className="mr-2 h-4 w-4" /> KOT</Button>
                             </div>
-                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
+                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white" onClick={() => setIsPaymentDialogOpen(true)} disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
                                 <IndianRupee className="mr-2 h-4 w-4" /> {settings.discountButtonText || 'Generate Bill'}
                             </Button>
                         </CardFooter>

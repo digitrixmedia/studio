@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
@@ -329,21 +328,29 @@ const defaultSettings: AppSettings = {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [settings, setSettings] = useState<AppSettings>(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        return { ...defaultSettings, ...JSON.parse(savedSettings) };
+      }
+    }
+    return defaultSettings;
+  });
+  
   const { toast } = useToast();
 
   const setSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const saveSettings = (section: string) => {
-    // In a real app, you might save to localStorage or a backend
-    console.log(`Saving ${section} settings:`, settings);
+  const saveSettings = useCallback((section: string) => {
+    localStorage.setItem('appSettings', JSON.stringify(settings));
     toast({
       title: `${section} Settings Saved`,
       description: `Your ${section.toLowerCase()} settings have been updated.`,
     });
-  };
+  }, [settings, toast]);
 
   return (
     <SettingsContext.Provider value={{ settings, setSetting, saveSettings }}>
