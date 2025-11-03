@@ -38,6 +38,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 
 export default function OrdersPage() {
@@ -740,6 +741,13 @@ export default function OrdersPage() {
     order.customer.name.toLowerCase().includes(billSearchQuery.toLowerCase()) ||
     order.orderNumber.toString().includes(billSearchQuery)
   );
+  
+  const findImage = (itemId: string) => {
+    const item = menuItems.find(m => m.id === itemId);
+    const id = item?.name.toLowerCase().split(' ')[0].replace(/[^a-z]/g, '');
+    const placeholder = PlaceHolderImages.find(p => p.id.startsWith(id || ''));
+    return placeholder?.imageUrl || "https://picsum.photos/seed/placeholder/200/200";
+  }
 
   useEffect(() => {
     if (activeOrder && activeOrder.items.length === 0) {
@@ -793,7 +801,7 @@ export default function OrdersPage() {
                     {filteredMenuItems.map(item => (
                         <Card key={item.id} className="overflow-hidden relative shadow-md hover:shadow-xl transition-shadow duration-200 hover:-translate-y-1 flex flex-col">
                           <button
-                            className="w-full text-left p-2 flex-1"
+                            className="w-full text-left p-2 flex-1 flex flex-col"
                             onClick={() => addToCart(item)}
                             disabled={!item.isAvailable}
                           >
@@ -802,12 +810,24 @@ export default function OrdersPage() {
                                     <span className="font-bold text-destructive">Unavailable</span>
                                 </div>
                             )}
-                            <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
-                             <p className="text-xs text-muted-foreground whitespace-normal">{item.description}</p>
-                            <p className="text-sm flex items-center mt-auto pt-1">
-                              <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                              {item.price.toFixed(2)}
-                            </p>
+                            {settings.displayItemImages && (
+                              <div className="aspect-video relative w-full mb-2">
+                                <Image 
+                                  src={findImage(item.id)}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover rounded-md"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 flex flex-col">
+                                <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
+                                <p className="text-xs text-muted-foreground whitespace-normal flex-1">{item.description}</p>
+                                <p className="text-sm flex items-center mt-auto pt-1">
+                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                {item.price.toFixed(2)}
+                                </p>
+                            </div>
                           </button>
                         </Card>
                       ))}
