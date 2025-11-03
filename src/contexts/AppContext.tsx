@@ -104,6 +104,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const isAppPath = !isSuperAdminPath && !isFranchisePath && !isLoginPage;
 
     const userRole = currentUser.role;
+    
+    const redirectToDefaultScreen = () => {
+        if (settings.defaultScreen === 'Dashboard') {
+            router.push('/dashboard');
+        } else if (settings.defaultScreen === 'Billing') {
+            router.push('/orders');
+        } else { // Table Management
+            router.push('/tables');
+        }
+    }
 
     // 1. If user is on the login page, redirect them to their correct dashboard
     if (isLoginPage) {
@@ -111,11 +121,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       else if (userRole === 'admin') router.push('/franchise/dashboard');
       else if (userRole === 'waiter' || userRole === 'cashier') router.push('/orders');
       else {
-        if (settings.defaultScreen === 'Billing') {
-            router.push('/orders');
-        } else {
-            router.push('/tables');
-        }
+        redirectToDefaultScreen();
       }
       return;
     }
@@ -133,11 +139,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         // If Franchise Admin has selected an outlet, they should be in the main app.
         if (selectedOutlet) {
           if (!isAppPath) {
-             if (settings.defaultScreen === 'Billing') {
-                router.push('/orders');
-            } else {
-                router.push('/tables');
-            }
+            redirectToDefaultScreen();
           }
         } 
         // If no outlet is selected, they should be in the franchise section.
@@ -154,11 +156,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           if (userRole === 'waiter' || userRole === 'cashier') {
             router.push('/orders');
           } else {
-             if (settings.defaultScreen === 'Billing') {
-                router.push('/orders');
-            } else {
-                router.push('/tables');
-            }
+            redirectToDefaultScreen();
           }
         }
         break;
@@ -189,6 +187,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           } else {
              if (settings.defaultScreen === 'Billing') {
                 router.push('/orders');
+            } else if (settings.defaultScreen === 'Dashboard') {
+                router.push('/dashboard');
             } else {
                 router.push('/tables');
             }
@@ -216,7 +216,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (currentUser?.role === 'admin') {
       setSelectedOutlet(outlet);
       localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
-      router.push('/orders');
+       if (settings.defaultScreen === 'Dashboard') {
+        router.push('/dashboard');
+      } else if (settings.defaultScreen === 'Billing') {
+        router.push('/orders');
+      } else {
+        router.push('/tables');
+      }
     }
   };
 

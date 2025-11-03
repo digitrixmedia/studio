@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -53,12 +54,12 @@ export default function DisplaySettingsPage() {
                                     onValueChange={(value) => setSetting('menuPreference', value as 'On the Left' | 'On the Right')}
                                     options={['On the Left', 'On the Right']}
                                 />
-                                <SettingRadioGroup
+                                 <SettingRadioGroup
                                     label="Default Screen to Display"
-                                    description="Configure the type of display between a touch based or keyboard based."
+                                    description="Configure the default screen users see after login."
                                     value={settings.defaultScreen}
-                                    onValueChange={(value) => setSetting('defaultScreen', value as 'Billing' | 'Table Management')}
-                                    options={['Billing', 'Table Management']}
+                                    onValueChange={(value) => setSetting('defaultScreen', value as 'Dashboard' | 'Billing' | 'Table Management')}
+                                    options={['Dashboard', 'Billing', 'Table Management']}
                                 />
                                 <SettingRadioGroup
                                     label="Order Live View"

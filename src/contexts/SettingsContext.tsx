@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
@@ -8,7 +9,7 @@ export interface AppSettings {
   // Display settings
   billingLayout: 'Touch Screen' | 'Keyboard';
   menuPreference: 'On the Left' | 'On the Right';
-  defaultScreen: 'Billing' | 'Table Management';
+  defaultScreen: 'Dashboard' | 'Billing' | 'Table Management';
   orderLiveView: 'ASC' | 'DESC';
   kotLiveView: 'ASC' | 'DESC';
   kptBreachedOnTop: boolean;
@@ -183,7 +184,7 @@ interface SettingsContextType {
 const defaultSettings: AppSettings = {
   billingLayout: 'Touch Screen',
   menuPreference: 'On the Left',
-  defaultScreen: 'Table Management',
+  defaultScreen: 'Dashboard',
   orderLiveView: 'DESC',
   kotLiveView: 'ASC',
   kptBreachedOnTop: true,
