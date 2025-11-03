@@ -65,7 +65,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const { setSetting } = useSettings();
+  const { settings, setSetting } = useSettings();
 
   useEffect(() => {
     const storedUserRole = localStorage.getItem('userRole') as Role | null;
@@ -110,7 +110,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (userRole === 'super-admin') router.push('/super-admin/dashboard');
       else if (userRole === 'admin') router.push('/franchise/dashboard');
       else if (userRole === 'waiter' || userRole === 'cashier') router.push('/orders');
-      else router.push('/dashboard');
+      else {
+        if (settings.defaultScreen === 'Billing') {
+            router.push('/orders');
+        } else {
+            router.push('/tables');
+        }
+      }
       return;
     }
 
@@ -127,7 +133,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         // If Franchise Admin has selected an outlet, they should be in the main app.
         if (selectedOutlet) {
           if (!isAppPath) {
-            router.push('/dashboard');
+             if (settings.defaultScreen === 'Billing') {
+                router.push('/orders');
+            } else {
+                router.push('/tables');
+            }
           }
         } 
         // If no outlet is selected, they should be in the franchise section.
@@ -144,12 +154,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           if (userRole === 'waiter' || userRole === 'cashier') {
             router.push('/orders');
           } else {
-            router.push('/dashboard');
+             if (settings.defaultScreen === 'Billing') {
+                router.push('/orders');
+            } else {
+                router.push('/tables');
+            }
           }
         }
         break;
     }
-  }, [currentUser, selectedOutlet, pathname, router]);
+  }, [currentUser, selectedOutlet, pathname, router, settings.defaultScreen]);
 
   const login = (role: Role, isInitialLoad = false) => {
     const user = users.find(u => u.role === role);
@@ -173,7 +187,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           } else if (role === 'waiter' || role === 'cashier') {
             router.push('/orders');
           } else {
-            router.push('/dashboard');
+             if (settings.defaultScreen === 'Billing') {
+                router.push('/orders');
+            } else {
+                router.push('/tables');
+            }
           }
         }
       } else if (!isInitialLoad) { // Only show toast on explicit login attempts
