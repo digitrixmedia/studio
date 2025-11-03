@@ -47,6 +47,8 @@ export interface AppSettings {
   roundOffIncrement: '1' | '0.5' | '0.25';
   decimalPoints: '0' | '1' | '2';
   displayServiceCharge: boolean;
+  serviceChargeValue: number;
+  taxOnServiceCharge: boolean;
   taxAmount: number;
   showContainerCharge: boolean;
   containerChargeLabel: string;
@@ -81,6 +83,7 @@ export interface AppSettings {
   disableTaxOnComplimentary: boolean;
   saveSpecialNote: boolean;
   displaySurcharge: boolean;
+  surchargeValue: number;
 
   // Connected Services
   enableAutoConsumption: boolean;
@@ -211,6 +214,8 @@ const defaultSettings: AppSettings = {
   roundOffIncrement: '1',
   decimalPoints: '2',
   displayServiceCharge: false,
+  serviceChargeValue: 10,
+  taxOnServiceCharge: false,
   taxAmount: 0,
   showContainerCharge: true,
   containerChargeLabel: 'Container Charge',
@@ -245,6 +250,7 @@ const defaultSettings: AppSettings = {
   disableTaxOnComplimentary: true,
   saveSpecialNote: false,
   displaySurcharge: false,
+  surchargeValue: 5,
   enableAutoConsumption: false,
   resetStockOnDayStart: false,
   outOfStockAction: 'Hide items',
