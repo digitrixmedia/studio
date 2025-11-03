@@ -144,13 +144,17 @@ export default function PurchaseOrdersPage() {
                   <TableRow key={item.id}>
                     <TableCell>{getIngredientName(item.ingredientId)}</TableCell>
                     <TableCell className='text-right'>{item.quantity} {item.purchaseUnit}</TableCell>
-                    <TableCell className='text-right flex items-center justify-end'>
-                      <IndianRupee className="h-4 w-4 mr-1"/>
-                      {item.unitPrice.toFixed(2)}
+                    <TableCell className='text-right'>
+                      <div className="flex items-center justify-end">
+                        <IndianRupee className="h-4 w-4 mr-1"/>
+                        {item.unitPrice.toFixed(2)}
+                      </div>
                     </TableCell>
-                     <TableCell className='text-right flex items-center justify-end'>
-                      <IndianRupee className="h-4 w-4 mr-1"/>
-                      {item.amount.toFixed(2)}
+                     <TableCell className='text-right'>
+                      <div className="flex items-center justify-end">
+                        <IndianRupee className="h-4 w-4 mr-1"/>
+                        {item.amount.toFixed(2)}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
