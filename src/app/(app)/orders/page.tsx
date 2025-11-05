@@ -103,7 +103,7 @@ export default function OrdersPage() {
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
           isMealParent: !!item.mealDeal,
-          isBogo: item.isBogo, // Automatically apply BOGO if set on menu item
+          isBogo: false, // Default to false, will be updated by updateQuantity if needed
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
@@ -144,7 +144,7 @@ export default function OrdersPage() {
           variation: selectedVariation,
           notes: notes || undefined,
           isMealParent: !!customizationItem.mealDeal,
-          isBogo: customizationItem.isBogo,
+          isBogo: false,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
@@ -219,11 +219,14 @@ export default function OrdersPage() {
     if (newQuantity < 1) {
       removeFromCart(itemId);
     } else {
-      const updatedItems = activeOrder.items.map(item =>
-          item.id === itemId
-            ? { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity }
-            : item
-        );
+      const updatedItems = activeOrder.items.map(item => {
+          if (item.id === itemId) {
+            const menuItem = menuItems.find(mi => mi.id === item.baseMenuItemId);
+            const isBogoActive = menuItem?.isBogo ? newQuantity >= 2 : (item.isBogo || false);
+            return { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity, isBogo: isBogoActive };
+          }
+          return item;
+        });
       updateActiveOrder(updatedItems);
     }
   };
