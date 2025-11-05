@@ -27,7 +27,7 @@ export default function InventoryLayout({
     <div className="space-y-4">
       {showBackButton && (
         <div className="flex items-center gap-4">
-            <Link href={pathname.startsWith('/inventory/wastage') ? '/inventory/wastage' : (pathname.startsWith('/inventory/purchase') ? '/inventory' : '/inventory')} passHref legacyBehavior>
+            <Link href={pathname.startsWith('/inventory/wastage') ? '/inventory/wastage' : (pathname.startsWith('/inventory/purchase') ? '/inventory' : '/inventory')} passHref>
               <Button variant="outline" size="icon" asChild>
                 <a><ArrowLeft className="h-4 w-4" /></a>
               </Button>
