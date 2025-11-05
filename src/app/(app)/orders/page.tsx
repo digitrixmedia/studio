@@ -843,12 +843,12 @@ export default function OrdersPage() {
                     >
                       Order {index + 1}
                       {orders.length > 1 && (
-                        <button 
+                        <div 
                           onClick={(e) => { e.stopPropagation(); removeOrder(order.id); }}
                           className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs"
                         >
                           <X className="h-3 w-3"/>
-                        </button>
+                        </div>
                       )}
                     </Button>
                   ))}
