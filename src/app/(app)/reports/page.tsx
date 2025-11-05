@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -21,7 +21,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users, purchaseOrders, vendors, ingredients } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent, Truck } from 'lucide-react';
+import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent, Truck, Loader2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { addDays, format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -30,6 +30,9 @@ import { cn } from '@/lib/utils';
 import type { Order, PurchaseOrder } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { PrintableReport } from '@/components/reports/PrintableReport';
 
 const chartConfig = {
   sales: {
@@ -58,6 +61,7 @@ export default function ReportsPage() {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; orders: Order[] } | null>(null);
   const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
   const [viewedPurchaseOrder, setViewedPurchaseOrder] = useState<PurchaseOrder | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const filteredCompletedOrders = useMemo(() => {
     return orders.filter(o => {
@@ -181,86 +185,61 @@ export default function ReportsPage() {
     return Array.from(vendorMap.values()).sort((a,b) => b.total - a.total);
   }, [filteredPurchaseOrders]);
 
+  const printableReportRef = useRef<HTMLDivElement>(null);
 
-  const handleExport = () => {
-    const headers = ['Order #', 'Date', 'Time', 'Customer Name', 'Customer Phone', 'Type', 'Cashier', 'Subtotal', 'Discount', 'Tax', 'Total'];
-    const rows = filteredCompletedOrders.map(order => 
-        [
-            order.orderNumber,
-            format(order.createdAt, 'yyyy-MM-dd'),
-            format(order.createdAt, 'p'),
-            order.customerName || 'N/A',
-            order.customerPhone || 'N/A',
-            order.type,
-            getUserName(order.createdBy),
-            order.subTotal.toFixed(2),
-            order.discount.toFixed(2),
-            order.tax.toFixed(2),
-            order.total.toFixed(2)
-        ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
-    );
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
+  const handleExport = async () => {
+    setIsExporting(true);
+    const reportElement = printableReportRef.current;
+    if (!reportElement) {
+        setIsExporting(false);
+        return;
+    };
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `sales_report_${format(date?.from || new Date(), 'yyyy-MM-dd')}_to_${format(date?.to || date?.from || new Date(), 'yyyy-MM-dd')}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-  };
-
-  const handleExportPurchaseLogs = () => {
-    const headers = [
-      'PO Number', 'PO Date', 'Vendor', 'PO Status', 'Payment Status', 'Invoice Number', 'Invoice Date',
-      'Item Name', 'Item Quantity', 'Item Unit Price', 'Item Amount', 'Item CGST %', 'Item SGST %', 'Item IGST %', 'Item Description',
-      'PO Subtotal', 'PO Discount', 'PO Other Charges', 'PO Total Taxes', 'PO Grand Total'
-    ];
-
-    const rows = filteredPurchaseOrders.flatMap(po => 
-      po.items.map(item => 
-        [
-          po.poNumber,
-          format(po.date, 'yyyy-MM-dd'),
-          getVendorName(po.vendorId),
-          po.status,
-          po.paymentStatus,
-          po.invoiceNumber || '',
-          po.invoiceDate ? format(po.invoiceDate, 'yyyy-MM-dd') : '',
-          getIngredientName(item.ingredientId),
-          item.quantity,
-          item.unitPrice.toFixed(2),
-          item.amount.toFixed(2),
-          item.cgst,
-          item.sgst,
-          item.igst,
-          item.description || '',
-          po.subTotal.toFixed(2),
-          po.totalDiscount.toFixed(2),
-          po.otherCharges.toFixed(2),
-          po.totalTaxes.toFixed(2),
-          po.grandTotal.toFixed(2)
-        ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
-      )
-    );
+    // Briefly make the printable content visible but off-screen to ensure it renders correctly
+    reportElement.style.position = 'absolute';
+    reportElement.style.left = '-9999px';
+    reportElement.style.display = 'block';
     
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    if (link.download !== undefined) {
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `purchase_report_${format(date?.from || new Date(), 'yyyy-MM-dd')}_to_${format(date?.to || date?.from || new Date(), 'yyyy-MM-dd')}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    await new Promise(resolve => setTimeout(resolve, 500)); // Allow time for charts to render
+
+    const canvas = await html2canvas(reportElement, {
+        scale: 2, // Increase resolution
+        useCORS: true,
+        logging: true,
+    });
+    
+    reportElement.style.display = 'none'; // Hide it again
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'mm',
+        format: 'a4',
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = canvas.width;
+    const imgHeight = canvas.height;
+    const ratio = imgWidth / imgHeight;
+    const canvasHeightInPdf = pdfWidth / ratio;
+    
+    let heightLeft = canvasHeightInPdf;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
+        heightLeft -= pdfHeight;
     }
+    
+    const fileName = `ZappyyPOS_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    pdf.save(fileName);
+    setIsExporting(false);
   };
   
   const handleDayClick = (dayData: { date: Date, orders: number }) => {
@@ -347,9 +326,13 @@ export default function ReportsPage() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline" onClick={handleExport} disabled={isExporting}>
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
                 <Download className="mr-2 h-4 w-4" />
-                Export Sales Report
+              )}
+                {isExporting ? 'Generating PDF...' : 'Export Detailed Report'}
             </Button>
         </CardContent>
       </Card>
@@ -716,9 +699,6 @@ export default function ReportsPage() {
                         <CardTitle>Purchase Order Log</CardTitle>
                         <CardDescription>Detailed log of all purchase entries. Click to view details.</CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleExportPurchaseLogs}>
-                        <Download className="mr-2 h-4 w-4" /> Export Purchases
-                    </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -905,7 +885,20 @@ export default function ReportsPage() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+     <div ref={printableReportRef} style={{ display: 'none' }}>
+        <PrintableReport
+            dateRange={date}
+            summary={{ totalSales, totalOrders, averageOrderValue }}
+            orderTypeData={orderTypeData}
+            paymentMethodData={paymentMethodData}
+            dailySalesData={dailySalesData}
+            itemWiseSales={itemWiseSales}
+            categorySales={categorySales}
+            hourlySalesData={hourlySalesData}
+            purchaseSummary={{ totalPurchases, totalPurchaseOrders, uniqueVendors }}
+            vendorWisePurchases={vendorWisePurchases}
+        />
+      </div>
     </div>
   );
 }
-
