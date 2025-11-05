@@ -30,9 +30,6 @@ import { cn } from '@/lib/utils';
 import type { Order, PurchaseOrder } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { PrintableReport } from '@/components/reports/PrintableReport';
 
 const chartConfig = {
   sales: {
@@ -61,7 +58,6 @@ export default function ReportsPage() {
   const [selectedDay, setSelectedDay] = useState<{ date: Date; orders: Order[] } | null>(null);
   const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
   const [viewedPurchaseOrder, setViewedPurchaseOrder] = useState<PurchaseOrder | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
 
   const filteredCompletedOrders = useMemo(() => {
     return orders.filter(o => {
@@ -185,61 +181,83 @@ export default function ReportsPage() {
     return Array.from(vendorMap.values()).sort((a,b) => b.total - a.total);
   }, [filteredPurchaseOrders]);
 
-  const printableReportRef = useRef<HTMLDivElement>(null);
+  const handleExport = () => {
+    const sanitize = (value: any) => `"${String(value).replace(/"/g, '""')}"`;
+    let csvContent = "data:text/csv;charset=utf-8,";
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    const reportElement = printableReportRef.current;
-    if (!reportElement) {
-        setIsExporting(false);
-        return;
-    };
+    // Section: Report Summary
+    csvContent += "ZappyyPOS Comprehensive Report\n";
+    const dateRange = date?.from ? `${format(date.from, "LLL dd, y")} - ${date.to ? format(date.to, "LLL dd, y") : ''}` : 'All Time';
+    csvContent += `Date Range:,"${dateRange}"\n\n`;
     
-    // Briefly make the printable content visible but off-screen to ensure it renders correctly
-    reportElement.style.position = 'absolute';
-    reportElement.style.left = '-9999px';
-    reportElement.style.display = 'block';
-    
-    await new Promise(resolve => setTimeout(resolve, 500)); // Allow time for charts to render
+    csvContent += "Overall Summary\n";
+    csvContent += "Metric,Value\n";
+    csvContent += `Total Sales,"${totalSales.toFixed(2)}"\n`;
+    csvContent += `Total Orders,"${totalOrders}"\n`;
+    csvContent += `Average Order Value,"${averageOrderValue.toFixed(2)}"\n\n`;
 
-    const canvas = await html2canvas(reportElement, {
-        scale: 2, // Increase resolution
-        useCORS: true,
-        logging: true,
+    // Section: Daily Sales
+    csvContent += "Daily Sales Breakdown\n";
+    csvContent += "Date,Total Sales,Orders,Avg. Order Value\n";
+    dailySalesData.forEach(d => {
+      csvContent += [format(d.date, 'yyyy-MM-dd'), d.sales.toFixed(2), d.orders, d.aov.toFixed(2)].join(',') + '\n';
     });
-    
-    reportElement.style.display = 'none'; // Hide it again
+    csvContent += "\n";
 
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'mm',
-        format: 'a4',
+    // Section: Item-wise Sales
+    csvContent += "Item-wise Sales\n";
+    csvContent += "Item,Quantity Sold,Total Sales\n";
+    itemWiseSales.forEach(item => {
+        csvContent += [sanitize(item.name), item.quantitySold, item.sales.toFixed(2)].join(',') + '\n';
     });
+    csvContent += "\n";
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = imgWidth / imgHeight;
-    const canvasHeightInPdf = pdfWidth / ratio;
-    
-    let heightLeft = canvasHeightInPdf;
-    let position = 0;
+    // Section: Category Sales
+    csvContent += "Category Sales\n";
+    csvContent += "Category,Items Sold,% of Total Sales,Total Revenue\n";
+    categorySales.forEach(cat => {
+        csvContent += [sanitize(cat.name), cat.itemsSold, cat.percentage.toFixed(2), cat.sales.toFixed(2)].join(',') + '\n';
+    });
+    csvContent += "\n";
 
-    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
-    heightLeft -= pdfHeight;
+    // Section: Order Type Sales
+    csvContent += "Sales by Order Type\n";
+    csvContent += "Order Type,Total Sales\n";
+    orderTypeData.forEach(ot => {
+        csvContent += [sanitize(ot.type), ot.sales.toFixed(2)].join(',') + '\n';
+    });
+    csvContent += "\n";
 
-    while (heightLeft > 0) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, canvasHeightInPdf);
-        heightLeft -= pdfHeight;
-    }
-    
-    const fileName = `ZappyyPOS_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-    pdf.save(fileName);
-    setIsExporting(false);
+    // Section: Payment Method Sales
+    csvContent += "Sales by Payment Method\n";
+    csvContent += "Payment Method,Total Sales\n";
+    paymentMethodData.forEach(pm => {
+        csvContent += [sanitize(pm.method), pm.sales.toFixed(2)].join(',') + '\n';
+    });
+    csvContent += "\n";
+
+    // Section: Purchase Summary
+    csvContent += "Purchase Summary\n";
+    csvContent += "Metric,Value\n";
+    csvContent += `Total Purchases,"${totalPurchases.toFixed(2)}"\n`;
+    csvContent += `Total Purchase Orders,"${totalPurchaseOrders}"\n`;
+    csvContent += `Unique Suppliers,"${uniqueVendors}"\n\n`;
+
+    // Section: Vendor-wise Purchases
+    csvContent += "Vendor-wise Purchases\n";
+    csvContent += "Supplier,Total Orders,Total Amount\n";
+    vendorWisePurchases.forEach(v => {
+        csvContent += [sanitize(v.name), v.orders, v.total.toFixed(2)].join(',') + '\n';
+    });
+    csvContent += "\n";
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ZappyyPOS_Report_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
   
   const handleDayClick = (dayData: { date: Date, orders: number }) => {
@@ -326,13 +344,9 @@ export default function ReportsPage() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <Button variant="outline" onClick={handleExport} disabled={isExporting}>
-              {isExporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
+            <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
-              )}
-                {isExporting ? 'Generating PDF...' : 'Export Detailed Report'}
+                Export Detailed Report
             </Button>
         </CardContent>
       </Card>
@@ -885,20 +899,6 @@ export default function ReportsPage() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-     <div ref={printableReportRef} style={{ display: 'none' }}>
-        <PrintableReport
-            dateRange={date}
-            summary={{ totalSales, totalOrders, averageOrderValue }}
-            orderTypeData={orderTypeData}
-            paymentMethodData={paymentMethodData}
-            dailySalesData={dailySalesData}
-            itemWiseSales={itemWiseSales}
-            categorySales={categorySales}
-            hourlySalesData={hourlySalesData}
-            purchaseSummary={{ totalPurchases, totalPurchaseOrders, uniqueVendors }}
-            vendorWisePurchases={vendorWisePurchases}
-        />
-      </div>
     </div>
   );
 }
