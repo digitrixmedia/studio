@@ -45,6 +45,7 @@ export interface MenuItem {
   variations?: MenuItemVariation[];
   addons?: MenuItemAddon[];
   isAvailable: boolean;
+  isBogo?: boolean;
   ingredients: { ingredientId: string; quantity: number }[];
   mealDeal?: MealDeal;
 }

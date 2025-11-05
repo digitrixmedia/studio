@@ -52,7 +52,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ingredients, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
-import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles, Upload } from 'lucide-react';
+import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles, Upload, Gift } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +69,7 @@ const initialFormState: Partial<MenuItem> = {
   description: '',
   variations: [],
   addons: [],
+  isBogo: false,
   mealDeal: {
     upsellPrice: 0,
     sideItemIds: [],
@@ -387,7 +388,12 @@ export default function MenuPage() {
                     <Label htmlFor="description" className="text-right">Description</Label>
                     <Textarea id="description" className="col-span-3" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
                   </div>
-
+                   <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="is-bogo-toggle" className="text-right">Is BOGO Item?</Label>
+                    <div className="col-span-3">
+                      <Switch id="is-bogo-toggle" checked={formData.isBogo} onCheckedChange={(checked) => handleInputChange('isBogo', checked)} />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="customization-toggle" className="text-right">Customization</Label>
                     <div className="col-span-3">
@@ -542,6 +548,7 @@ export default function MenuPage() {
               <TableRow key={item.id}>
                 <TableCell className="font-medium flex items-center gap-2">
                     {item.name}
+                    {item.isBogo && <Badge variant="outline" className="text-green-600 border-green-500"><Gift className="h-3 w-3 mr-1"/>BOGO</Badge>}
                     {item.mealDeal && <Badge variant="outline" className="text-amber-600 border-amber-500"><Sparkles className="h-3 w-3 mr-1"/>Meal</Badge>}
                 </TableCell>
                 <TableCell>

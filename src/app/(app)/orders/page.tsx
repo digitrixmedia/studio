@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { menuItems, menuCategories, tables } from '@/lib/data';
 import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal } from '@/lib/types';
-import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X } from 'lucide-react';
+import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -103,6 +103,7 @@ export default function OrdersPage() {
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
           isMealParent: !!item.mealDeal,
+          isBogo: item.isBogo, // Automatically apply BOGO if set on menu item
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
@@ -143,6 +144,7 @@ export default function OrdersPage() {
           variation: selectedVariation,
           notes: notes || undefined,
           isMealParent: !!customizationItem.mealDeal,
+          isBogo: customizationItem.isBogo,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
@@ -286,8 +288,7 @@ export default function OrdersPage() {
   const bogoDiscount = useMemo(() => {
     if (!activeOrder) return 0;
     
-    // Manual BOGO calculation
-    const manualBogoDiscount = activeOrder.items.reduce((totalDiscount, item) => {
+    return activeOrder.items.reduce((totalDiscount, item) => {
       if (item.isBogo && item.quantity >= 2) {
         const freeItemsCount = Math.floor(item.quantity / 2);
         return totalDiscount + freeItemsCount * item.price;
@@ -295,21 +296,7 @@ export default function OrdersPage() {
       return totalDiscount;
     }, 0);
     
-    if (manualBogoDiscount > 0) return manualBogoDiscount;
-
-    // Automatic BOGO calculation
-    if (settings.applyBogoAutomatically) {
-      return activeOrder.items.reduce((totalDiscount, item) => {
-        if (item.quantity >= 2) {
-          const freeItemsCount = Math.floor(item.quantity / 2);
-          return totalDiscount + freeItemsCount * item.price;
-        }
-        return totalDiscount;
-      }, 0);
-    }
-    
-    return 0;
-  }, [activeOrder, settings.applyBogoAutomatically]);
+  }, [activeOrder]);
   
   let discountableAmount = subTotal - bogoDiscount;
   if (settings.ignoreAddonPrice) {
