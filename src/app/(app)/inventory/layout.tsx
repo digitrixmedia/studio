@@ -27,7 +27,7 @@ export default function InventoryLayout({
     <div className="space-y-4">
       {!isDashboard && (
         <div className="flex items-center gap-4">
-            <Link href={pathname.startsWith('/inventory/wastage') ? '/inventory/wastage' : '/inventory'}>
+            <Link href={pathname.startsWith('/inventory/wastage') ? '/inventory/wastage' : '/inventory'} asChild>
             <Button variant="outline" size="icon">
                 <ArrowLeft className="h-4 w-4" />
             </Button>
