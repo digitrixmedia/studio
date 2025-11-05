@@ -21,29 +21,22 @@ export default function InventoryLayout({
   }
   
   const isDashboard = pathname === '/inventory';
-  const showBackButton = !isDashboard && pathname !== '/inventory/wastage/add';
+  const showBackButton = !isDashboard;
 
   return (
     <div className="space-y-4">
-      {!isDashboard && (
+      {showBackButton && (
         <div className="flex items-center gap-4">
-            <Link href={pathname.startsWith('/inventory/wastage') ? '/inventory/wastage' : '/inventory'}>
-            <Button variant="outline" size="icon">
-                <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <Link href={pathname.startsWith('/inventory/wastage') ? '/inventory/wastage' : (pathname.startsWith('/inventory/purchase') ? '/inventory' : '/inventory')} passHref legacyBehavior>
+              <Button variant="outline" size="icon" asChild>
+                <a><ArrowLeft className="h-4 w-4" /></a>
+              </Button>
             </Link>
             <h1 className="text-2xl font-bold capitalize">{pageTitle}</h1>
         </div>
       )}
-      {pathname === '/inventory/wastage/add' && (
-         <div className="flex items-center gap-4">
-            <Link href={'/inventory/wastage'}>
-            <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back
-            </Button>
-            </Link>
-            <h1 className="text-2xl font-bold capitalize">Add Wastage</h1>
-        </div>
+      {isDashboard && (
+         <h1 className="text-3xl font-bold capitalize">{pageTitle}</h1>
       )}
       {children}
     </div>
