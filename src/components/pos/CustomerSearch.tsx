@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger, PopoverAnchor } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { User, Phone } from 'lucide-react';
@@ -16,35 +16,21 @@ interface CustomerSearchProps {
 
 export function CustomerSearch({ activeOrder, onCustomerSelect }: CustomerSearchProps) {
     const { customers } = useAppContext();
-    const [nameInput, setNameInput] = useState(activeOrder.customer.name);
-    const [phoneInput, setPhoneInput] = useState(activeOrder.customer.phone);
+    const [nameInput, setNameInput] = useState('');
+    const [phoneInput, setPhoneInput] = useState('');
     const [open, setOpen] = useState(false);
-    const [activeField, setActiveField] = useState<'name' | 'phone' | null>(null);
 
+    // Sync local state when the active order changes
     useEffect(() => {
-        // Sync with active order when it changes
         setNameInput(activeOrder.customer.name || '');
         setPhoneInput(activeOrder.customer.phone || '');
     }, [activeOrder.id, activeOrder.customer.name, activeOrder.customer.phone]);
 
-    const filteredCustomers = useMemo(() => {
-        if (!activeField) return [];
-
-        const searchTerm = activeField === 'name' ? nameInput.toLowerCase() : phoneInput;
-        if (!searchTerm) return customers.slice(0, 5); // Show some initial customers
-
-        return customers.filter(customer =>
-            (activeField === 'name' && customer.name.toLowerCase().includes(searchTerm)) ||
-            (activeField === 'phone' && customer.phone.includes(searchTerm))
-        ).slice(0, 10);
-    }, [nameInput, phoneInput, customers, activeField]);
-
     const handleSelect = (customer: Customer) => {
-        onCustomerSelect({ name: customer.name, phone: customer.phone });
         setNameInput(customer.name);
         setPhoneInput(customer.phone);
+        onCustomerSelect({ name: customer.name, phone: customer.phone });
         setOpen(false);
-        setActiveField(null);
     };
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,18 +43,27 @@ export function CustomerSearch({ activeOrder, onCustomerSelect }: CustomerSearch
         if (!open) setOpen(true);
     };
     
-    const handleNameBlur = () => {
-        // Update order only on blur if no selection was made
-        if (activeOrder.customer.name !== nameInput) {
-            onCustomerSelect({ ...activeOrder.customer, name: nameInput });
-        }
+    const handleBlur = () => {
+        // Use a timeout to allow the select event to fire before closing.
+        setTimeout(() => {
+             if (activeOrder.customer.name !== nameInput || activeOrder.customer.phone !== phoneInput) {
+                onCustomerSelect({ name: nameInput, phone: phoneInput });
+            }
+        }, 100);
     }
     
-    const handlePhoneBlur = () => {
-         if (activeOrder.customer.phone !== phoneInput) {
-            onCustomerSelect({ ...activeOrder.customer, phone: phoneInput });
-        }
-    }
+    const filteredCustomers = useMemo(() => {
+        const searchName = nameInput.toLowerCase();
+        const searchPhone = phoneInput;
+
+        if (!searchName && !searchPhone) return customers.slice(0, 5);
+
+        return customers.filter(customer =>
+            (searchName && customer.name.toLowerCase().includes(searchName)) ||
+            (searchPhone && customer.phone.includes(searchPhone))
+        ).slice(0, 10);
+    }, [nameInput, phoneInput, customers]);
+
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -81,8 +76,7 @@ export function CustomerSearch({ activeOrder, onCustomerSelect }: CustomerSearch
                             className="pl-10"
                             value={nameInput}
                             onChange={handleNameChange}
-                            onFocus={() => setActiveField('name')}
-                            onBlur={handleNameBlur}
+                            onBlur={handleBlur}
                         />
                     </div>
                 </PopoverAnchor>
@@ -94,8 +88,7 @@ export function CustomerSearch({ activeOrder, onCustomerSelect }: CustomerSearch
                             className="pl-10"
                             value={phoneInput}
                             onChange={handlePhoneChange}
-                            onFocus={() => setActiveField('phone')}
-                            onBlur={handlePhoneBlur}
+                            onBlur={handleBlur}
                         />
                     </div>
                 </PopoverAnchor>
