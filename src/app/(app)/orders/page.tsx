@@ -40,6 +40,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { CustomerSearch } from '@/components/pos/CustomerSearch';
 
 
 export default function OrdersPage() {
@@ -992,16 +993,10 @@ export default function OrdersPage() {
                                       </SelectContent>
                                   </Select>
                               )}
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                  <div className="relative">
-                                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input placeholder="Customer Name" className="pl-10" value={activeOrder.customer.name} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, name: e.target.value}})} />
-                                  </div>
-                                  <div className="relative">
-                                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input placeholder="Phone Number" className="pl-10" value={activeOrder.customer.phone} onChange={(e) => updateOrder(activeOrder.id, { customer: {...activeOrder.customer, phone: e.target.value}})} />
-                                  </div>
-                              </div>
+                              <CustomerSearch 
+                                activeOrder={activeOrder}
+                                onCustomerSelect={(customer) => updateOrder(activeOrder.id, { customer })}
+                              />
                           </div>
                         </CardDescription>
                         </Tabs>
