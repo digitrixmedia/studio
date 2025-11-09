@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import {
@@ -79,7 +77,7 @@ const initialDeliveryBoyState = {
 };
 
 export default function OperationsPage() {
-    const { orders: appOrders, setOrders: setAppOrders, tables, setTables, startOrderForTable, loadOrder } = useAppContext();
+    const { orders: appOrders, setOrders: setAppOrders, tables, setTables, startOrderForTable, loadOrder, customers } = useAppContext();
     const router = useRouter();
     const { toast } = useToast();
     const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
@@ -229,44 +227,6 @@ export default function OperationsPage() {
     }
 
     const kots = orders.filter(o => o.status === 'new' || o.status === 'preparing');
-
-    const customerList = useMemo(() => {
-        const customerMap = new Map<string, Customer>();
-
-        orders.forEach(order => {
-            if (order.customerPhone) {
-                let customer = customerMap.get(order.customerPhone);
-                if (!customer) {
-                    customer = {
-                        id: `cust-${order.customerPhone}`,
-                        name: order.customerName || 'Unknown',
-                        phone: order.customerPhone,
-                        totalOrders: 0,
-                        totalSpent: 0,
-                        loyaltyPoints: 0,
-                        firstVisit: order.createdAt,
-                        lastVisit: order.createdAt,
-                        tier: 'New',
-                        birthday: order.customerPhone === '9876543200' ? '1990-11-15' : undefined,
-                    };
-                }
-                
-                customer.totalOrders += 1;
-                customer.totalSpent += order.total;
-                if (order.createdAt < customer.firstVisit) customer.firstVisit = order.createdAt;
-                if (order.createdAt > customer.lastVisit) customer.lastVisit = order.createdAt;
-                
-                // Simple loyalty logic
-                customer.loyaltyPoints = Math.floor(customer.totalSpent / 10);
-                if (customer.totalSpent > 5000) customer.tier = 'VIP';
-                else if (customer.totalOrders > 5) customer.tier = 'Regular';
-
-                customerMap.set(order.customerPhone, customer);
-            }
-        });
-
-        return Array.from(customerMap.values()).sort((a,b) => b.totalSpent - a.totalSpent);
-    }, [orders]);
     
     const liveViewOrders = {
         'new': orders.filter(o => o.status === 'new'),
@@ -558,7 +518,7 @@ export default function OperationsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {customerList.map(customer => (
+                                {customers.map(customer => (
                                     <TableRow key={customer.phone} onClick={() => setViewCustomer(customer)} className="cursor-pointer">
                                         <TableCell>
                                             <div className="font-medium">{customer.name}</div>

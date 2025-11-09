@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer } from '@/lib/types';
