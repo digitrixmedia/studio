@@ -451,6 +451,7 @@ export default function OrdersPage() {
             
             .item-variation { font-size: 11px; padding-left: 15px; }
             .notes { font-size: 11px; font-style: italic; padding-left: 15px; }
+            .meal-item { font-size: 11px; padding-left: 15px; color: #333; }
             
             .totals { 
               display: block;
@@ -515,6 +516,12 @@ export default function OrdersPage() {
                   </tr>
                   ${item.variation && item.variation.name !== 'Regular' ? `<tr><td></td><td colspan="4" class="item-variation">(${item.variation.name})</td></tr>` : ''}
                   ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}
+                  ${(item.mealItems || []).map(mealItem => `
+                    <tr>
+                      <td></td>
+                      <td colspan="4" class="meal-item">+ ${mealItem.name}</td>
+                    </tr>
+                  `).join('')}
                 `).join('')}
               </tbody>
             </table>
@@ -1236,13 +1243,25 @@ export default function OrdersPage() {
                     <CardContent>
                        <div className="space-y-2 text-sm">
                            {activeOrder.items.map(item => (
-                               <div key={item.id} className="flex justify-between">
-                                   <span>{item.quantity} x {item.name}</span>
-                                   <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
-                                       <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>
-                                       {item.totalPrice.toFixed(2)}
-                                    </span>
-                               </div>
+                               <React.Fragment key={item.id}>
+                                   <div className="flex justify-between">
+                                       <span>{item.quantity} x {item.name}</span>
+                                       <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
+                                           <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>
+                                           {item.totalPrice.toFixed(2)}
+                                        </span>
+                                   </div>
+                                   {item.mealItems && (
+                                       <div className="pl-4 text-xs text-muted-foreground">
+                                           {item.mealItems.map(mealItem => (
+                                               <div key={mealItem.id} className="flex justify-between">
+                                                   <span>+ {mealItem.name}</span>
+                                                   <span>(Meal)</span>
+                                               </div>
+                                           ))}
+                                       </div>
+                                   )}
+                               </React.Fragment>
                            ))}
                            <div className="border-t pt-2 mt-2 space-y-2">
                                <div className="flex justify-between">
