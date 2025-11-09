@@ -96,6 +96,8 @@ export default function OrdersPage() {
        if (existingItem) {
          updateQuantity(existingItem.id, existingItem.quantity + 1);
        } else {
+         const menuItem = menuItems.find(mi => mi.id === item.id);
+         const isBogoActive = menuItem?.isBogo ? (parseInt(settings.defaultQuantity, 10) || 1) >= 2 : false;
          const newOrderItem: OrderItem = {
           id: uniqueCartId,
           baseMenuItemId: item.id,
@@ -104,7 +106,7 @@ export default function OrdersPage() {
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
           isMealParent: !!item.mealDeal,
-          isBogo: false, // Default to false, will be updated by updateQuantity if needed
+          isBogo: isBogoActive,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
@@ -135,6 +137,8 @@ export default function OrdersPage() {
     if (existingItem) {
         updateQuantity(existingItem.id, existingItem.quantity + 1);
     } else {
+        const menuItem = menuItems.find(mi => mi.id === customizationItem.id);
+        const isBogoActive = menuItem?.isBogo ? 1 >= 2 : false;
         const newOrderItem: OrderItem = {
           id: uniqueCartId,
           baseMenuItemId: customizationItem.id,
@@ -145,7 +149,7 @@ export default function OrdersPage() {
           variation: selectedVariation,
           notes: notes || undefined,
           isMealParent: !!customizationItem.mealDeal,
-          isBogo: false,
+          isBogo: isBogoActive,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
@@ -167,36 +171,52 @@ export default function OrdersPage() {
         return;
     }
     
-    const mealItems: OrderItem[] = [
-        {
-            id: `meal-side-${Date.now()}`,
-            baseMenuItemId: sideItem.id,
-            name: sideItem.name,
-            quantity: 1,
-            price: 0, // Free as part of the meal
-            totalPrice: 0,
-        },
-        {
-            id: `meal-drink-${Date.now()}`,
-            baseMenuItemId: drinkItem.id,
-            name: drinkItem.name,
-            quantity: 1,
-            price: 0, // Free as part of the meal
-            totalPrice: 0,
-        }
-    ];
+    const mealDealItem: OrderItem = {
+        id: `meal-deal-${mealUpsellParentItem.id}`,
+        baseMenuItemId: 'meal-deal',
+        name: 'Meal Deal',
+        quantity: mealUpsellParentItem.quantity,
+        price: parentItem.mealDeal.upsellPrice,
+        totalPrice: parentItem.mealDeal.upsellPrice * mealUpsellParentItem.quantity,
+        isMealChild: true,
+        mealParentId: mealUpsellParentItem.id,
+    };
+    
+    const mealSide: OrderItem = {
+        id: `meal-side-${mealUpsellParentItem.id}`,
+        baseMenuItemId: sideItem.id,
+        name: sideItem.name,
+        quantity: mealUpsellParentItem.quantity,
+        price: 0,
+        totalPrice: 0,
+        isMealChild: true,
+        mealParentId: mealUpsellParentItem.id,
+    };
+
+    const mealDrink: OrderItem = {
+        id: `meal-drink-${mealUpsellParentItem.id}`,
+        baseMenuItemId: drinkItem.id,
+        name: drinkItem.name,
+        quantity: mealUpsellParentItem.quantity,
+        price: 0,
+        totalPrice: 0,
+        isMealChild: true,
+        mealParentId: mealUpsellParentItem.id,
+    };
 
     const updatedParentItem: OrderItem = {
         ...mealUpsellParentItem,
-        price: mealUpsellParentItem.price + parentItem.mealDeal.upsellPrice,
-        totalPrice: (mealUpsellParentItem.price + parentItem.mealDeal.upsellPrice) * mealUpsellParentItem.quantity,
         isMealParent: false, // Turn off the prompt
-        mealItems: mealItems, // Nest the meal items
     };
 
-    const updatedCartItems = activeOrder.items.map(item => item.id === mealUpsellParentItem.id ? updatedParentItem : item);
-
-    updateActiveOrder(updatedCartItems);
+    const parentIndex = activeOrder.items.findIndex(item => item.id === mealUpsellParentItem.id);
+    const newItems = [...activeOrder.items];
+    
+    newItems[parentIndex] = updatedParentItem;
+    // Insert meal items right after the parent
+    newItems.splice(parentIndex + 1, 0, mealDealItem, mealSide, mealDrink);
+    
+    updateActiveOrder(newItems);
     setMealUpsellParentItem(null); // Close the selector
   };
   
@@ -234,7 +254,8 @@ export default function OrdersPage() {
 
   const removeFromCart = (itemId: string) => {
     if (!activeOrder) return;
-    const updatedItems = activeOrder.items.filter(item => item.id !== itemId);
+    // Also remove associated meal items
+    const updatedItems = activeOrder.items.filter(item => item.id !== itemId && item.mealParentId !== itemId);
     updateActiveOrder(updatedItems);
   };
 
@@ -500,23 +521,45 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                ${activeOrder.items.map((item, index) => `
-                  <tr>
-                    <td>${index + 1}</td>
-                    <td class="col-item">${item.name.replace(/\\s\\(.*\\)/, '')}</td>
-                    <td class="col-qty">${item.quantity}</td>
-                    <td class="col-price">${item.price.toFixed(2)}</td>
-                    <td class="col-amount">${item.totalPrice.toFixed(2)}</td>
-                  </tr>
-                  ${item.variation && item.variation.name !== 'Regular' ? `<tr><td></td><td colspan="4" class="item-variation">(${item.variation.name})</td></tr>` : ''}
-                  ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}
-                  ${(item.mealItems || []).map(mealItem => `
+                ${activeOrder.items.map((item, index) => {
+                  if (item.isMealChild) return ''; // Skip meal children, they are handled under parent
+                  let itemHtml = `
                     <tr>
-                      <td></td>
-                      <td colspan="4" class="meal-item">+ ${mealItem.name}</td>
+                      <td>${index + 1}</td>
+                      <td class="col-item">${item.name.replace(/\\s\\(.*\\)/, '')}</td>
+                      <td class="col-qty">${item.quantity}</td>
+                      <td class="col-price">${item.price.toFixed(2)}</td>
+                      <td class="col-amount">${item.totalPrice.toFixed(2)}</td>
                     </tr>
-                  `).join('')}
-                `).join('')}
+                    ${item.variation && item.variation.name !== 'Regular' ? `<tr><td></td><td colspan="4" class="item-variation">(${item.variation.name})</td></tr>` : ''}
+                    ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}`;
+
+                  const mealItems = activeOrder.items.filter(i => i.mealParentId === item.id);
+                  if (mealItems.length > 0) {
+                      const mealDealItem = mealItems.find(i => i.baseMenuItemId === 'meal-deal');
+                      if (mealDealItem) {
+                         itemHtml += `
+                           <tr>
+                              <td></td>
+                              <td class="col-item meal-item">+ ${mealDealItem.name}</td>
+                              <td class="col-qty"></td>
+                              <td class="col-price">${mealDealItem.price.toFixed(2)}</td>
+                              <td class="col-amount">${mealDealItem.totalPrice.toFixed(2)}</td>
+                           </tr>`;
+                      }
+                      mealItems.forEach(mealItem => {
+                        if (mealItem.baseMenuItemId !== 'meal-deal') {
+                           itemHtml += `
+                           <tr>
+                              <td></td>
+                              <td colspan="4" class="col-item meal-item">+ ${mealItem.name}</td>
+                           </tr>`;
+                        }
+                      });
+                  }
+
+                  return itemHtml;
+                }).join('')}
               </tbody>
             </table>
             
@@ -618,6 +661,7 @@ export default function OrdersPage() {
             .item-name { font-weight: bold; font-size: 1rem; }
             .item-variation { font-size: 11px; padding-left: 10px; }
             .notes { font-size: 11px; font-style: italic; padding-left: 10px; white-space: normal; }
+            .meal-item { font-size: 11px; padding-left: 15px; color: #333; }
           </style>
         </head>
         <body>
@@ -643,16 +687,35 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                ${activeOrder.items.map((item) => `
-                  <tr>
-                    <td class="col-qty">${item.quantity}x</td>
-                    <td class="col-item">
-                      <div class="item-name">${item.name.replace(/\\s\\(.*\\)/, '')}</div>
-                      ${item.variation && item.variation.name !== 'Regular' ? `<div class="item-variation">(${item.variation.name})</div>` : ''}
-                      ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
-                    </td>
-                  </tr>
-                `).join('')}
+                ${activeOrder.items.map((item) => {
+                  if(item.baseMenuItemId === 'meal-deal') return ''; // Don't print the deal itself
+                  let itemHtml = `
+                    <tr>
+                      <td class="col-qty">${item.quantity}x</td>
+                      <td class="col-item">
+                        <div class="item-name">${item.name.replace(/\\s\\(.*\\)/, '')} ${item.isMealChild && item.mealParentId ? '(Meal)' : ''}</div>
+                        ${item.variation && item.variation.name !== 'Regular' ? `<div class="item-variation">(${item.variation.name})</div>` : ''}
+                        ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
+                      </td>
+                    </tr>`;
+                    
+                  if(!item.isMealChild) {
+                     const mealChildren = activeOrder.items.filter(i => i.mealParentId === item.id);
+                     if(mealChildren.length > 0) {
+                        mealChildren.forEach(child => {
+                            if(child.baseMenuItemId !== 'meal-deal') {
+                                itemHtml += `
+                                <tr>
+                                    <td class="col-qty"></td>
+                                    <td class="col-item meal-item">+ ${child.name} (Meal)</td>
+                                </tr>`;
+                            }
+                        })
+                     }
+                  }
+                  
+                  return itemHtml;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -913,9 +976,10 @@ export default function OrdersPage() {
                             <div key={item.id}>
                                 <div className="flex items-start">
                                     <div className='flex-1 text-left'>
-                                        <button onClick={() => openNoteEditor(item)}>
-                                            <p className="font-semibold text-sm">{item.name}</p>
+                                        <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
+                                            <p className={cn("font-semibold text-sm", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
                                         </button>
+                                         {!item.isMealChild && (
                                          <div className="flex items-center gap-2">
                                             <p className="text-sm text-muted-foreground flex items-center">
                                                 <IndianRupee className="h-3.5 w-3.5 mr-1" />
@@ -928,35 +992,36 @@ export default function OrdersPage() {
                                                 </div>
                                             )}
                                          </div>
+                                         )}
                                         {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
                                     </div>
-                                    <div className="flex items-center gap-1 sm:gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                    >
-                                        <MinusCircle className="h-4 w-4" />
-                                    </Button>
-                                    <span className='text-sm'>{item.quantity}</span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6"
-                                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                    >
-                                        <PlusCircle className="h-4 w-4" />
-                                    </Button>
+                                    <div className={cn("flex items-center gap-1 sm:gap-2", item.isMealChild && "opacity-0 pointer-events-none")}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                        >
+                                            <MinusCircle className="h-4 w-4" />
+                                        </Button>
+                                        <span className='text-sm'>{item.quantity}</span>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                        >
+                                            <PlusCircle className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                    <p className="w-20 text-right font-semibold flex items-center justify-end text-sm">
+                                    <p className={cn("w-20 text-right font-semibold flex items-center justify-end text-sm", item.isMealChild && "text-muted-foreground")}>
                                     <IndianRupee className="h-3.5 w-3.5 mr-1" />
                                     {item.totalPrice.toFixed(2)}
                                     </p>
                                     <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-6 w-6 ml-1 sm:ml-2 text-destructive"
+                                    className={cn("h-6 w-6 ml-1 sm:ml-2 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
                                     onClick={() => removeFromCart(item.id)}
                                     >
                                     <X className="h-4 w-4" />
@@ -967,13 +1032,6 @@ export default function OrdersPage() {
                                         <Button size="sm" variant="outline" className="h-auto py-1" onClick={() => setMealUpsellParentItem(item)}>
                                             <Sparkles className="h-3 w-3 mr-2 text-amber-500"/> Make it a Meal
                                         </Button>
-                                    </div>
-                                )}
-                                {item.mealItems && (
-                                    <div className="pl-6 text-xs text-muted-foreground">
-                                        {item.mealItems.map(mealItem => (
-                                            <p key={mealItem.id}>+ {mealItem.name}</p>
-                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -1236,27 +1294,31 @@ export default function OrdersPage() {
                     </CardHeader>
                     <CardContent>
                        <div className="space-y-2 text-sm">
-                           {activeOrder.items.map(item => (
-                               <React.Fragment key={item.id}>
+                           {activeOrder.items.map(item => {
+                                if (item.isMealChild) return null;
+                                return (
+                                <React.Fragment key={item.id}>
                                    <div className="flex justify-between">
                                        <span>{item.quantity} x {item.name}</span>
                                        <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
                                            <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>
-                                           {item.totalPrice.toFixed(2)}
+                                           {item.price.toFixed(2)}
                                         </span>
                                    </div>
-                                   {item.mealItems && (
-                                       <div className="pl-4 text-xs text-muted-foreground">
-                                           {item.mealItems.map(mealItem => (
-                                               <div key={mealItem.id} className="flex justify-between">
-                                                   <span>+ {mealItem.name}</span>
-                                                   <span>(Meal)</span>
-                                               </div>
-                                           ))}
+                                   {activeOrder.items.filter(i => i.mealParentId === item.id).map(mealItem => (
+                                       <div key={mealItem.id} className="pl-4 text-xs text-muted-foreground flex justify-between">
+                                           <span>+ {mealItem.name}</span>
+                                           <span>
+                                                {mealItem.baseMenuItemId === 'meal-deal' ? 
+                                                    <span className='flex items-center'><IndianRupee className="inline-block h-3 w-3 mr-1"/>{mealItem.price.toFixed(2)}</span>
+                                                    : '(Meal)'
+                                                }
+                                           </span>
                                        </div>
-                                   )}
+                                   ))}
                                </React.Fragment>
-                           ))}
+                               )
+                           })}
                            <div className="border-t pt-2 mt-2 space-y-2">
                                <div className="flex justify-between">
                                     <span>Subtotal</span>
@@ -1427,3 +1489,5 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
         </Dialog>
     )
 }
+
+    

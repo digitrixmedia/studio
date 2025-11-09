@@ -54,7 +54,7 @@ export interface OrderItem {
   id: string; // This will be a unique id for the cart item
   name: string;
   quantity: number;
-  price: number; // base price
+  price: number; // base price for one unit
   variation?: MenuItemVariation;
   addons?: MenuItemAddon[];
   notes?: string;
@@ -62,8 +62,9 @@ export interface OrderItem {
   isBogo?: boolean;
   // --- Meal Deal Fields ---
   baseMenuItemId?: string; // ID of the MenuItem this OrderItem is derived from
-  isMealParent?: boolean; // True if this is the main item of a meal
-  mealItems?: OrderItem[]; // Holds the side and drink
+  isMealParent?: boolean; // True if this is the main item that triggered a meal upsell
+  isMealChild?: boolean;  // True if this is a side/drink added as part of a meal
+  mealParentId?: string;  // The ID of the parent OrderItem if this is a meal child
 }
 
 export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
@@ -287,3 +288,5 @@ export interface AppOrder {
   tableId: string;
   discount: number;
 }
+
+    
