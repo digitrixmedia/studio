@@ -2,6 +2,7 @@
 
 'use client';
 
+import * as React from 'react';
 import {
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
 } from '@/components/ui/card';
@@ -460,13 +461,6 @@ export default function OrdersPage() {
             }
             .totals .row { display: flex; justify-content: space-between; }
             .totals .grand-total { font-size: 16px; font-weight: bold; margin-top: 5px; }
-            
-            .footer { 
-              display: block;
-              margin-top: 10px; 
-              font-size: 12px; 
-              text-align: center;
-            }
           </style>
         </head>
         <body>
