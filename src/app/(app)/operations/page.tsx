@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -48,7 +49,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow, differenceInDays, getYear, setYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -225,6 +226,23 @@ export default function OperationsPage() {
 
         toast({ title: 'Rider Assigned', description: `${deliveryBoy.name} has been assigned to order #${order.orderNumber}.` });
     }
+    
+     const handleMarkAsDelivered = (deliveryBoyId: string) => {
+        const deliveryBoy = deliveryBoys.find(b => b.id === deliveryBoyId);
+        if (!deliveryBoy || !deliveryBoy.currentOrder) return;
+        
+        const orderNumber = deliveryBoy.currentOrder.replace('#', '');
+        const order = orders.find(o => o.orderNumber === orderNumber);
+
+        if (order) {
+            // Update order status
+            setOrders(prev => prev.map(o => o.orderNumber === orderNumber ? { ...o, status: 'completed' } : o));
+            toast({ title: "Order Completed", description: `Order #${orderNumber} has been marked as delivered.` });
+        }
+
+        // Update delivery boy status
+        setDeliveryBoys(prev => prev.map(b => b.id === deliveryBoyId ? { ...b, status: 'available', currentOrder: undefined } : b));
+    };
 
     const kots = orders.filter(o => o.status === 'new' || o.status === 'preparing');
     
@@ -663,8 +681,11 @@ export default function OperationsPage() {
                                             </div>
                                         </CardHeader>
                                         {boy.status === 'on-a-delivery' && (
-                                            <CardFooter className="p-4 pt-0">
+                                            <CardFooter className="p-4 pt-0 flex items-center justify-between">
                                                 <p className="text-xs">Delivering Order: <span className="font-bold">{boy.currentOrder}</span></p>
+                                                <Button size="sm" variant="secondary" onClick={() => handleMarkAsDelivered(boy.id)}>
+                                                    <CheckCircle className="mr-2 h-4 w-4" /> Delivered
+                                                </Button>
                                             </CardFooter>
                                         )}
                                     </Card>
