@@ -19,8 +19,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { menuItems, menuCategories, tables } from '@/lib/data';
-import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal } from '@/lib/types';
-import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift } from 'lucide-react';
+import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal, Customer } from '@/lib/types';
+import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift, Award } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -58,10 +58,16 @@ export default function OrdersPage() {
     getOrderByTable,
     currentUser,
     createNewOrder,
+    customers,
+    updateCustomer
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
   const activeOrder = useMemo(() => orders.find(o => o.id === activeOrderId), [orders, activeOrderId]);
+  const activeCustomer = useMemo(() => {
+    if (!activeOrder?.customer.phone) return null;
+    return customers.find(c => c.phone === activeOrder.customer.phone) || null;
+  }, [customers, activeOrder?.customer.phone]);
 
   const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
   
@@ -76,11 +82,16 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [billSearchQuery, setBillSearchQuery] = useState('');
   const [manualTaxRate, setManualTaxRate] = useState<number | null>(null);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
   
-  const updateActiveOrder = (items: OrderItem[]) => {
+  const updateActiveOrder = (items: OrderItem[], redeemedPoints?: number) => {
     if (activeOrderId) {
-      updateOrder(activeOrderId, { items });
+      const updates: Partial<AppOrder> = { items };
+      if (redeemedPoints !== undefined) {
+        updates.redeemedPoints = redeemedPoints;
+      }
+      updateOrder(activeOrderId, updates);
     }
   };
 
@@ -270,10 +281,17 @@ export default function OrdersPage() {
   const resetCurrentOrder = () => {
     if (!activeOrderId) return;
     
-    // Check if it's the last order
+    // In a real app with a backend, we'd persist the completed order here.
+    // For now, we just reset the state.
+
+    // If points were redeemed, update the customer's loyalty points
+    if (activeOrder && activeOrder.redeemedPoints > 0 && activeCustomer) {
+      const newPoints = activeCustomer.loyaltyPoints - activeOrder.redeemedPoints;
+      updateCustomer(activeCustomer.id, { loyaltyPoints: newPoints });
+    }
+
     if (orders.length === 1) {
-      // Just reset the order, don't remove it
-       const newOrder = createNewOrder();
+      const newOrder = createNewOrder();
       setOrders([newOrder]);
       setActiveOrderId(newOrder.id);
     } else {
@@ -285,6 +303,7 @@ export default function OrdersPage() {
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
     setManualTaxRate(null);
+    setPointsToRedeem(0);
     setIsPaymentDialogOpen(false);
   }
   
@@ -322,6 +341,8 @@ export default function OrdersPage() {
     }, 0);
     
   }, [activeOrder]);
+
+  let pointsDiscount = activeOrder?.redeemedPoints || 0;
   
   let discountableAmount = subTotal - bogoDiscount;
   if (settings.ignoreAddonPrice) {
@@ -336,8 +357,6 @@ export default function OrdersPage() {
   }
   
   if (settings.specialDiscountReasonMandatory && calculatedDiscount > 0) {
-      // In a real app, you'd check for a reason. For now, we block it.
-      // This part of the logic is prepared for a future UI addition.
       toast({
           variant: "destructive",
           title: "Discount Reason Required",
@@ -354,24 +373,25 @@ export default function OrdersPage() {
     const taxRate = manualTaxRate !== null ? manualTaxRate : settings.taxAmount;
     if (taxRate <= 0) return 0;
 
-    const taxableAmount = settings.calculateTaxBeforeDiscount ? totalBeforeTaxAndDiscount : totalBeforeTaxAndDiscount - discountAmount;
+    let taxableAmount = totalBeforeTaxAndDiscount - discountAmount - pointsDiscount;
+    
+    if (settings.calculateTaxBeforeDiscount) {
+      taxableAmount = totalBeforeTaxAndDiscount;
+    }
     
     if (settings.calculateBackwardTax) {
-      const total = totalBeforeTaxAndDiscount - discountAmount;
+      const total = totalBeforeTaxAndDiscount - discountAmount - pointsDiscount;
       return total - (total / (1 + (taxRate / 100)));
     }
     
     return taxableAmount * (taxRate / 100);
-  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount, manualTaxRate]);
+  }, [settings.calculateTaxBeforeDiscount, settings.calculateBackwardTax, settings.taxAmount, totalBeforeTaxAndDiscount, discountAmount, pointsDiscount, manualTaxRate]);
 
 
-  let total = totalBeforeTaxAndDiscount - discountAmount + tax;
+  let total = totalBeforeTaxAndDiscount - discountAmount - pointsDiscount + tax;
 
   if (settings.isComplimentary) {
       total = 0;
-      if (settings.disableTaxOnComplimentary) {
-          // tax variable will still hold the calculated tax, but total is 0
-      }
   }
 
   const changeDue = Number(amountPaid) > total ? Number(amountPaid) - total : 0;
@@ -572,6 +592,7 @@ export default function OrdersPage() {
                </div>
                ${bogoDiscount > 0 ? `<div class="row"><span>BOGO Discount</span><span>- ${bogoDiscount.toFixed(2)}</span></div>` : ''}
                ${discountAmount > 0 ? `<div class="row"><span>Discount</span><span>- ${discountAmount.toFixed(2)}</span></div>` : ''}
+               ${pointsDiscount > 0 ? `<div class="row"><span>Points Redeemed</span><span>- ${pointsDiscount.toFixed(2)}</span></div>` : ''}
                ${tax > 0 ? `<div class="row"><span>GST (${manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span><span>${tax.toFixed(2)}</span></div>` : ''}
             </div>
 
@@ -758,7 +779,6 @@ export default function OrdersPage() {
 
       const result = await generateSmsBill(orderDetails);
 
-      // Simulate sending SMS
       console.log('--- SIMULATING SMS ---');
       console.log(`To: ${activeOrder.customer.phone}`);
       console.log(`Message: ${result.smsContent}`);
@@ -780,6 +800,23 @@ export default function OrdersPage() {
       });
     }
   }
+
+  const handleRedeemPoints = () => {
+    if (!activeOrder) return;
+
+    if (pointsToRedeem > (activeCustomer?.loyaltyPoints || 0)) {
+        toast({ title: "Error", description: "Cannot redeem more points than available.", variant: "destructive" });
+        return;
+    }
+
+    if (pointsToRedeem > total) {
+        toast({ title: "Error", description: "Redemption value cannot exceed bill total.", variant: "destructive" });
+        return;
+    }
+
+    updateOrder(activeOrder.id, { redeemedPoints: pointsToRedeem });
+    toast({ title: "Points Applied", description: `${pointsToRedeem} points have been redeemed as a discount.` });
+  };
 
   const filteredMenuItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -806,8 +843,10 @@ export default function OrdersPage() {
   useEffect(() => {
     if (activeOrder && activeOrder.items.length === 0) {
       setManualTaxRate(null);
+      setPointsToRedeem(0);
+      updateOrder(activeOrder.id, { redeemedPoints: 0 });
     }
-  }, [activeOrder]);
+  }, [activeOrder?.items.length]);
 
   if (!activeOrder) {
     return (
@@ -966,6 +1005,11 @@ export default function OrdersPage() {
                           </div>
                         </CardDescription>
                         </Tabs>
+                         {activeCustomer && (
+                            <div className="mt-2 text-sm text-center bg-muted/50 p-2 rounded-md">
+                                <span className='font-semibold'>{activeCustomer.name}</span> has <span className='font-bold text-primary'>{activeCustomer.loyaltyPoints - (activeOrder.redeemedPoints || 0)}</span> points available.
+                            </div>
+                        )}
                     </div>
                     <CardContent className="flex-1 overflow-y-auto pt-0">
                         {activeOrder.items.length === 0 ? (
@@ -1043,7 +1087,7 @@ export default function OrdersPage() {
                         <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t'>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1">
                                     <span>Subtotal</span>
                                     {settings.displayDiscountTextbox && (
                                      <Popover>
@@ -1086,6 +1130,29 @@ export default function OrdersPage() {
                                         </PopoverContent>
                                       </Popover>
                                       )}
+                                      {activeCustomer && (
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Award /></Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-72">
+                                                <div className="grid gap-4">
+                                                     <div className="space-y-2">
+                                                        <h4 className="font-medium leading-none">Redeem Loyalty Points</h4>
+                                                        <p className="text-sm text-muted-foreground">
+                                                            Available: <span className="font-bold">{activeCustomer.loyaltyPoints} points</span>
+                                                        </p>
+                                                    </div>
+                                                    <div className="grid gap-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <Input type="number" value={pointsToRedeem || ''} onChange={(e) => setPointsToRedeem(Number(e.target.value))} placeholder="Points to redeem"/>
+                                                            <Button onClick={handleRedeemPoints}>Apply</Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                      )}
                                   </div>
                                   <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
                                       <IndianRupee className="h-4 w-4 mr-1" />
@@ -1102,6 +1169,12 @@ export default function OrdersPage() {
                                     <div className="flex justify-between text-destructive">
                                     <span>Discount ({settings.discountValue}{settings.discountType === 'percentage' ? '%' : ''})</span>
                                     <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{discountAmount.toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {pointsDiscount > 0 && !settings.isComplimentary && (
+                                    <div className="flex justify-between text-destructive">
+                                        <span>Points Redeemed</span>
+                                        <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{pointsDiscount.toFixed(2)}</span>
                                     </div>
                                 )}
                                  <div className="flex justify-between">
@@ -1336,6 +1409,12 @@ export default function OrdersPage() {
                                     <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{discountAmount.toFixed(2)}</span>
                                 </div>
                                )}
+                               {pointsDiscount > 0 && !settings.isComplimentary && (
+                                <div className="flex justify-between text-destructive">
+                                    <span>Points Redeemed</span>
+                                    <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{pointsDiscount.toFixed(2)}</span>
+                                </div>
+                               )}
                                 {tax > 0 && (
                                 <div className="flex justify-between">
                                     <span>GST ({manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span>
@@ -1428,11 +1507,9 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
     useEffect(() => {
         if (parentItem) {
-            // Pre-select if possible
             if (sideItems.length > 0) setSelectedSide(sideItems[0].id);
             if (drinkItems.length > 0) setSelectedDrink(drinkItems[0].id);
         } else {
-            // Reset on close
             setSelectedSide('');
             setSelectedDrink('');
         }

@@ -2,10 +2,10 @@
 
 'use client';
 
-import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table } from '@/lib/types';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer } from '@/lib/types';
 import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
 
@@ -20,6 +20,8 @@ interface AppContextType {
   setTables: React.Dispatch<React.SetStateAction<Table[]>>;
   heldOrders: AppOrder[];
   setHeldOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
+  customers: Customer[];
+  updateCustomer: (customerId: string, updates: Partial<Customer>) => void;
   activeOrderId: string | null;
   setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>;
   addOrder: () => void;
@@ -49,6 +51,7 @@ const createNewOrder = (): AppOrder => ({
   orderType: 'dine-in',
   tableId: '',
   discount: 0,
+  redeemedPoints: 0,
 });
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
@@ -58,6 +61,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const menuCategories = initialMenuCategories;
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
+  const [allPastOrders, setAllPastOrders] = useState<Order[]>(mockOrders);
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
@@ -66,6 +70,53 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
   const { settings, setSetting } = useSettings();
+
+    const customers = useMemo(() => {
+        const customerMap = new Map<string, Customer>();
+
+        allPastOrders.forEach(order => {
+            if (order.customerPhone && order.status === 'completed') {
+                let customer = customerMap.get(order.customerPhone);
+                if (!customer) {
+                    customer = {
+                        id: `cust-${order.customerPhone}`,
+                        name: order.customerName || 'Unknown',
+                        phone: order.customerPhone,
+                        totalOrders: 0,
+                        totalSpent: 0,
+                        loyaltyPoints: 0,
+                        firstVisit: order.createdAt,
+                        lastVisit: order.createdAt,
+                        tier: 'New',
+                        birthday: order.customerPhone === '9876543200' ? '1990-11-15' : undefined,
+                    };
+                }
+                
+                customer.totalOrders += 1;
+                customer.totalSpent += order.total;
+                if (order.createdAt < customer.firstVisit) customer.firstVisit = order.createdAt;
+                if (order.createdAt > customer.lastVisit) customer.lastVisit = order.createdAt;
+                
+                customer.loyaltyPoints = Math.floor(customer.totalSpent / 10);
+                if (customer.totalSpent > 5000) customer.tier = 'VIP';
+                else if (customer.totalOrders > 5) customer.tier = 'Regular';
+
+                customerMap.set(order.customerPhone, customer);
+            }
+        });
+
+        return Array.from(customerMap.values()).sort((a,b) => b.totalSpent - a.totalSpent);
+    }, [allPastOrders]);
+
+    const updateCustomer = (customerId: string, updates: Partial<Customer>) => {
+        // In a real app, this would be an API call. Here we just simulate for the loyalty points.
+        const customerToUpdate = customers.find(c => c.id === customerId);
+        if (customerToUpdate) {
+            // This is not persisted in this demo, but shows the mechanism
+            console.log("Updating customer", customerId, "with", updates);
+        }
+    }
+
 
   useEffect(() => {
     const storedUserRole = localStorage.getItem('userRole') as Role | null;
@@ -312,6 +363,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         orderType: order.type,
         tableId: order.tableId || '',
         discount: order.discount || 0,
+        redeemedPoints: 0,
     };
     setSetting('discountValue', order.discount || 0);
 
@@ -369,10 +421,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     selectOutlet, 
     clearSelectedOutlet, 
     menuItems, 
-    menuCategories, 
-    // These setters are not needed when using mock data directly
-    // setMenuItems, 
-    // setMenuCategories,
+    menuCategories,
+    customers,
+    updateCustomer,
     orders,
     setOrders,
     tables,

@@ -287,6 +287,7 @@ export interface AppOrder {
   orderType: OrderType;
   tableId: string;
   discount: number;
+  redeemedPoints: number;
 }
 
     
