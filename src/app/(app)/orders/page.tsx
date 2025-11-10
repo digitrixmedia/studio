@@ -431,7 +431,7 @@ export default function OrdersPage() {
             body {
               font-family: 'Arial', 'Source Code Pro', monospace;
               color: #000;
-              width: 76mm;
+              width: 72mm;
               padding: 0;
               margin: 0 auto;
               -webkit-print-color-adjust: exact;
@@ -443,7 +443,7 @@ export default function OrdersPage() {
             }
             .container { 
               display: block;
-              padding: 2mm;
+              padding: 1mm;
             }
             .header { 
               display: block;
@@ -1561,5 +1561,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
         </Dialog>
     )
 }
+
+    
 
     
