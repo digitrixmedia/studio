@@ -425,13 +425,13 @@ export default function OrdersPage() {
           <title>Customer Bill</title>
           <style>
             @page { 
-              size: 80mm auto; 
+              size: 72mm auto; 
               margin: 0;
             }
             body {
               font-family: 'Arial', 'Source Code Pro', monospace;
               color: #000;
-              width: 72mm;
+              width: 68mm;
               padding: 0;
               margin: 0 auto;
               -webkit-print-color-adjust: exact;
@@ -443,7 +443,7 @@ export default function OrdersPage() {
             }
             .container { 
               display: block;
-              padding: 1mm;
+              padding: 2mm;
             }
             .header { 
               display: block;
@@ -1103,7 +1103,7 @@ export default function OrdersPage() {
                                                   type="number"
                                                   value={settings.discountValue || ''}
                                                   onChange={(e) => setSetting('discountValue', Number(e.target.value))}
-                                                  className="flex-1"
+                                                  className="w-24"
                                                   placeholder="Value"
                                                 />
                                                 <ToggleGroup
@@ -1112,8 +1112,8 @@ export default function OrdersPage() {
                                                   value={settings.discountType}
                                                   onValueChange={(value: 'fixed' | 'percentage') => value && setSetting('discountType', value)}
                                                 >
-                                                  <ToggleGroupItem value="fixed">Fixed</ToggleGroupItem>
-                                                  <ToggleGroupItem value="percentage">Percentage</ToggleGroupItem>
+                                                  <ToggleGroupItem value="fixed">₹</ToggleGroupItem>
+                                                  <ToggleGroupItem value="percentage">%</ToggleGroupItem>
                                                 </ToggleGroup>
                                               </div>
                                                <div className="flex items-center space-x-2 pt-2">
