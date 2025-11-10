@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orders, ingredients, tables, menuItems } from '@/lib/data';
-import { IndianRupee, ClipboardList, Utensils, AlertCircle, PlusCircle, ShoppingBag } from 'lucide-react';
+import { IndianRupee, ClipboardList, Utensils, AlertCircle, PlusCircle, ShoppingBag, CalendarPlus } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
 
@@ -88,6 +88,11 @@ export default function DashboardPage() {
         </Link>
         <Link href="/tables">
           <Button size="lg" variant="outline">View Tables</Button>
+        </Link>
+        <Link href="/operations">
+          <Button size="lg" variant="outline">
+            <CalendarPlus className="mr-2 h-5 w-5" /> Book a Table
+          </Button>
         </Link>
         <Link href="/reports">
          <Button size="lg" variant="outline">Daily Sales Report</Button>
