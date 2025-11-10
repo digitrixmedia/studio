@@ -59,7 +59,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -80,6 +80,7 @@ const initialDeliveryBoyState = {
 export default function OperationsPage() {
     const { orders: appOrders, setOrders: setAppOrders, tables, setTables, startOrderForTable, loadOrder, customers } = useAppContext();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
     const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
@@ -108,6 +109,8 @@ export default function OperationsPage() {
     
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
     const [customerFormData, setCustomerFormData] = useState<Partial<Customer>>({});
+
+    const defaultTab = searchParams.get('tab') || 'orders';
 
     useEffect(() => {
         if (viewCustomer) {
@@ -346,7 +349,7 @@ export default function OperationsPage() {
     <>
     <div className='space-y-4'>
         <h1 className='text-2xl font-bold'>Operations Management</h1>
-        <Tabs defaultValue="orders">
+        <Tabs defaultValue={defaultTab}>
             <TabsList className='grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6'>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
                 <TabsTrigger value="kots">KOTs</TabsTrigger>

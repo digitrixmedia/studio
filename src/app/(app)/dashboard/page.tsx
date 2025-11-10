@@ -89,7 +89,7 @@ export default function DashboardPage() {
         <Link href="/tables">
           <Button size="lg" variant="outline">View Tables</Button>
         </Link>
-        <Link href="/operations">
+        <Link href="/operations?tab=reservations">
           <Button size="lg" variant="outline">
             <CalendarPlus className="mr-2 h-5 w-5" /> Book a Table
           </Button>
