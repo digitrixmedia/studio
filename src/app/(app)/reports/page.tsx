@@ -23,7 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent, Truck, Loader2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { addDays, format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { addDays, format, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ const getIngredientName = (ingredientId: string) => ingredients.find(i => i.id =
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [date, setDate] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -6),
+    from: addDays(new Date(), -29),
     to: new Date(),
   });
   const [selectedDay, setSelectedDay] = useState<{ date: Date; orders: Order[] } | null>(null);
@@ -295,6 +295,14 @@ export default function ReportsPage() {
     }
   }
 
+  const setToday = () => {
+    setDate({ from: new Date(), to: new Date() });
+  };
+  const setYesterday = () => {
+    const yesterday = subDays(new Date(), 1);
+    setDate({ from: yesterday, to: yesterday });
+  };
+
 
   return (
     <div className='flex flex-col gap-6'>
@@ -306,7 +314,7 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div className='flex gap-2 items-center'>
+            <div className='flex items-center gap-2 flex-wrap'>
                  <Popover>
                     <PopoverTrigger asChild>
                     <Button
@@ -343,6 +351,8 @@ export default function ReportsPage() {
                     />
                     </PopoverContent>
                 </Popover>
+                 <Button variant="ghost" onClick={setToday}>Today's Sales</Button>
+                <Button variant="ghost" onClick={setYesterday}>Yesterday's Sales</Button>
             </div>
             <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
