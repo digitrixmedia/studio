@@ -399,7 +399,7 @@ export default function ReportsPage() {
           <TabsTrigger value="hourly">Hourly Sales</TabsTrigger>
           <TabsTrigger value="purchases">Purchases</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className='mt-6'>
+        <TabsContent value="overview" className='mt-6 space-y-6'>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="lg:col-span-4">
                     <CardHeader>
@@ -445,6 +445,46 @@ export default function ReportsPage() {
                     </CardContent>
                 </Card>
             </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Sales Report</CardTitle>
+                    <CardDescription>A detailed breakdown of each sale in the selected period. Click a row to see order details.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Order No.</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Payment</TableHead>
+                                <TableHead>Order Type</TableHead>
+                                <TableHead>Biller</TableHead>
+                                <TableHead className='text-right'>Discount</TableHead>
+                                <TableHead className='text-right'>Total</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow className="font-bold bg-muted hover:bg-muted">
+                                <TableCell>Total</TableCell>
+                                <TableCell colSpan={4}></TableCell>
+                                <TableCell className='text-right'>{filteredCompletedOrders.reduce((sum, o) => sum + o.discount, 0).toFixed(2)}</TableCell>
+                                <TableCell className='text-right'>{totalSales.toFixed(2)}</TableCell>
+                            </TableRow>
+                            {filteredCompletedOrders.map(order => (
+                                <TableRow key={order.id} onClick={() => setViewedOrder(order)} className="cursor-pointer">
+                                    <TableCell>#{order.orderNumber}</TableCell>
+                                    <TableCell>{format(order.createdAt, 'dd-MM-yy')}</TableCell>
+                                    <TableCell className="capitalize">{order.paymentMethod}</TableCell>
+                                    <TableCell className="capitalize">{order.type.replace(/-/g, ' ')}</TableCell>
+                                    <TableCell>{getUserName(order.createdBy)}</TableCell>
+                                    <TableCell className="text-right">{order.discount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-medium">{order.total.toFixed(2)}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </TabsContent>
         <TabsContent value="daily-sales" className='mt-6'>
            <Card>
