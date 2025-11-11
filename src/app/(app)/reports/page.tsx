@@ -51,40 +51,48 @@ const getIngredientName = (ingredientId: string) => ingredients.find(i => i.id =
 
 export default function ReportsPage() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [date, setDate] = useState<DateRange | undefined>({
+  const [globalDate, setGlobalDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -29),
     to: new Date(),
   });
+  const [salesReportDate, setSalesReportDate] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
+  
   const [selectedDay, setSelectedDay] = useState<{ date: Date; orders: Order[] } | null>(null);
   const [viewedOrder, setViewedOrder] = useState<Order | null>(null);
   const [viewedPurchaseOrder, setViewedPurchaseOrder] = useState<PurchaseOrder | null>(null);
 
-  const filteredCompletedOrders = useMemo(() => {
+  const filterOrdersByDate = (dateRange: DateRange | undefined) => {
     return orders.filter(o => {
         const isCompleted = o.status === 'completed';
-        if (!date?.from || !isCompleted) return isCompleted;
+        if (!dateRange?.from || !isCompleted) return isCompleted;
         const isInInterval = isWithinInterval(o.createdAt, {
-            start: startOfDay(date.from),
-            end: date.to ? endOfDay(date.to) : endOfDay(date.from)
+            start: startOfDay(dateRange.from),
+            end: dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
         });
         return isInInterval;
     });
-  }, [date]);
+  }
+
+  const filteredGlobalOrders = useMemo(() => filterOrdersByDate(globalDate), [globalDate]);
+  const filteredSalesReportOrders = useMemo(() => filterOrdersByDate(salesReportDate), [salesReportDate]);
   
   const filteredPurchaseOrders = useMemo(() => {
     return purchaseOrders.filter(po => {
-      if(!date?.from) return true;
+      if(!globalDate?.from) return true;
       return isWithinInterval(po.date, {
-        start: startOfDay(date.from),
-        end: date.to ? endOfDay(date.to) : endOfDay(date.from),
+        start: startOfDay(globalDate.from),
+        end: globalDate.to ? endOfDay(globalDate.to) : endOfDay(globalDate.from),
       });
     });
-  }, [date]);
+  }, [globalDate]);
 
 
   // Sales metrics
-  const totalSales = filteredCompletedOrders.reduce((sum, order) => sum + order.total, 0);
-  const totalOrders = filteredCompletedOrders.length;
+  const totalSales = filteredGlobalOrders.reduce((sum, order) => sum + order.total, 0);
+  const totalOrders = filteredGlobalOrders.length;
   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
   
   // Purchase metrics
@@ -95,7 +103,7 @@ export default function ReportsPage() {
   const itemWiseSales = useMemo(() => {
     return menuItems
       .map(item => {
-        const { quantitySold, totalSales } = filteredCompletedOrders.reduce(
+        const { quantitySold, totalSales } = filteredGlobalOrders.reduce(
           (acc, order) => {
             order.items.forEach(orderItem => {
               if (orderItem.id.startsWith(item.id)) {
@@ -117,7 +125,7 @@ export default function ReportsPage() {
       })
       .filter(item => item.sales > 0)
       .sort((a, b) => b.sales - a.sales);
-  }, [filteredCompletedOrders]);
+  }, [filteredGlobalOrders]);
 
     const categorySales = useMemo(() => {
         return menuCategories.map(category => {
@@ -134,7 +142,7 @@ export default function ReportsPage() {
           .sort((a, b) => b.sales - a.sales);
     }, [itemWiseSales, totalSales]);
 
-    const paymentMethodSales = (filteredCompletedOrders as Required<Order>[]).reduce((acc, order) => {
+    const paymentMethodSales = (filteredGlobalOrders as Required<Order>[]).reduce((acc, order) => {
         acc[order.paymentMethod] = (acc[order.paymentMethod] || 0) + order.total;
         return acc;
     }, {} as Record<string, number>);
@@ -144,7 +152,7 @@ export default function ReportsPage() {
       sales,
     }));
 
-    const orderTypeSales = filteredCompletedOrders.reduce((acc, order) => {
+    const orderTypeSales = filteredGlobalOrders.reduce((acc, order) => {
         acc[order.type] = (acc[order.type] || 0) + order.total;
         return acc;
     }, {} as Record<string, number>);
@@ -156,7 +164,7 @@ export default function ReportsPage() {
     
   const dailySalesData = useMemo(() => {
     return initialDailySales.map(day => {
-      const filtered = filteredCompletedOrders.filter(order => format(order.createdAt, 'EEE') === format(day.date, 'EEE'));
+      const filtered = filteredGlobalOrders.filter(order => format(order.createdAt, 'EEE') === format(day.date, 'EEE'));
       return {
         ...day,
         sales: filtered.reduce((sum, o) => sum + o.total, 0),
@@ -164,7 +172,7 @@ export default function ReportsPage() {
         aov: filtered.length > 0 ? filtered.reduce((sum, o) => sum + o.total, 0) / filtered.length : 0
       };
     }).filter(d => d.orders > 0);
-  }, [filteredCompletedOrders]);
+  }, [filteredGlobalOrders]);
   
   const vendorWisePurchases = useMemo(() => {
     const vendorMap = new Map<string, { name: string, total: number, orders: number }>();
@@ -187,7 +195,7 @@ export default function ReportsPage() {
 
     // Section: Report Summary
     csvContent += "ZappyyPOS Comprehensive Report\n";
-    const dateRange = date?.from ? `${format(date.from, "LLL dd, y")} - ${date.to ? format(date.to, "LLL dd, y") : ''}` : 'All Time';
+    const dateRange = globalDate?.from ? `${format(globalDate.from, "LLL dd, y")} - ${globalDate.to ? format(globalDate.to, "LLL dd, y") : ''}` : 'All Time';
     csvContent += `Date Range:,"${dateRange}"\n\n`;
     
     csvContent += "Overall Summary\n";
@@ -295,12 +303,12 @@ export default function ReportsPage() {
     }
   }
 
-  const setToday = () => {
-    setDate({ from: new Date(), to: new Date() });
+  const setSalesReportToday = () => {
+    setSalesReportDate({ from: new Date(), to: new Date() });
   };
-  const setYesterday = () => {
+  const setSalesReportYesterday = () => {
     const yesterday = subDays(new Date(), 1);
-    setDate({ from: yesterday, to: yesterday });
+    setSalesReportDate({ from: yesterday, to: yesterday });
   };
 
 
@@ -314,7 +322,44 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div></div>
+            <div className='flex items-center gap-2'>
+                <Popover>
+                    <PopoverTrigger asChild>
+                    <Button
+                        id="date"
+                        variant={"outline"}
+                        className={cn(
+                        "w-[280px] justify-start text-left font-normal",
+                        !globalDate && "text-muted-foreground"
+                        )}
+                    >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {globalDate?.from ? (
+                        globalDate.to ? (
+                            <>
+                            {format(globalDate.from, "LLL dd, y")} -{" "}
+                            {format(globalDate.to, "LLL dd, y")}
+                            </>
+                        ) : (
+                            format(globalDate.from, "LLL dd, y")
+                        )
+                        ) : (
+                        <span>Pick a date range</span>
+                        )}
+                    </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={globalDate?.from}
+                        selected={globalDate}
+                        onSelect={setGlobalDate}
+                        numberOfMonths={2}
+                    />
+                    </PopoverContent>
+                </Popover>
+            </div>
             <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export Detailed Report
@@ -421,47 +466,47 @@ export default function ReportsPage() {
                     <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
                         <div>
                             <CardTitle>Sales Report</CardTitle>
-                            <CardDescription>A detailed breakdown of each sale in the selected period. Click a row to see order details.</CardDescription>
+                            <CardDescription>A detailed breakdown of each sale. Click a row to see order details.</CardDescription>
                         </div>
                         <div className='flex items-center gap-2 flex-wrap'>
                             <Popover>
                                 <PopoverTrigger asChild>
                                 <Button
-                                    id="date"
+                                    id="sales-date"
                                     variant={"outline"}
                                     className={cn(
                                     "w-[280px] justify-start text-left font-normal",
-                                    !date && "text-muted-foreground"
+                                    !salesReportDate && "text-muted-foreground"
                                     )}
                                 >
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date?.from ? (
-                                    date.to ? (
+                                    {salesReportDate?.from ? (
+                                    salesReportDate.to ? (
                                         <>
-                                        {format(date.from, "LLL dd, y")} -{" "}
-                                        {format(date.to, "LLL dd, y")}
+                                        {format(salesReportDate.from, "LLL dd, y")} -{" "}
+                                        {format(salesReportDate.to, "LLL dd, y")}
                                         </>
                                     ) : (
-                                        format(date.from, "LLL dd, y")
+                                        format(salesReportDate.from, "LLL dd, y")
                                     )
                                     ) : (
                                     <span>Pick a date range</span>
                                     )}
                                 </Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent className="w-auto p-0" align="end">
                                 <Calendar
                                     initialFocus
                                     mode="range"
-                                    defaultMonth={date?.from}
-                                    selected={date}
-                                    onSelect={setDate}
+                                    defaultMonth={salesReportDate?.from}
+                                    selected={salesReportDate}
+                                    onSelect={setSalesReportDate}
                                     numberOfMonths={2}
                                 />
                                 </PopoverContent>
                             </Popover>
-                            <Button variant="ghost" onClick={setToday}>Today's Sales</Button>
-                            <Button variant="ghost" onClick={setYesterday}>Yesterday's Sales</Button>
+                            <Button variant="ghost" onClick={setSalesReportToday}>Today</Button>
+                            <Button variant="ghost" onClick={setSalesReportYesterday}>Yesterday</Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -482,13 +527,13 @@ export default function ReportsPage() {
                             <TableRow className="font-bold bg-muted hover:bg-muted">
                                 <TableCell>Total</TableCell>
                                 <TableCell colSpan={4}></TableCell>
-                                <TableCell className='text-right'>{filteredCompletedOrders.reduce((sum, o) => sum + o.discount, 0).toFixed(2)}</TableCell>
-                                <TableCell className='text-right'>{totalSales.toFixed(2)}</TableCell>
+                                <TableCell className='text-right'>{filteredSalesReportOrders.reduce((sum, o) => sum + o.discount, 0).toFixed(2)}</TableCell>
+                                <TableCell className='text-right'>{filteredSalesReportOrders.reduce((sum, o) => sum + o.total, 0).toFixed(2)}</TableCell>
                             </TableRow>
-                            {filteredCompletedOrders.map(order => (
+                            {filteredSalesReportOrders.map(order => (
                                 <TableRow key={order.id} onClick={() => setViewedOrder(order)} className="cursor-pointer">
                                     <TableCell>#{order.orderNumber}</TableCell>
-                                    <TableCell>{format(order.createdAt, 'dd-MM-yy')}</TableCell>
+                                    <TableCell>{format(order.createdAt, 'dd-MM-yy, p')}</TableCell>
                                     <TableCell className="capitalize">{order.paymentMethod}</TableCell>
                                     <TableCell className="capitalize">{order.type.replace(/-/g, ' ')}</TableCell>
                                     <TableCell>{getUserName(order.createdBy)}</TableCell>
