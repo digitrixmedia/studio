@@ -314,46 +314,7 @@ export default function ReportsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div className='flex items-center gap-2 flex-wrap'>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                    <Button
-                        id="date"
-                        variant={"outline"}
-                        className={cn(
-                        "w-[280px] justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                        )}
-                    >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date?.from ? (
-                        date.to ? (
-                            <>
-                            {format(date.from, "LLL dd, y")} -{" "}
-                            {format(date.to, "LLL dd, y")}
-                            </>
-                        ) : (
-                            format(date.from, "LLL dd, y")
-                        )
-                        ) : (
-                        <span>Pick a date range</span>
-                        )}
-                    </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={date?.from}
-                        selected={date}
-                        onSelect={setDate}
-                        numberOfMonths={2}
-                    />
-                    </PopoverContent>
-                </Popover>
-                 <Button variant="ghost" onClick={setToday}>Today's Sales</Button>
-                <Button variant="ghost" onClick={setYesterday}>Yesterday's Sales</Button>
-            </div>
+            <div></div>
             <Button variant="outline" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export Detailed Report
@@ -457,8 +418,52 @@ export default function ReportsPage() {
             </div>
             <Card>
                 <CardHeader>
-                    <CardTitle>Sales Report</CardTitle>
-                    <CardDescription>A detailed breakdown of each sale in the selected period. Click a row to see order details.</CardDescription>
+                    <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
+                        <div>
+                            <CardTitle>Sales Report</CardTitle>
+                            <CardDescription>A detailed breakdown of each sale in the selected period. Click a row to see order details.</CardDescription>
+                        </div>
+                        <div className='flex items-center gap-2 flex-wrap'>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-[280px] justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date?.from ? (
+                                    date.to ? (
+                                        <>
+                                        {format(date.from, "LLL dd, y")} -{" "}
+                                        {format(date.to, "LLL dd, y")}
+                                        </>
+                                    ) : (
+                                        format(date.from, "LLL dd, y")
+                                    )
+                                    ) : (
+                                    <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                />
+                                </PopoverContent>
+                            </Popover>
+                            <Button variant="ghost" onClick={setToday}>Today's Sales</Button>
+                            <Button variant="ghost" onClick={setYesterday}>Yesterday's Sales</Button>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <Table>
