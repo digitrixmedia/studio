@@ -31,6 +31,7 @@ export const menuItems: MenuItem[] = [
     category: 'cat-1',
     foodType: 'veg',
     isAvailable: true,
+    isBogo: true,
     variations: [
       { id: 'var-1-1', name: 'Regular', priceModifier: 0, ingredients: [] },
       { id: 'var-1-2', name: 'Large', priceModifier: 40, ingredients: [] },
@@ -433,4 +434,5 @@ export const auditLogs: AuditLog[] = [
 ];
 
   
+
 
