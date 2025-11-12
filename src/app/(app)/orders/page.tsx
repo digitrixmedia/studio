@@ -108,8 +108,6 @@ export default function OrdersPage() {
        if (existingItem) {
          updateQuantity(existingItem.id, existingItem.quantity + 1);
        } else {
-         const menuItem = menuItems.find(mi => mi.id === item.id);
-         const isBogoActive = menuItem?.isBogo ? (parseInt(settings.defaultQuantity, 10) || 1) >= 2 : false;
          const newOrderItem: OrderItem = {
           id: uniqueCartId,
           baseMenuItemId: item.id,
@@ -118,7 +116,7 @@ export default function OrdersPage() {
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
           isMealParent: !!item.mealDeal,
-          isBogo: isBogoActive,
+          isBogo: false, // Default to false, let user enable it
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
@@ -149,8 +147,6 @@ export default function OrdersPage() {
     if (existingItem) {
         updateQuantity(existingItem.id, existingItem.quantity + 1);
     } else {
-        const menuItem = menuItems.find(mi => mi.id === customizationItem.id);
-        const isBogoActive = menuItem?.isBogo ? 1 >= 2 : false;
         const newOrderItem: OrderItem = {
           id: uniqueCartId,
           baseMenuItemId: customizationItem.id,
@@ -161,7 +157,7 @@ export default function OrdersPage() {
           variation: selectedVariation,
           notes: notes || undefined,
           isMealParent: !!customizationItem.mealDeal,
-          isBogo: isBogoActive,
+          isBogo: false, // Default to false
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
@@ -254,8 +250,7 @@ export default function OrdersPage() {
     } else {
       const updatedItems = activeOrder.items.map(item => {
           if (item.id === itemId) {
-            const menuItem = menuItems.find(mi => mi.id === item.baseMenuItemId);
-            const isBogoActive = menuItem?.isBogo ? newQuantity >= 2 : (item.isBogo || false);
+            const isBogoActive = item.isBogo && newQuantity >= 2;
             return { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity, isBogo: isBogoActive };
           }
           return item;
@@ -1570,5 +1565,6 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
