@@ -16,6 +16,7 @@ export const menuCategories: MenuCategory[] = [
   { id: 'cat-1', name: 'Hot Coffee' },
   { id: 'cat-2', name: 'Cold Coffee' },
   { id: 'cat-3', name: 'Sandwiches' },
+  { id: 'cat-7', name: 'Pizza' },
   { id: 'cat-4', name: 'Desserts' },
   { id: 'cat-5', name: 'Sides' },
   { id: 'cat-6', name: 'Beverages' },
@@ -96,6 +97,25 @@ export const menuItems: MenuItem[] = [
       sideItemIds: ['item-9'],
       drinkItemIds: ['item-10'],
     },
+  },
+  {
+    id: 'item-11',
+    name: 'Margherita Pizza',
+    description: 'Classic pizza with fresh mozzarella, tomatoes, and basil.',
+    price: 350,
+    category: 'cat-7',
+    foodType: 'veg',
+    isAvailable: true,
+    variations: [
+      { id: 'var-11-1', name: 'Regular (8")', priceModifier: 0, ingredients: [] },
+      { id: 'var-11-2', name: 'Medium (10")', priceModifier: 100, ingredients: [] },
+      { id: 'var-11-3', name: 'Large (12")', priceModifier: 200, ingredients: [] },
+    ],
+    addons: [
+      { id: 'addon-3', name: 'Extra Cheese', price: 60 },
+      { id: 'addon-4', name: 'Olives', price: 40 },
+    ],
+    ingredients: [],
   },
   {
     id: 'item-6',
@@ -413,3 +433,4 @@ export const auditLogs: AuditLog[] = [
 ];
 
   
+

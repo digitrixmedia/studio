@@ -869,7 +869,7 @@ export default function OrdersPage() {
               onValueChange={setActiveCategory}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7">
                 {menuCategories.map(category => (
                   <TabsTrigger key={category.id} value={category.id}>
                     {category.name}
@@ -1565,3 +1565,4 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
