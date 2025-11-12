@@ -1011,70 +1011,75 @@ export default function OrdersPage() {
                         <p className="text-muted-foreground">No items in order.</p>
                         ) : (
                         <div className="space-y-2">
-                            {activeOrder.items.map(item => (
-                            <div key={item.id}>
-                                <div className="flex items-start">
-                                    <div className='flex-1 text-left'>
-                                        <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
-                                            <p className={cn("font-semibold text-sm", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
-                                        </button>
-                                         {!item.isMealChild && (
-                                         <div className="flex items-center gap-2">
-                                            <p className="text-sm text-muted-foreground flex items-center">
-                                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                                {item.price.toFixed(2)}
-                                            </p>
-                                            {item.quantity >= 2 && (
-                                                <div className="flex items-center space-x-1">
-                                                    <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
-                                                    <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
-                                                </div>
+                            {activeOrder.items.map(item => {
+                                const menuItem = menuItems.find(mi => mi.id === item.baseMenuItemId);
+                                const isBogoEligible = menuItem?.isBogo;
+
+                                return (
+                                <div key={item.id}>
+                                    <div className="flex items-start">
+                                        <div className='flex-1 text-left'>
+                                            <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
+                                                <p className={cn("font-semibold text-sm", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
+                                            </button>
+                                            {!item.isMealChild && (
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm text-muted-foreground flex items-center">
+                                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                                    {item.price.toFixed(2)}
+                                                </p>
+                                                {isBogoEligible && item.quantity >= 2 && (
+                                                    <div className="flex items-center space-x-1">
+                                                        <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
+                                                        <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
+                                                    </div>
+                                                )}
+                                            </div>
                                             )}
-                                         </div>
-                                         )}
-                                        {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
-                                    </div>
-                                    <div className={cn("flex items-center gap-1 sm:gap-2", item.isMealChild && "opacity-0 pointer-events-none")}>
+                                            {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
+                                        </div>
+                                        <div className={cn("flex items-center gap-1 sm:gap-2", item.isMealChild && "opacity-0 pointer-events-none")}>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6"
+                                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            >
+                                                <MinusCircle className="h-4 w-4" />
+                                            </Button>
+                                            <span className='text-sm'>{item.quantity}</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6"
+                                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                            >
+                                                <PlusCircle className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                        <p className={cn("w-20 text-right font-semibold flex items-center justify-end text-sm", item.isMealChild && "text-muted-foreground")}>
+                                        <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                        {item.totalPrice.toFixed(2)}
+                                        </p>
                                         <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6"
-                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn("h-6 w-6 ml-1 sm:ml-2 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
+                                        onClick={() => removeFromCart(item.id)}
                                         >
-                                            <MinusCircle className="h-4 w-4" />
-                                        </Button>
-                                        <span className='text-sm'>{item.quantity}</span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6"
-                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                        >
-                                            <PlusCircle className="h-4 w-4" />
+                                        <X className="h-4 w-4" />
                                         </Button>
                                     </div>
-                                    <p className={cn("w-20 text-right font-semibold flex items-center justify-end text-sm", item.isMealChild && "text-muted-foreground")}>
-                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                    {item.totalPrice.toFixed(2)}
-                                    </p>
-                                    <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn("h-6 w-6 ml-1 sm:ml-2 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
-                                    onClick={() => removeFromCart(item.id)}
-                                    >
-                                    <X className="h-4 w-4" />
-                                    </Button>
+                                    {item.isMealParent && (
+                                        <div className="pl-4 mt-1">
+                                            <Button size="sm" variant="outline" className="h-auto py-1" onClick={() => setMealUpsellParentItem(item)}>
+                                                <Sparkles className="h-3 w-3 mr-2 text-amber-500"/> Make it a Meal
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
-                                {item.isMealParent && (
-                                    <div className="pl-4 mt-1">
-                                        <Button size="sm" variant="outline" className="h-auto py-1" onClick={() => setMealUpsellParentItem(item)}>
-                                            <Sparkles className="h-3 w-3 mr-2 text-amber-500"/> Make it a Meal
-                                        </Button>
-                                    </div>
                                 )}
-                            </div>
-                            ))}
+                            )}
                         </div>
                         )}
                     </CardContent>
@@ -1565,4 +1570,5 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
