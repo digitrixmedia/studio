@@ -3,8 +3,8 @@
 
 import { ArrowLeft, BarChart2, Book, Box, Building, ClipboardList, CookingPot, LayoutDashboard, LayoutGrid, ShoppingBag, Table, User } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ReactNode, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { ReactNode, useState, useEffect } from 'react';
 import { ZappyyIcon } from '@/components/icons';
 import { UserNav } from '@/components/layout/UserNav';
 import { Button } from '@/components/ui/button';
@@ -64,7 +64,42 @@ const quickAccessItems: QuickAccessItem[] = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { currentUser, selectedOutlet, clearSelectedOutlet } = useAppContext();
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarContent, setSidebarContent] = useState<QuickAccessItem | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey) {
+        let path = '';
+        switch (event.key.toLowerCase()) {
+          case 's':
+            path = '/reports';
+            break;
+          case 'd':
+            path = '/dashboard';
+            break;
+          case 'p':
+            path = '/orders';
+            break;
+          case 'i':
+            path = '/inventory';
+            break;
+          case 'm':
+            path = '/menu';
+            break;
+          default:
+            return;
+        }
+        event.preventDefault();
+        router.push(path);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [router]);
 
   if (!currentUser || currentUser.role === 'super-admin') {
     return (
