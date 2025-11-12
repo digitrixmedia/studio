@@ -103,7 +103,12 @@ export default function OrdersPage() {
       setCustomizationItem(item);
     } else {
        const uniqueCartId = `${item.id}-base-${Date.now()}`;
-       const existingItem = activeOrder.items.find(cartItem => cartItem.name === item.name && !cartItem.variation && !cartItem.notes);
+       // An item is unique based on its name, variation, and notes.
+       const existingItem = activeOrder.items.find(cartItem => 
+         cartItem.baseMenuItemId === item.id && 
+         !cartItem.variation && 
+         !cartItem.notes
+       );
        
        if (existingItem) {
          updateQuantity(existingItem.id, existingItem.quantity + 1);
@@ -135,14 +140,18 @@ export default function OrdersPage() {
     
     let basePrice = customizationItem.price;
     let finalName = customizationItem.name;
-    const uniqueCartId = `${customizationItem.id}-${selectedVariation?.id || 'base'}-${Date.now()}`;
+    const uniqueCartId = `${customizationItem.id}-${selectedVariation?.id || 'base'}-${notes || ''}-${Date.now()}`;
 
     if (selectedVariation) {
       basePrice += selectedVariation.priceModifier;
       finalName += ` (${selectedVariation.name})`;
     }
     
-    const existingItem = activeOrder.items.find(cartItem => cartItem.name === finalName && cartItem.notes === (notes || undefined));
+    const existingItem = activeOrder.items.find(cartItem => 
+        cartItem.baseMenuItemId === customizationItem.id &&
+        (cartItem.variation?.id || 'base') === (selectedVariation?.id || 'base') &&
+        (cartItem.notes || '') === (notes || '')
+    );
 
     if (existingItem) {
         updateQuantity(existingItem.id, existingItem.quantity + 1);
@@ -449,7 +458,7 @@ export default function OrdersPage() {
             }
             .header { 
               display: block;
-              text-align: center;
+              text-align: center; 
               margin-bottom: 5px;
             }
             .header h2 {
@@ -1572,6 +1581,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
 
