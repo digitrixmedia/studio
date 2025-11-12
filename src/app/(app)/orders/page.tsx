@@ -116,7 +116,7 @@ export default function OrdersPage() {
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
           isMealParent: !!item.mealDeal,
-          isBogo: false, // Default to false, let user enable it
+          isBogo: false, 
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
@@ -157,7 +157,7 @@ export default function OrdersPage() {
           variation: selectedVariation,
           notes: notes || undefined,
           isMealParent: !!customizationItem.mealDeal,
-          isBogo: false, // Default to false
+          isBogo: false,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
@@ -243,20 +243,27 @@ export default function OrdersPage() {
   };
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
-     if (!activeOrder) return;
+    if (!activeOrder) return;
 
     if (newQuantity < 1) {
       removeFromCart(itemId);
-    } else {
-      const updatedItems = activeOrder.items.map(item => {
-          if (item.id === itemId) {
-            const isBogoActive = item.isBogo && newQuantity >= 2;
-            return { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity, isBogo: isBogoActive };
-          }
-          return item;
-        });
-      updateActiveOrder(updatedItems);
+      return;
     }
+
+    const updatedItems = activeOrder.items.map(item => {
+      // Update the target item
+      if (item.id === itemId) {
+        const isBogoActive = item.isBogo && newQuantity >= 2;
+        return { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity, isBogo: isBogoActive };
+      }
+      // If the target item is a meal parent, update its children's quantities as well
+      if (item.mealParentId === itemId) {
+        return { ...item, quantity: newQuantity, totalPrice: item.price * newQuantity };
+      }
+      return item;
+    });
+
+    updateActiveOrder(updatedItems);
   };
 
   const removeFromCart = (itemId: string) => {
@@ -1565,6 +1572,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
 
