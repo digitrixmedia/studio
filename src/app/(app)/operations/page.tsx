@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -507,8 +508,8 @@ export default function OperationsPage() {
                                         <Badge>{kot.status}</Badge>
                                     </CardHeader>
                                     <CardContent className="flex-1 space-y-1">
-                                        {kot.items.map(item => (
-                                            <div key={item.id} className="flex justify-between text-sm">
+                                        {kot.items.map((item, index) => (
+                                            <div key={`${item.id}-${index}`} className="flex justify-between text-sm">
                                                 <span>{item.quantity} x {item.name}</span>
                                             </div>
                                         ))}
@@ -582,7 +583,7 @@ export default function OperationsPage() {
                                                     <Badge variant="secondary">{order.type}</Badge>
                                                 </div>
                                                 <div className="text-sm mt-1">
-                                                    {order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                                                    {order.items.map((i, index) => `${i.quantity}x ${i.name}`).join(', ')}
                                                 </div>
                                             </Card>
                                         ))}
@@ -747,8 +748,8 @@ export default function OperationsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {viewOrder?.items.map(item => (
-                            <TableRow key={item.id}>
+                        {viewOrder?.items.map((item, index) => (
+                            <TableRow key={`${item.id}-${index}`}>
                                 <TableCell>{item.quantity} x {item.name}</TableCell>
                                 <TableCell className='text-right flex items-center justify-end'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
@@ -1063,3 +1064,4 @@ export default function OperationsPage() {
     </>
   );
 }
+

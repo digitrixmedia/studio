@@ -1022,12 +1022,12 @@ export default function OrdersPage() {
                         <p className="text-muted-foreground">No items in order.</p>
                         ) : (
                         <div className="space-y-2">
-                            {activeOrder.items.map(item => {
+                            {activeOrder.items.map((item, index) => {
                                 const menuItem = menuItems.find(mi => mi.id === item.baseMenuItemId);
                                 const isBogoEligible = menuItem?.isBogo;
 
                                 return (
-                                <div key={item.id}>
+                                <div key={`${item.id}-${index}`}>
                                     <div className="flex items-start">
                                         <div className='flex-1 text-left'>
                                             <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
@@ -1581,6 +1581,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
 

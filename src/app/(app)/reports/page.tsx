@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
@@ -917,8 +918,8 @@ export default function ReportsPage() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {viewedOrder?.items.map(item => (
-                            <TableRow key={item.id}>
+                        {viewedOrder?.items.map((item, index) => (
+                            <TableRow key={`${item.id}-${index}`}>
                                 <TableCell>{item.quantity} x {item.name}</TableCell>
                                 <TableCell className='text-right flex items-center justify-end'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
@@ -1002,3 +1003,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+
