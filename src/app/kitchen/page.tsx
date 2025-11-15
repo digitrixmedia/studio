@@ -85,8 +85,8 @@ function OrderTicket({ order, onUpdateStatus }: { order: Order, onUpdateStatus: 
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 space-y-2 text-sm">
-        {order.items.map(item => (
-          <div key={item.id}>
+        {order.items.map((item, index) => (
+          <div key={`${item.id}-${index}`}>
             <span className="font-bold">{item.quantity}x</span> {item.name}
              {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 pl-4 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
           </div>
