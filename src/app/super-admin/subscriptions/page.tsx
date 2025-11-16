@@ -43,7 +43,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { subscriptions as initialSubscriptions } from '@/lib/data';
-import type { Subscription, SubscriptionStatus } from '@/lib/types';
+import type { Subscription, SubscriptionStatus, User } from '@/lib/types';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -56,7 +56,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 
 const initialFormState = {
@@ -70,7 +70,7 @@ const initialFormState = {
 };
 
 export default function SubscriptionsPage() {
-  const { auth } = useAppContext();
+  const { auth, users, setUsers } = useAppContext();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
@@ -134,8 +134,19 @@ export default function SubscriptionsPage() {
 
     } else {
        // Create new subscription
+       const superAdminEmail = auth.currentUser?.email;
+       const superAdminPassword = 'password123'; // This is a temporary solution for the demo.
+       
+       if (!superAdminEmail) {
+            toast({ variant: "destructive", title: "Error", description: "Super admin is not logged in." });
+            return;
+       }
+
        try {
         await createUserWithEmailAndPassword(auth, formData.adminEmail, formData.adminPassword);
+        
+        // Immediately sign the super admin back in
+        await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
         
         const newSub: Subscription = {
           id: `sub-${Date.now()}`,
@@ -150,7 +161,18 @@ export default function SubscriptionsPage() {
           totalReads: 0,
           totalWrites: 0,
         };
+
+        const newUser: User = {
+            id: `user-${Date.now()}`,
+            name: formData.adminName,
+            email: formData.adminEmail,
+            role: 'admin',
+            subscriptionId: newSub.id,
+        };
+
         setSubscriptions(prev => [newSub, ...prev]);
+        setUsers(prev => [...prev, newUser]);
+
         toast({
           title: "Subscription & User Created",
           description: `User account for ${formData.adminEmail} has been created successfully.`,
@@ -168,6 +190,8 @@ export default function SubscriptionsPage() {
                 title: "User Creation Failed",
                 description: description,
             });
+            // Sign back in even if creation fails
+            await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
             return; // Stop execution if user creation fails
        }
     }
@@ -374,3 +398,5 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
+
+    

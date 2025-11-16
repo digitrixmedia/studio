@@ -2,7 +2,7 @@
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer } from '@/lib/types';
-import { users, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders } from '@/lib/data';
+import { users as initialUsersData, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,8 @@ interface AppContextType {
   updateCustomer: (customerId: string, updates: Partial<Customer>) => void;
   activeOrderId: string | null;
   setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>;
+  users: User[];
+  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   addOrder: () => void;
   removeOrder: (orderId: string) => void;
   updateOrder: (orderId: string, updates: Partial<AppOrder>) => void;
@@ -67,6 +69,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
+  const [users, setUsers] = useState<User[]>(initialUsersData);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -78,7 +81,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   // Create Firebase users from mock data on initial load
   useEffect(() => {
     const createUsers = async () => {
-      for (const user of users) {
+      for (const user of initialUsersData) {
         try {
           await createUserWithEmailAndPassword(auth, user.email, 'password123');
           console.log(`User ${user.email} created successfully.`);
@@ -150,6 +153,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 setCurrentUser(appUser);
             } else {
                 // This case can happen if a user is deleted from `data.ts` but not Firebase.
+                // Or if a new user was just created and the local `users` state hasn't updated yet.
+                // We'll rely on redirection logic to handle this gracefully.
                 setCurrentUser(null);
             }
         } else {
@@ -163,7 +168,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth]);
+  }, [auth, users]); // Add `users` as a dependency
 
   useEffect(() => {
     const storedOutlet = localStorage.getItem('selectedOutlet');
@@ -438,6 +443,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     updateCustomer,
     orders,
     setOrders,
+    users,
+    setUsers,
     tables,
     setTables,
     heldOrders,
@@ -466,3 +473,5 @@ export function useAppContext() {
   }
   return context;
 }
+
+    
