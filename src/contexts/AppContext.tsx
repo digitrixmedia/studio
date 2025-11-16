@@ -6,6 +6,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
+import { initializeFirebase } from '@/firebase';
 
 interface AppContextType {
   currentUser: User | null;
@@ -29,7 +31,7 @@ interface AppContextType {
   resumeOrder: (orderId: string) => void;
   getOrderByTable: (tableId: string) => AppOrder | undefined;
   loadOrder: (order: Order) => void;
-  login: (role: Role) => void;
+  login: (email: string, password: string) => void;
   logout: () => void;
   selectOutlet: (outlet: FranchiseOutlet) => void;
   clearSelectedOutlet: () => void;
@@ -68,6 +70,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
   const { settings, setSetting } = useSettings();
+
+  const { auth } = initializeFirebase();
 
     const customers = useMemo(() => {
         const customerMap = new Map<string, Customer>();
@@ -117,26 +121,40 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const storedUserRole = localStorage.getItem('userRole') as Role | null;
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+        if (firebaseUser && firebaseUser.email) {
+            // User is signed in.
+            const appUser = users.find(u => u.email === firebaseUser.email);
+            if (appUser) {
+                setCurrentUser(appUser);
+            } else {
+                // This case can happen if a user is deleted from `data.ts` but not Firebase.
+                setCurrentUser(null);
+            }
+        } else {
+            // User is signed out.
+            setCurrentUser(null);
+             if (!pathname.startsWith('/login')) {
+                router.push('/login');
+            }
+        }
+    });
+
+    return () => unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth]);
+
+  useEffect(() => {
     const storedOutlet = localStorage.getItem('selectedOutlet');
-    
-    if (storedUserRole) {
-      login(storedUserRole, true); // Pass a flag to prevent immediate redirection
-    }
-    
-    if (storedOutlet) {
+     if (storedOutlet) {
       try {
         setSelectedOutlet(JSON.parse(storedOutlet));
       } catch (e) {
         localStorage.removeItem('selectedOutlet');
       }
     }
-    
-    if (!storedUserRole && !pathname.startsWith('/login')) {
-         router.push('/login');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   useEffect(() => {
     if (!currentUser) {
@@ -212,51 +230,26 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, selectedOutlet, pathname, router, settings.defaultScreen]);
 
-  const login = (role: Role, isInitialLoad = false) => {
-    const user = users.find(u => u.role === role);
-    if (user) {
-      // Super Admins can always log in
-      if (user.role === 'super-admin') {
-        setCurrentUser(user);
-        localStorage.setItem('userRole', role);
-        if (!isInitialLoad) router.push('/super-admin/dashboard');
-        return;
-      }
-      
-      // Check subscription status for all other users
-      const userSubscription = subscriptions.find(s => s.id === user.subscriptionId);
-      if (userSubscription && userSubscription.status === 'active') {
-        setCurrentUser(user);
-        localStorage.setItem('userRole', role);
-        if (!isInitialLoad) {
-           if (role === 'admin') {
-            router.push('/franchise/dashboard');
-          } else if (role === 'waiter' || role === 'cashier') {
-            router.push('/orders');
-          } else {
-             if (settings.defaultScreen === 'Billing') {
-                router.push('/orders');
-            } else if (settings.defaultScreen === 'Dashboard') {
-                router.push('/dashboard');
-            } else {
-                router.push('/tables');
-            }
-          }
+  const login = async (email: string, password: string) => {
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged will handle the user state update and redirection
+    } catch (error: any) {
+        let description = "An unknown error occurred.";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            description = "Invalid email or password. Please try again.";
         }
-      } else if (!isInitialLoad) { // Only show toast on explicit login attempts
         toast({
             variant: "destructive",
             title: "Login Failed",
-            description: `Your subscription is ${userSubscription?.status || 'not found'}. Please contact support.`,
+            description,
         });
-      }
     }
   };
 
-  const logout = () => {
-    setCurrentUser(null);
+  const logout = async () => {
+    await signOut(auth);
     setSelectedOutlet(null);
-    localStorage.removeItem('userRole');
     localStorage.removeItem('selectedOutlet');
     router.push('/login');
   };
