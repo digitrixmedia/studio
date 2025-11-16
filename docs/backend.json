@@ -1,0 +1,522 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the ZappyyPOS system.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role within the cafe (Admin, Manager, Cashier, Waiter, Kitchen Staff)."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "email"
+      ]
+    },
+    "MenuItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MenuItem",
+      "type": "object",
+      "description": "Represents an item on the cafe's menu.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the menu item."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the menu item (e.g., Cafe Latte)."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the menu item."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category of the menu item (e.g., Hot Coffee)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the menu item."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the image for the menu item.",
+          "format": "uri"
+        },
+        "taxRate": {
+          "type": "number",
+          "description": "Applicable tax rate for the menu item (GST slab)."
+        },
+        "isAvailable": {
+          "type": "boolean",
+          "description": "Flag indicating whether the item is currently available."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "price",
+        "category"
+      ]
+    },
+    "Ingredient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ingredient",
+      "type": "object",
+      "description": "Represents a raw material used in menu items.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ingredient."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the ingredient (e.g., Coffee Beans, Milk)."
+        },
+        "unit": {
+          "type": "string",
+          "description": "Unit of measurement for the ingredient (e.g., gms, ml)."
+        },
+        "stockLevel": {
+          "type": "number",
+          "description": "Current stock level of the ingredient."
+        },
+        "minimumThreshold": {
+          "type": "number",
+          "description": "Minimum stock level threshold for triggering low stock alerts."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "unit",
+        "stockLevel",
+        "minimumThreshold"
+      ]
+    },
+    "MenuItemIngredient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MenuItemIngredient",
+      "type": "object",
+      "description": "Represents the quantity of an ingredient required for a menu item.",
+      "properties": {
+        "menuItemId": {
+          "type": "string",
+          "description": "Reference to MenuItem. (Relationship: MenuItem 1:N MenuItemIngredient)"
+        },
+        "ingredientId": {
+          "type": "string",
+          "description": "Reference to Ingredient. (Relationship: Ingredient 1:N MenuItemIngredient)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the ingredient required for the menu item."
+        }
+      },
+      "required": [
+        "menuItemId",
+        "ingredientId",
+        "quantity"
+      ]
+    },
+    "Table": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Table",
+      "type": "object",
+      "description": "Represents a table in the cafe.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the table."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the table (e.g., Table 1, Sofa Seating)."
+        },
+        "status": {
+          "type": "string",
+          "description": "Current status of the table (Vacant, Occupied, Billing)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "status"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order."
+        },
+        "orderType": {
+          "type": "string",
+          "description": "Type of order (Dine-In, Takeaway, Delivery)."
+        },
+        "tableId": {
+          "type": "string",
+          "description": "Reference to Table. (Relationship: Table 1:N Order) Nullable for Takeaway/Delivery orders."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Order)"
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "Date and time the order was placed.",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Total amount of the order."
+        }
+      },
+      "required": [
+        "id",
+        "orderType",
+        "customerId",
+        "orderDate",
+        "totalAmount"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents an item within an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order item."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N OrderItem)"
+        },
+        "menuItemId": {
+          "type": "string",
+          "description": "Reference to MenuItem. (Relationship: MenuItem 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of the menu item in the order."
+        },
+        "itemPrice": {
+          "type": "number",
+          "description": "Price of the item at the time of the order."
+        },
+        "customizations": {
+          "type": "string",
+          "description": "Stringified JSON of customizations like size and add-ons at time of order to persist customer choice."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "menuItemId",
+        "quantity",
+        "itemPrice"
+      ]
+    },
+    "Payment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Payment",
+      "type": "object",
+      "description": "Represents a payment made for an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the payment."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N Payment)"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Method of payment (Cash, UPI, Card, Other Digital Wallets)."
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount paid."
+        },
+        "transactionId": {
+          "type": "string",
+          "description": "Transaction identifier (if applicable, e.g., for UPI)."
+        },
+        "paymentDate": {
+          "type": "string",
+          "description": "Date and time the payment was made.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "paymentMethod",
+        "amount",
+        "paymentDate"
+      ]
+    },
+    "Discount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Discount",
+      "type": "object",
+      "description": "Represents a discount applied to an order.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the discount."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the discount (e.g., 10% Off Tuesdays)."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of discount (Percentage, Flat Amount)."
+        },
+        "value": {
+          "type": "number",
+          "description": "Value of the discount (e.g., 10 for 10%, 5 for $5)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "value"
+      ]
+    },
+    "OrderDiscount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderDiscount",
+      "type": "object",
+      "description": "Represents a discount applied to a specific order.",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "description": "Reference to Order. (Relationship: Order 1:N OrderDiscount)"
+        },
+        "discountId": {
+          "type": "string",
+          "description": "Reference to Discount. (Relationship: Discount 1:N OrderDiscount)"
+        }
+      },
+      "required": [
+        "orderId",
+        "discountId"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Uses path-based ownership for private user data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/menu_items/{menuItemId}",
+        "definition": {
+          "entityName": "MenuItem",
+          "schema": {
+            "$ref": "#/backend/entities/MenuItem"
+          },
+          "description": "Stores menu items available in the cafe.",
+          "params": [
+            {
+              "name": "menuItemId",
+              "description": "The unique identifier of the menu item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/ingredients/{ingredientId}",
+        "definition": {
+          "entityName": "Ingredient",
+          "schema": {
+            "$ref": "#/backend/entities/Ingredient"
+          },
+          "description": "Stores ingredients used in menu items.",
+          "params": [
+            {
+              "name": "ingredientId",
+              "description": "The unique identifier of the ingredient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/menu_item_ingredients/{menuItemIngredientId}",
+        "definition": {
+          "entityName": "MenuItemIngredient",
+          "schema": {
+            "$ref": "#/backend/entities/MenuItemIngredient"
+          },
+          "description": "Represents the relationship between menu items and ingredients.",
+          "params": [
+            {
+              "name": "menuItemIngredientId",
+              "description": "The unique identifier of the menu item ingredient relationship."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tables/{tableId}",
+        "definition": {
+          "entityName": "Table",
+          "schema": {
+            "$ref": "#/backend/entities/Table"
+          },
+          "description": "Stores information about tables in the cafe.",
+          "params": [
+            {
+              "name": "tableId",
+              "description": "The unique identifier of the table."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores customer orders. Includes denormalized 'customerId' for authorization independence.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "The unique identifier of the order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}/order_items/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Stores items within an order. Path based ownership inherited from orders collection.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "The unique identifier of the order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "The unique identifier of the order item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/payments/{paymentId}",
+        "definition": {
+          "entityName": "Payment",
+          "schema": {
+            "$ref": "#/backend/entities/Payment"
+          },
+          "description": "Stores payment information for orders.",
+          "params": [
+            {
+              "name": "paymentId",
+              "description": "The unique identifier of the payment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/discounts/{discountId}",
+        "definition": {
+          "entityName": "Discount",
+          "schema": {
+            "$ref": "#/backend/entities/Discount"
+          },
+          "description": "Stores available discounts.",
+          "params": [
+            {
+              "name": "discountId",
+              "description": "The unique identifier of the discount."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/order_discounts/{orderDiscountId}",
+        "definition": {
+          "entityName": "OrderDiscount",
+          "schema": {
+            "$ref": "#/backend/entities/OrderDiscount"
+          },
+          "description": "Represents discounts applied to specific orders.",
+          "params": [
+            {
+              "name": "orderDiscountId",
+              "description": "The unique identifier of the order discount."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Collection to store admin roles. Existence of a document implies admin role.  Uses existence over content for simplicity.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support ZappyyPOS's features while adhering to the principles of Authorization Independence, Structural Segregation, Access Modeling, and Data Clarity. Authorization independence is achieved through denormalization. For example, the `orders` collection stores the `customerId` to avoid requiring a `get()` operation to retrieve user information when applying security rules to orders. This enables atomic operations and simplifies security rule definition.\n\n**Structural Segregation** is implemented by separating user data (`/users/{userId}`) from global data like menu items (`/menu_items`) and discounts (`/discounts`). This separation allows for simpler security rules as each collection has a homogeneous security posture. Path-based ownership is used for user-specific data, such as a user's order history, enabling straightforward security rules based on `request.auth.uid`.\n\n**Access Modeling** utilizes the membership map approach to manage collaborative access. While the current entities don't explicitly require collaborative access, the structure is prepared for future needs. Global roles are managed using the `/roles_admin/{uid}` collection, using existence over content for simplicity and security.\n\nThe data structure also facilitates secure `list` operations (QAPs). Because data is segregated into collections with homogeneous security requirements, listing data within a collection is inherently secure, as all documents within a collection adhere to the same set of security rules.\n\nFurthermore, the structure supports data integrity by clearly defining ownership (e.g., `customerId` in `orders`) and using explicit state modeling (`status` field in `Table`). Predictable schemas and naming conventions are enforced across all collections to enhance debuggability and maintainability."
+  }
+}

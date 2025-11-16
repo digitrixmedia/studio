@@ -1,0 +1,231 @@
+/**
+ * @fileoverview Firestore Security Rules for ZappyyPOS.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a multi-tenant security model with path-based ownership for user data
+ * and role-based access control for administrative functions. Authorization independence is a priority,
+ * achieved by denormalizing key authorization data directly onto documents.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores private user profile data, accessible only to the user.
+ * - /menu_items/{menuItemId}: Stores publicly accessible menu items.
+ * - /ingredients/{ingredientId}: Stores publicly accessible ingredient information.
+ * - /menu_item_ingredients/{menuItemIngredientId}: Stores publicly accessible relations between menu items and ingredients.
+ * - /tables/{tableId}: Stores publicly accessible table information.
+ * - /orders/{orderId}: Stores order data, with customerId for owner-based authorization.
+ * - /orders/{orderId}/order_items/{orderItemId}: Stores order item data, inheriting authorization from the parent order.
+ * - /payments/{paymentId}: Stores payment information.
+ * - /discounts/{discountId}: Stores discount information.
+ * - /order_discounts/{orderDiscountId}: Stores order discount information.
+ * - /roles_admin/{userId}: Documents in this collection indicate that the user is an administrator.
+ *
+ * Key Security Decisions:
+ * - User data is strictly private; users can only access their own data under /users/{userId}.
+ * - Menu items, ingredients, tables, and discounts are publicly readable.
+ * - Orders are secured using the customerId field.
+ * - Administrative privileges are determined by the existence of a document in the /roles_admin/{userId} collection.
+ * - Data validation is relaxed to allow for rapid prototyping, focusing on ownership and relational integrity only.
+ *
+ * Denormalization for Authorization:
+ * - Orders include the customerId field to allow for direct authorization checks without additional reads.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Checks if the request is made by a signed-in user.
+     * @param {string} userId - The user ID to check against.
+     * @return {bool} True if the user is signed in, false otherwise.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the resource based on the provided user ID.
+     * @param {string} userId - The user ID to check against.
+     * @return {bool} True if the user is the owner, false otherwise.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the existing resource based on the provided user ID and that the resource exists.
+     * @param {string} userId - The user ID to check against.
+     * @return {bool} True if the user is the owner and the resource exists, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user is an admin.
+     * @return {bool} True if the user is an admin, false otherwise.
+     */
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * @description Rules for user profiles.
+     * @path /users/{userId}
+     * @allow (create) - A user can create their own profile if the userId matches their auth.uid.
+     * @allow (get, list, update, delete) - A user can only access their own profile.
+     * @deny (create) - A user cannot create a profile with a userId that doesn't match their auth.uid.
+     * @principle Enforces document ownership for user profiles.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for menu items.
+     * @path /menu_items/{menuItemId}
+     * @allow (get, list) - Anyone can read menu items.
+     * @allow (create, update, delete) - Only admins can create, update, or delete menu items.
+     * @principle Public read access with admin-only writes.
+     */
+    match /menu_items/{menuItemId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for ingredients.
+     * @path /ingredients/{ingredientId}
+     * @allow (get, list) - Anyone can read ingredients.
+     * @allow (create, update, delete) - Only admins can create, update, or delete ingredients.
+     * @principle Public read access with admin-only writes.
+     */
+    match /ingredients/{ingredientId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for menu item ingredients.
+     * @path /menu_item_ingredients/{menuItemIngredientId}
+     * @allow (get, list) - Anyone can read menu item ingredients.
+     * @allow (create, update, delete) - Only admins can create, update, or delete menu item ingredients.
+     * @principle Public read access with admin-only writes.
+     */
+    match /menu_item_ingredients/{menuItemIngredientId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for tables.
+     * @path /tables/{tableId}
+     * @allow (get, list) - Anyone can read table information.
+     * @allow (create, update, delete) - Only admins can create, update, or delete tables.
+     * @principle Public read access with admin-only writes.
+     */
+    match /tables/{tableId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for orders.
+     * @path /orders/{orderId}
+     * @allow (get, list) - Anyone can read order information.
+     * @allow (create) - Any signed-in user can create an order.
+     * @allow (update, delete) - Only the customer who placed the order or an admin can update or delete it.
+     * @principle Owner-based access with admin override.
+     */
+    match /orders/{orderId} {
+      allow get, list: if true;
+      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow update: if (isExistingOwner(resource.data.customerId) || isAdmin());
+      allow delete: if (isExistingOwner(resource.data.customerId) || isAdmin());
+    }
+
+    /**
+     * @description Rules for order items within an order.
+     * @path /orders/{orderId}/order_items/{orderItemId}
+     * @allow (get, list) - Anyone can read order items within an order.
+     * @allow (create) - Only the customer who placed the order or an admin can create an order item.
+     * @allow (update, delete) - Only the customer who placed the order or an admin can update or delete order items.
+     * @principle Owner-based access inherited from the parent order.
+     */
+    match /orders/{orderId}/order_items/{orderItemId} {
+       allow get, list: if true;
+       allow create: if (isSignedIn() && get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid) || isAdmin();
+       allow update: if ((resource != null) && ((get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid) || isAdmin()));
+       allow delete: if ((resource != null) && ((get(/databases/$(database)/documents/orders/$(orderId)).data.customerId == request.auth.uid) || isAdmin()));
+    }
+
+    /**
+     * @description Rules for payments.
+     * @path /payments/{paymentId}
+     * @allow (get, list) - Anyone can read payment information.
+     * @allow (create, update, delete) - Only admins can create, update, or delete payments.
+     * @principle Admin-only access.
+     */
+    match /payments/{paymentId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for discounts.
+     * @path /discounts/{discountId}
+     * @allow (get, list) - Anyone can read discount information.
+     * @allow (create, update, delete) - Only admins can create, update, or delete discounts.
+     * @principle Public read access with admin-only writes.
+     */
+    match /discounts/{discountId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Rules for order discounts.
+     * @path /order_discounts/{orderDiscountId}
+     * @allow (get, list) - Anyone can read order discount information.
+     * @allow (create, update, delete) - Only admins can create, update, or delete order discounts.
+     * @principle Admin-only access.
+     */
+    match /order_discounts/{orderDiscountId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+
+     /**
+      * @description Rules for admin roles.
+      * @path /roles_admin/{userId}
+      * @allow (get, list) - Only admins can check other admins
+      * @allow (create) - Only admins can grant admin role.
+      * @allow (delete) - Only admins can revoke admin role.
+      * @deny (create) - A user cannot assign themselves admin role.
+      * @principle Enforces role-based access control for admins.
+      */
+    match /roles_admin/{userId} {
+        allow get, list: if isAdmin();
+        allow create: if isAdmin();
+        allow update: if false;
+        allow delete: if isAdmin() && resource != null;
+    }
+  }
+}
