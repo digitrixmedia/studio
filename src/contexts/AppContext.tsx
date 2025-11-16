@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeFirebase } from '@/firebase';
 
 interface AppContextType {
@@ -72,6 +72,25 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { settings, setSetting } = useSettings();
 
   const { auth } = initializeFirebase();
+
+  // Create Firebase users from mock data on initial load
+  useEffect(() => {
+    const createUsers = async () => {
+      for (const user of users) {
+        try {
+          await createUserWithEmailAndPassword(auth, user.email, 'password123');
+          console.log(`User ${user.email} created successfully.`);
+        } catch (error: any) {
+          if (error.code === 'auth/email-already-in-use') {
+            // This is expected on subsequent loads, so we can ignore it.
+          } else {
+            console.error(`Error creating user ${user.email}:`, error);
+          }
+        }
+      }
+    };
+    createUsers();
+  }, [auth]);
 
     const customers = useMemo(() => {
         const customerMap = new Map<string, Customer>();
