@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer } from '@/lib/types';
@@ -37,6 +38,7 @@ interface AppContextType {
   clearSelectedOutlet: () => void;
   createNewOrder: () => AppOrder;
   startOrderForTable: (tableId: string) => void;
+  auth: ReturnType<typeof getAuth>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -451,6 +453,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     loadOrder,
     createNewOrder,
     startOrderForTable,
+    auth
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

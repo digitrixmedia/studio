@@ -55,6 +55,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useAppContext } from '@/contexts/AppContext';
 
 
 const initialFormState = {
@@ -68,6 +69,7 @@ const initialFormState = {
 };
 
 export default function SubscriptionsPage() {
+  const { auth } = useAppContext();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
@@ -96,11 +98,21 @@ export default function SubscriptionsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.adminEmail || (!formData.adminPassword && !editingSub)) {
+        toast({
+            variant: "destructive",
+            title: "Missing Information",
+            description: "Email and password are required.",
+        });
+        return;
+    }
+
     if(editingSub) {
-      // Update existing subscription
+      // In a real app, you'd also update the user's details in Firebase Auth if needed.
+      // This is more complex and requires admin privileges, so we'll skip it for now.
       setSubscriptions(subscriptions.map(sub => 
         sub.id === editingSub.id 
           ? {
@@ -121,24 +133,42 @@ export default function SubscriptionsPage() {
 
     } else {
        // Create new subscription
-       const newSub: Subscription = {
-        id: `sub-${Date.now()}`,
-        franchiseName: formData.franchiseName,
-        outletName: formData.outletName,
-        adminName: formData.adminName,
-        adminEmail: formData.adminEmail,
-        startDate: new Date(formData.startDate),
-        endDate: new Date(formData.endDate),
-        status: 'active',
-        storageUsedMB: 0,
-        totalReads: 0,
-        totalWrites: 0,
-      };
-      setSubscriptions(prev => [newSub, ...prev]);
-      toast({
-        title: "Subscription Created",
-        description: `${formData.outletName} for ${formData.franchiseName} has been created.`,
-      });
+       try {
+        await auth.createUserWithEmailAndPassword(formData.adminEmail, formData.adminPassword);
+        
+        const newSub: Subscription = {
+          id: `sub-${Date.now()}`,
+          franchiseName: formData.franchiseName,
+          outletName: formData.outletName,
+          adminName: formData.adminName,
+          adminEmail: formData.adminEmail,
+          startDate: new Date(formData.startDate),
+          endDate: new Date(formData.endDate),
+          status: 'active',
+          storageUsedMB: 0,
+          totalReads: 0,
+          totalWrites: 0,
+        };
+        setSubscriptions(prev => [newSub, ...prev]);
+        toast({
+          title: "Subscription & User Created",
+          description: `User account for ${formData.adminEmail} has been created successfully.`,
+        });
+
+       } catch (error: any) {
+           let description = "An unknown error occurred.";
+            if (error.code === 'auth/email-already-in-use') {
+                description = "This email is already in use by another account.";
+            } else if (error.code === 'auth/weak-password') {
+                description = "The password is too weak. It must be at least 6 characters.";
+            }
+            toast({
+                variant: "destructive",
+                title: "User Creation Failed",
+                description: description,
+            });
+            return; // Stop execution if user creation fails
+       }
     }
 
     setIsDialogOpen(false);
