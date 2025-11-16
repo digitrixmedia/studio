@@ -56,6 +56,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 
 const initialFormState = {
@@ -134,7 +135,7 @@ export default function SubscriptionsPage() {
     } else {
        // Create new subscription
        try {
-        await auth.createUserWithEmailAndPassword(formData.adminEmail, formData.adminPassword);
+        await createUserWithEmailAndPassword(auth, formData.adminEmail, formData.adminPassword);
         
         const newSub: Subscription = {
           id: `sub-${Date.now()}`,
