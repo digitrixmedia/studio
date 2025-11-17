@@ -436,7 +436,7 @@ export default function OrdersPage() {
           <title>Customer Bill</title>
           <style>
             @page { 
-              size: 72mm auto; 
+              size: 70mm auto; 
               margin: 0;
             }
             body {
@@ -444,7 +444,7 @@ export default function OrdersPage() {
               color: #000;
               width: 68mm;
               padding: 0;
-              margin: 0 auto;
+              margin: 0;
               -webkit-print-color-adjust: exact;
             }
             * { 
@@ -454,7 +454,7 @@ export default function OrdersPage() {
             }
             .container { 
               display: block;
-              padding: 2mm;
+              padding: 1mm;
             }
             .header { 
               display: block;
@@ -1581,6 +1581,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
 
