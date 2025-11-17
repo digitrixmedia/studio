@@ -436,35 +436,30 @@ export default function OrdersPage() {
           <title>Customer Bill</title>
           <style>
             @page { 
-              size: 72mm auto; 
               margin: 0mm;
             }
             body {
               font-family: 'Arial', 'Source Code Pro', monospace;
               color: #000;
-              width: 72mm;
-              padding: 0;
               margin: 0;
+              padding: 0;
               -webkit-print-color-adjust: exact;
             }
             * { 
               box-sizing: border-box; 
-              margin: 0;
-              padding: 0;
             }
             .container { 
-              display: block;
-              padding: 0;
+              width: 72mm;
+              padding: 0 2mm; /* Added a small horizontal padding */
             }
             .header { 
-              display: block;
               text-align: center; 
               margin-bottom: 5px;
             }
             .header h2 {
                 font-weight: bold; 
                 font-size: 1.4rem;
-                margin-bottom: 2px;
+                margin: 0;
             }
             .header p { 
               font-size: 12px; 
@@ -479,10 +474,8 @@ export default function OrdersPage() {
             }
             
             .customer-details { 
-              display: block;
-              text-align: left; 
-              margin-bottom: 5px; 
               font-size: 12px; 
+              margin-bottom: 5px; 
             }
             .info-grid { 
               display: grid; 
@@ -490,7 +483,6 @@ export default function OrdersPage() {
               font-size: 12px; 
               margin-bottom: 5px; 
             }
-            .info-grid div { text-align: left; }
             .info-grid div:nth-child(even) { text-align: right; }
             
             table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -508,12 +500,12 @@ export default function OrdersPage() {
             .meal-item { font-size: 11px; padding-left: 15px; color: #333; }
             
             .totals { 
-              display: block;
               margin-top: 5px; 
               font-size: 12px; 
             }
             .totals .row { display: flex; justify-content: space-between; }
             .totals .grand-total { font-size: 16px; font-weight: bold; margin-top: 5px; }
+            .footer p { text-align: center; font-size: 11px; }
           </style>
         </head>
         <body>
@@ -1581,6 +1573,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
 
