@@ -454,7 +454,7 @@ export default function OrdersPage() {
             }
             .container { 
               display: block;
-              padding: 0 2mm;
+              padding: 0;
             }
             .header { 
               display: block;
@@ -1581,6 +1581,7 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
 
