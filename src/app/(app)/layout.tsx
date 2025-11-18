@@ -75,7 +75,7 @@ const navItems: NavItem[] = [
     href: '/operations',
     label: 'Operations',
     icon: LayoutGrid,
-    roles: ['manager', 'admin'],
+    roles: ['manager', 'admin', 'cashier'],
   },
   {
     href: '/tables',
@@ -89,18 +89,18 @@ const navItems: NavItem[] = [
     icon: CookingPot,
     roles: ['manager', 'kitchen', 'admin'],
   },
-  { href: '/menu', label: 'Menu', icon: Book, roles: ['manager', 'admin'] },
+  { href: '/menu', label: 'Menu', icon: Book, roles: ['manager', 'admin', 'cashier'] },
   {
     href: '/inventory',
     label: 'Inventory',
     icon: Box,
-    roles: ['manager', 'admin'],
+    roles: ['manager', 'admin', 'cashier'],
   },
   {
     href: '/reports',
     label: 'Reports',
     icon: BarChart2,
-    roles: ['manager', 'admin'],
+    roles: ['manager', 'admin', 'cashier'],
   },
   {
     href: '/profile',
