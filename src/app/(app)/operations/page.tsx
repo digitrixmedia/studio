@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -49,7 +50,7 @@ import { Button } from '@/components/ui/button';
 import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, menuItems } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer, OnlineOrderSource } from '@/lib/types';
 import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban, ArrowRight } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow, differenceInDays, getYear, setYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -120,6 +121,62 @@ export default function OperationsPage() {
 
     const defaultTab = searchParams.get('tab') || 'orders';
 
+    const handleSimulateOnlineOrder = useCallback((source: OnlineOrderSource) => {
+        const randomItemsCount = Math.floor(Math.random() * 3) + 1;
+        const orderItems: OrderItem[] = Array.from({ length: randomItemsCount }, () => {
+            const item = menuItems[Math.floor(Math.random() * menuItems.length)];
+            const quantity = 1;
+            return {
+                id: item.id,
+                name: item.name,
+                quantity,
+                price: item.price,
+                totalPrice: item.price * quantity,
+            };
+        });
+
+        const subTotal = orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
+        const tax = subTotal * 0.05;
+        const total = subTotal + tax;
+        
+        const newOnlineOrder: Order = {
+            id: `online-${source}-${Date.now()}`,
+            orderNumber: `Z-${Math.floor(Math.random() * 9000) + 1000}`,
+            type: 'delivery',
+            items: orderItems,
+            subTotal,
+            tax,
+            discount: 0,
+            total,
+            status: 'incoming',
+            createdAt: new Date(),
+            createdBy: 'system',
+            customerName: 'Online Customer',
+            customerPhone: '9999988888',
+            onlineOrderSource: source,
+        };
+
+        setOrders(prev => [newOnlineOrder, ...prev]);
+        toast({
+            title: `New Online Order from ${source.charAt(0).toUpperCase() + source.slice(1)}!`,
+            description: `A new order has arrived. Please review and accept.`,
+            action: (
+                <Button variant="outline" size="sm" onClick={() => router.push('/operations?tab=online-orders')}>
+                    View <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            ),
+        });
+    }, [menuItems, router, setOrders, toast]);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const source: OnlineOrderSource = Math.random() > 0.5 ? 'zomato' : 'swiggy';
+            handleSimulateOnlineOrder(source);
+        }, 15000); // Generate a new order every 15 seconds
+
+        return () => clearInterval(interval); // Clean up on component unmount
+    }, [handleSimulateOnlineOrder]);
+    
     useEffect(() => {
         if (viewCustomer) {
             setCustomerFormData({
@@ -351,53 +408,6 @@ export default function OperationsPage() {
         return diff >= 0 && diff <= 30;
     };
     
-    const handleSimulateOnlineOrder = (source: OnlineOrderSource) => {
-        const randomItemsCount = Math.floor(Math.random() * 3) + 1;
-        const orderItems: OrderItem[] = Array.from({ length: randomItemsCount }, () => {
-            const item = menuItems[Math.floor(Math.random() * menuItems.length)];
-            const quantity = 1;
-            return {
-                id: item.id,
-                name: item.name,
-                quantity,
-                price: item.price,
-                totalPrice: item.price * quantity,
-            };
-        });
-
-        const subTotal = orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
-        const tax = subTotal * 0.05;
-        const total = subTotal + tax;
-        
-        const newOnlineOrder: Order = {
-            id: `online-${source}-${Date.now()}`,
-            orderNumber: `Z-${Math.floor(Math.random() * 9000) + 1000}`,
-            type: 'delivery',
-            items: orderItems,
-            subTotal,
-            tax,
-            discount: 0,
-            total,
-            status: 'incoming',
-            createdAt: new Date(),
-            createdBy: 'system',
-            customerName: 'Online Customer',
-            customerPhone: '9999988888',
-            onlineOrderSource: source,
-        };
-
-        setOrders(prev => [newOnlineOrder, ...prev]);
-        toast({
-            title: "New Online Order!",
-            description: `A new order has arrived from ${source}.`,
-            action: (
-                <Button variant="outline" size="sm" onClick={() => router.push('/operations?tab=online-orders')}>
-                    View <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-        });
-    };
-
     const handleOnlineOrderAction = (orderId: string, action: 'accept' | 'reject') => {
         const order = orders.find(o => o.id === orderId);
         if (!order) return;
@@ -583,11 +593,7 @@ export default function OperationsPage() {
                         <div className="flex justify-between items-center">
                             <div>
                                 <CardTitle>Online Aggregator Orders</CardTitle>
-                                <CardDescription>Accept or reject new orders from Zomato and Swiggy.</CardDescription>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => handleSimulateOnlineOrder('zomato')}>Simulate Zomato Order</Button>
-                                <Button variant="outline" onClick={() => handleSimulateOnlineOrder('swiggy')}>Simulate Swiggy Order</Button>
+                                <CardDescription>Accept or reject new orders. New orders will appear here automatically.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
