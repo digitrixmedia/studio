@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSettings } from "@/contexts/SettingsContext";
+import { Switch } from "@/components/ui/switch";
 
 const navItems = [
     { name: 'Aggregators', id: 'aggregators' },
