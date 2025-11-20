@@ -1,5 +1,6 @@
 
 
+
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -68,7 +69,8 @@ export interface OrderItem {
 }
 
 export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
-export type OrderStatus = 'new' | 'preparing' | 'ready' | 'out-for-delivery' | 'completed' | 'cancelled';
+export type OnlineOrderSource = 'zomato' | 'swiggy';
+export type OrderStatus = 'new' | 'preparing' | 'ready' | 'out-for-delivery' | 'completed' | 'cancelled' | 'incoming' | 'rejected';
 export type PaymentMethod = 'cash' | 'upi' | 'card';
 
 export interface Order {
@@ -88,6 +90,7 @@ export interface Order {
   changeReturned?: number;
   customerName?: string;
   customerPhone?: string;
+  onlineOrderSource?: OnlineOrderSource;
 }
 
 export type TableStatus = 'vacant' | 'occupied' | 'billing';

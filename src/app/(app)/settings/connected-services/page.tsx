@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { useSettings } from "@/contexts/SettingsContext";
 
 const navItems = [
+    { name: 'Aggregators', id: 'aggregators' },
     { name: 'Inventory Settings', id: 'inventory' },
     { name: 'Day End Settings', id: 'day-end' },
     { name: 'Loyalty Settings', id: 'loyalty' },
@@ -33,6 +35,47 @@ export default function ConnectedServicesSettingsPage() {
         <SettingsPageLayout navItems={navItems}>
             {(activeTab) => (
                 <>
+                {activeTab === 'aggregators' && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Online Aggregators</CardTitle>
+                            <CardDescription>Connect with Zomato, Swiggy, and other online ordering platforms.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-8">
+                            <div className="space-y-4 p-4 border rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="zomato-enabled" className="font-semibold text-lg">Zomato</Label>
+                                    <Switch
+                                        id="zomato-enabled"
+                                        // checked={settings.zomatoEnabled}
+                                        // onCheckedChange={(checked) => setSetting('zomatoEnabled', checked)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="zomato-id">Restaurant ID</Label>
+                                    <Input id="zomato-id" placeholder="Enter your Zomato Restaurant ID" />
+                                </div>
+                            </div>
+                             <div className="space-y-4 p-4 border rounded-lg">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="swiggy-enabled" className="font-semibold text-lg">Swiggy</Label>
+                                    <Switch
+                                        id="swiggy-enabled"
+                                        // checked={settings.swiggyEnabled}
+                                        // onCheckedChange={(checked) => setSetting('swiggyEnabled', checked)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="swiggy-id">Restaurant ID</Label>
+                                    <Input id="swiggy-id" placeholder="Enter your Swiggy Restaurant ID" />
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveChanges}>Save Aggregator Settings</Button>
+                        </CardFooter>
+                    </Card>
+                )}
                 {activeTab === 'inventory' && (
                      <Card>
                         <CardHeader>
@@ -377,3 +420,4 @@ export default function ConnectedServicesSettingsPage() {
         </SettingsPageLayout>
     );
 }
+

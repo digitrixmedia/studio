@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import {
@@ -48,9 +49,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users } from '@/lib/data';
-import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle } from 'lucide-react';
+import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users, menuItems } from '@/lib/data';
+import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer, OnlineOrderSource } from '@/lib/types';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow, differenceInDays, getYear, setYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -63,6 +64,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
 import { Textarea } from '@/components/ui/textarea';
+import { ZappyyIcon } from '@/components/icons';
 
 const initialReservationState = {
     name: '',
@@ -345,14 +347,74 @@ export default function OperationsPage() {
         // Check if the event is within the next 30 days but not in the past
         return diff >= 0 && diff <= 30;
     };
+    
+    const handleSimulateOnlineOrder = (source: OnlineOrderSource) => {
+        const randomItemsCount = Math.floor(Math.random() * 3) + 1;
+        const orderItems: OrderItem[] = Array.from({ length: randomItemsCount }, () => {
+            const item = menuItems[Math.floor(Math.random() * menuItems.length)];
+            const quantity = 1;
+            return {
+                id: item.id,
+                name: item.name,
+                quantity,
+                price: item.price,
+                totalPrice: item.price * quantity,
+            };
+        });
+
+        const subTotal = orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
+        const tax = subTotal * 0.05;
+        const total = subTotal + tax;
+        
+        const newOnlineOrder: Order = {
+            id: `online-${source}-${Date.now()}`,
+            orderNumber: `Z-${Math.floor(Math.random() * 9000) + 1000}`,
+            type: 'delivery',
+            items: orderItems,
+            subTotal,
+            tax,
+            discount: 0,
+            total,
+            status: 'incoming',
+            createdAt: new Date(),
+            createdBy: 'system',
+            customerName: 'Online Customer',
+            customerPhone: '9999988888',
+            onlineOrderSource: source,
+        };
+
+        setOrders(prev => [newOnlineOrder, ...prev]);
+        toast({
+            title: "New Online Order!",
+            description: `A new order has arrived from ${source}.`,
+        });
+    };
+
+    const handleOnlineOrderAction = (orderId: string, action: 'accept' | 'reject') => {
+        setOrders(prev => prev.map(o => {
+            if (o.id === orderId) {
+                const newStatus = action === 'accept' ? 'new' : 'rejected';
+                return { ...o, status: newStatus };
+            }
+            return o;
+        }));
+        toast({
+            title: `Order ${action === 'accept' ? 'Accepted' : 'Rejected'}`,
+            description: `The online order has been ${action === 'accept' ? 'accepted and moved to KOTs' : 'rejected'}.`,
+        });
+    };
+    
+    const onlineOrders = orders.filter(o => o.status === 'incoming' || o.status === 'rejected');
+
 
   return (
     <>
     <div className='space-y-4'>
         <h1 className='text-2xl font-bold'>Operations Management</h1>
         <Tabs defaultValue={defaultTab}>
-            <TabsList className='grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6'>
+            <TabsList className='grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-7'>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
+                <TabsTrigger value="online-orders">Online Orders</TabsTrigger>
                 <TabsTrigger value="kots">KOTs</TabsTrigger>
                 <TabsTrigger value="customers">Customers</TabsTrigger>
                 <TabsTrigger value="live-view">Live View</TabsTrigger>
@@ -492,6 +554,61 @@ export default function OperationsPage() {
                     </Table>
                     </CardContent>
                 </Card>
+            </TabsContent>
+            <TabsContent value="online-orders">
+                 <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Online Aggregator Orders</CardTitle>
+                                <CardDescription>Accept or reject new orders from Zomato and Swiggy.</CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" onClick={() => handleSimulateOnlineOrder('zomato')}>Simulate Zomato Order</Button>
+                                <Button variant="outline" onClick={() => handleSimulateOnlineOrder('swiggy')}>Simulate Swiggy Order</Button>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {onlineOrders.map(order => (
+                                <Card key={order.id} className={cn("flex flex-col", order.status === 'rejected' && 'bg-destructive/10 border-destructive/50')}>
+                                    <CardHeader>
+                                        <CardTitle className="flex justify-between items-center">
+                                            <span>#{order.orderNumber}</span>
+                                            {order.onlineOrderSource === 'zomato' && <ZappyyIcon className="h-6 w-6 text-red-500" />}
+                                            {order.onlineOrderSource === 'swiggy' && <ZappyyIcon className="h-6 w-6 text-orange-500" />}
+                                        </CardTitle>
+                                        <CardDescription>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 space-y-1 text-sm">
+                                        {order.items.map(item => (
+                                            <div key={item.id} className="flex justify-between">
+                                                <span>{item.quantity} x {item.name}</span>
+                                                <span className="flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-1" />{item.totalPrice.toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                    </CardContent>
+                                    <CardFooter className="flex gap-2">
+                                        {order.status === 'incoming' && (
+                                            <>
+                                                <Button className="w-full" size="sm" onClick={() => handleOnlineOrderAction(order.id, 'accept')}>
+                                                    <CheckCircle className="mr-2" /> Accept
+                                                </Button>
+                                                <Button className="w-full" size="sm" variant="destructive" onClick={() => handleOnlineOrderAction(order.id, 'reject')}>
+                                                    <Ban className="mr-2" /> Reject
+                                                </Button>
+                                            </>
+                                        )}
+                                        {order.status === 'rejected' && (
+                                            <p className="text-destructive font-semibold text-sm">Order Rejected</p>
+                                        )}
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+                    </CardContent>
+                 </Card>
             </TabsContent>
              <TabsContent value="kots">
                 <Card>
@@ -1064,4 +1181,5 @@ export default function OperationsPage() {
     </>
   );
 }
+
 
