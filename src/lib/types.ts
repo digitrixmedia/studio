@@ -1,6 +1,3 @@
-
-
-
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -292,5 +289,3 @@ export interface AppOrder {
   discount: number;
   redeemedPoints: number;
 }
-
-    

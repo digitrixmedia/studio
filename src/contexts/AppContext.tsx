@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer } from '@/lib/types';
@@ -17,6 +16,8 @@ interface AppContextType {
   menuCategories: MenuCategory[];
   orders: AppOrder[];
   setOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
+  pastOrders: Order[];
+  setPastOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   tables: Table[];
   setTables: React.Dispatch<React.SetStateAction<Table[]>>;
   heldOrders: AppOrder[];
@@ -34,6 +35,7 @@ interface AppContextType {
   resumeOrder: (orderId: string) => void;
   getOrderByTable: (tableId: string) => AppOrder | undefined;
   loadOrder: (order: Order) => void;
+  loadOnlineOrderIntoPOS: (order: Order) => void;
   login: (email: string, password: string) => void;
   logout: () => void;
   selectOutlet: (outlet: FranchiseOutlet) => void;
@@ -65,7 +67,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const menuCategories = initialMenuCategories;
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
-  const [allPastOrders, setAllPastOrders] = useState<Order[]>(mockOrders);
+  const [pastOrders, setPastOrders] = useState<Order[]>(mockOrders);
   const [tables, setTables] = useState<Table[]>(initialTables);
   const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
@@ -100,7 +102,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const customers = useMemo(() => {
         const customerMap = new Map<string, Customer>();
 
-        allPastOrders.forEach(order => {
+        pastOrders.forEach(order => {
             if (order.customerPhone && order.status === 'completed') {
                 let customer = customerMap.get(order.customerPhone);
                 if (!customer) {
@@ -132,7 +134,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         });
 
         return Array.from(customerMap.values()).sort((a,b) => b.totalSpent - a.totalSpent);
-    }, [allPastOrders]);
+    }, [pastOrders]);
 
     const updateCustomer = (customerId: string, updates: Partial<Customer>) => {
         // In a real app, this would be an API call. Here we just simulate for the loyalty points.
@@ -398,6 +400,37 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loadOnlineOrderIntoPOS = (order: Order) => {
+    const newBill: AppOrder = {
+      id: `order-${Date.now()}`,
+      orderNumber: order.orderNumber,
+      items: order.items,
+      customer: {
+        name: order.customerName || 'Online Customer',
+        phone: order.customerPhone || '',
+      },
+      orderType: 'delivery',
+      tableId: '',
+      discount: 0,
+      redeemedPoints: 0,
+    };
+
+    const emptyOrderIndex = orders.findIndex(o => o.items.length === 0);
+    if (emptyOrderIndex !== -1) {
+      // Replace an empty bill if one exists
+      setOrders(prev => {
+        const newOrders = [...prev];
+        newOrders[emptyOrderIndex] = newBill;
+        return newOrders;
+      });
+      setActiveOrderId(newBill.id);
+    } else {
+      // Otherwise, add a new bill
+      setOrders(prev => [...prev, newBill]);
+      setActiveOrderId(newBill.id);
+    }
+  };
+
   const startOrderForTable = (tableId: string) => {
       const existingOrder = getOrderByTable(tableId);
       if (existingOrder) {
@@ -443,6 +476,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     updateCustomer,
     orders,
     setOrders,
+    pastOrders,
+    setPastOrders,
     users,
     setUsers,
     tables,
@@ -458,6 +493,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     resumeOrder,
     getOrderByTable,
     loadOrder,
+    loadOnlineOrderIntoPOS,
     createNewOrder,
     startOrderForTable,
     auth
@@ -473,5 +509,3 @@ export function useAppContext() {
   }
   return context;
 }
-
-    

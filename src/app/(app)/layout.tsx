@@ -31,6 +31,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
+  SidebarMenuBadge,
 } from '@/components/ui/sidebar';
 import {
   Sheet,
@@ -56,6 +57,7 @@ type NavItem = {
   label: string;
   icon: React.ElementType;
   roles: Role[];
+  notificationKey?: 'incomingOrders';
 };
 
 const navItems: NavItem[] = [
@@ -76,6 +78,7 @@ const navItems: NavItem[] = [
     label: 'Operations',
     icon: LayoutGrid,
     roles: ['manager', 'admin', 'cashier'],
+    notificationKey: 'incomingOrders',
   },
   {
     href: '/tables',
@@ -87,7 +90,7 @@ const navItems: NavItem[] = [
     href: '/kitchen',
     label: 'Kitchen Display',
     icon: CookingPot,
-    roles: ['manager', 'kitchen', 'admin'],
+    roles: ['manager', 'kitchen', 'admin', 'cashier'],
   },
   { href: '/menu', label: 'Menu', icon: Book, roles: ['manager', 'admin', 'cashier'] },
   {
@@ -140,10 +143,12 @@ const quickAccessItems: QuickAccessItem[] = [
 
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const { currentUser, selectedOutlet, clearSelectedOutlet } = useAppContext();
+  const { currentUser, selectedOutlet, clearSelectedOutlet, pastOrders } = useAppContext();
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarContentId, setSidebarContentId] = useState<string | null>(null);
+
+  const incomingOrdersCount = pastOrders.filter(o => o.status === 'incoming').length;
 
   const toggleSidebarContent = useCallback((id: string) => {
     setSidebarContentId(prevId => prevId === id ? null : id);
@@ -181,7 +186,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [router]);
 
   const sidebarContent = quickAccessItems.find((x) => x.id === sidebarContentId);
 
@@ -246,6 +251,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   <SidebarMenuButton isActive={pathname.startsWith(item.href)}>
                     <item.icon />
                     <span>{item.label}</span>
+                     {item.notificationKey === 'incomingOrders' && incomingOrdersCount > 0 && (
+                      <SidebarMenuBadge>{incomingOrdersCount}</SidebarMenuBadge>
+                    )}
                   </SidebarMenuButton>
                 </Link>
               </SidebarMenuItem>

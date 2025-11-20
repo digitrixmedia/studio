@@ -1,6 +1,3 @@
-
-
-
 'use client';
 
 import {
@@ -49,9 +46,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, orders as mockOrders, users, menuItems } from '@/lib/data';
+import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, menuItems } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer, OnlineOrderSource } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban, ArrowRight } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow, differenceInDays, getYear, setYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -81,13 +78,21 @@ const initialDeliveryBoyState = {
 };
 
 export default function OperationsPage() {
-    const { orders: appOrders, setOrders: setAppOrders, tables, setTables, startOrderForTable, loadOrder, customers } = useAppContext();
+    const { 
+        pastOrders: orders, 
+        setPastOrders: setOrders,
+        tables,
+        setTables,
+        startOrderForTable,
+        loadOrder,
+        customers,
+        loadOnlineOrderIntoPOS
+    } = useAppContext();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
     const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
     const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
-    const [orders, setOrders] = useState<Order[]>(mockOrders);
     
     const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'all'>('all');
     const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'all'>('all');
@@ -310,8 +315,6 @@ export default function OperationsPage() {
         router.push('/orders');
     };
     
-    const totalForOrder = (items: OrderItem[]) => items.reduce((sum, item) => sum + item.totalPrice, 0);
-    
     const getTierBadgeVariant = (tier: 'New' | 'Regular' | 'VIP'): 'secondary' | 'default' | 'destructive' => {
         if (tier === 'VIP') return 'destructive';
         if (tier === 'Regular') return 'default';
@@ -387,21 +390,33 @@ export default function OperationsPage() {
         toast({
             title: "New Online Order!",
             description: `A new order has arrived from ${source}.`,
+            action: (
+                <Button variant="outline" size="sm" onClick={() => router.push('/operations?tab=online-orders')}>
+                    View <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+            ),
         });
     };
 
     const handleOnlineOrderAction = (orderId: string, action: 'accept' | 'reject') => {
-        setOrders(prev => prev.map(o => {
-            if (o.id === orderId) {
-                const newStatus = action === 'accept' ? 'new' : 'rejected';
-                return { ...o, status: newStatus };
-            }
-            return o;
-        }));
-        toast({
-            title: `Order ${action === 'accept' ? 'Accepted' : 'Rejected'}`,
-            description: `The online order has been ${action === 'accept' ? 'accepted and moved to KOTs' : 'rejected'}.`,
-        });
+        const order = orders.find(o => o.id === orderId);
+        if (!order) return;
+
+        if (action === 'accept') {
+            loadOnlineOrderIntoPOS(order);
+            setOrders(prev => prev.filter(o => o.id !== orderId)); // Remove from operations view
+            toast({
+                title: "Order Accepted",
+                description: `Order #${order.orderNumber} has been loaded into the POS.`,
+            });
+            router.push('/orders');
+        } else { // Reject
+            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'rejected' } : o));
+            toast({
+                title: "Order Rejected",
+                description: `The online order has been rejected.`,
+            });
+        }
     };
     
     const onlineOrders = orders.filter(o => o.status === 'incoming' || o.status === 'rejected');
@@ -411,10 +426,17 @@ export default function OperationsPage() {
     <>
     <div className='space-y-4'>
         <h1 className='text-2xl font-bold'>Operations Management</h1>
-        <Tabs defaultValue={defaultTab}>
+        <Tabs defaultValue={defaultTab} onValueChange={(value) => router.push(`/operations?tab=${value}`)}>
             <TabsList className='grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-7'>
                 <TabsTrigger value="orders">Orders</TabsTrigger>
-                <TabsTrigger value="online-orders">Online Orders</TabsTrigger>
+                <TabsTrigger value="online-orders" className='relative'>
+                    Online Orders
+                    {onlineOrders.filter(o => o.status === 'incoming').length > 0 && (
+                        <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs">
+                           {onlineOrders.filter(o => o.status === 'incoming').length}
+                        </span>
+                    )}
+                </TabsTrigger>
                 <TabsTrigger value="kots">KOTs</TabsTrigger>
                 <TabsTrigger value="customers">Customers</TabsTrigger>
                 <TabsTrigger value="live-view">Live View</TabsTrigger>
@@ -1181,5 +1203,3 @@ export default function OperationsPage() {
     </>
   );
 }
-
-
