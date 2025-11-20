@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -11,6 +10,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSettings } from "@/contexts/SettingsContext";
 import { Switch } from "@/components/ui/switch";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+
+interface Aggregator {
+    id: string;
+    name: string;
+    restaurantId: string;
+    enabled: boolean;
+}
 
 const navItems = [
     { name: 'Aggregators', id: 'aggregators' },
@@ -25,10 +54,84 @@ const navItems = [
     { name: 'Invoice Structure', id: 'invoice-structure' },
 ];
 
+const initialAggregators: Aggregator[] = [
+    { id: 'agg-1', name: 'Zomato', restaurantId: 'ZOM12345', enabled: true },
+    { id: 'agg-2', name: 'Swiggy', restaurantId: 'SWG67890', enabled: true },
+];
+
 export default function ConnectedServicesSettingsPage() {
     const { settings, setSetting, saveSettings } = useSettings();
+    const { toast } = useToast();
+    const [aggregators, setAggregators] = useState<Aggregator[]>(initialAggregators);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingAggregator, setEditingAggregator] = useState<Aggregator | null>(null);
+    const [aggregatorToDelete, setAggregatorToDelete] = useState<Aggregator | null>(null);
+
+    const [aggregatorName, setAggregatorName] = useState('');
+    const [restaurantId, setRestaurantId] = useState('');
+
+    const handleOpenDialog = (aggregator?: Aggregator) => {
+        if (aggregator) {
+            setEditingAggregator(aggregator);
+            setAggregatorName(aggregator.name);
+            setRestaurantId(aggregator.restaurantId);
+        } else {
+            setEditingAggregator(null);
+            setAggregatorName('');
+            setRestaurantId('');
+        }
+        setIsDialogOpen(true);
+    };
+
+    const handleSaveAggregator = () => {
+        if (!aggregatorName || !restaurantId) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Information',
+                description: 'Please provide both an aggregator name and a restaurant ID.'
+            });
+            return;
+        }
+
+        if (editingAggregator) {
+            setAggregators(prev => prev.map(agg => agg.id === editingAggregator.id ? { ...agg, name: aggregatorName, restaurantId } : agg));
+            toast({ title: 'Aggregator Updated', description: `${aggregatorName} has been updated.` });
+        } else {
+            const newAggregator: Aggregator = {
+                id: `agg-${Date.now()}`,
+                name: aggregatorName,
+                restaurantId: restaurantId,
+                enabled: true
+            };
+            setAggregators(prev => [...prev, newAggregator]);
+            toast({ title: 'Aggregator Added', description: `${aggregatorName} has been added.` });
+        }
+
+        setIsDialogOpen(false);
+    };
+
+    const handleDeleteAggregator = () => {
+        if (aggregatorToDelete) {
+            setAggregators(prev => prev.filter(agg => agg.id !== aggregatorToDelete.id));
+            toast({
+                variant: 'destructive',
+                title: 'Aggregator Removed',
+                description: `${aggregatorToDelete.name} has been removed.`
+            });
+            setAggregatorToDelete(null);
+        }
+    };
+    
+    const toggleAggregatorEnabled = (aggregatorId: string) => {
+        setAggregators(prev => 
+            prev.map(agg => 
+                agg.id === aggregatorId ? { ...agg, enabled: !agg.enabled } : agg
+            )
+        );
+    };
     
     const handleSaveChanges = () => {
+        // In a real app, you'd save the `aggregators` state to your backend/context here.
         saveSettings('Connected Services');
     };
 
@@ -39,38 +142,45 @@ export default function ConnectedServicesSettingsPage() {
                 {activeTab === 'aggregators' && (
                     <Card>
                         <CardHeader>
-                            <CardTitle>Online Aggregators</CardTitle>
-                            <CardDescription>Connect with Zomato, Swiggy, and other online ordering platforms.</CardDescription>
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <CardTitle>Online Aggregators</CardTitle>
+                                    <CardDescription>Connect with Zomato, Swiggy, and other online ordering platforms.</CardDescription>
+                                </div>
+                                <Button onClick={() => handleOpenDialog()}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Aggregator
+                                </Button>
+                            </div>
                         </CardHeader>
-                        <CardContent className="space-y-8">
-                            <div className="space-y-4 p-4 border rounded-lg">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="zomato-enabled" className="font-semibold text-lg">Zomato</Label>
-                                    <Switch
-                                        id="zomato-enabled"
-                                        // checked={settings.zomatoEnabled}
-                                        // onCheckedChange={(checked) => setSetting('zomatoEnabled', checked)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="zomato-id">Restaurant ID</Label>
-                                    <Input id="zomato-id" placeholder="Enter your Zomato Restaurant ID" />
-                                </div>
-                            </div>
-                             <div className="space-y-4 p-4 border rounded-lg">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="swiggy-enabled" className="font-semibold text-lg">Swiggy</Label>
-                                    <Switch
-                                        id="swiggy-enabled"
-                                        // checked={settings.swiggyEnabled}
-                                        // onCheckedChange={(checked) => setSetting('swiggyEnabled', checked)}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="swiggy-id">Restaurant ID</Label>
-                                    <Input id="swiggy-id" placeholder="Enter your Swiggy Restaurant ID" />
-                                </div>
-                            </div>
+                        <CardContent className="space-y-4">
+                            {aggregators.length === 0 ? (
+                                <p className="text-muted-foreground text-center">No aggregators configured. Add one to get started.</p>
+                            ) : (
+                                aggregators.map(agg => (
+                                    <div key={agg.id} className="space-y-4 p-4 border rounded-lg">
+                                        <div className="flex items-center justify-between">
+                                            <Label htmlFor={`agg-enabled-${agg.id}`} className="font-semibold text-lg">{agg.name}</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Switch
+                                                    id={`agg-enabled-${agg.id}`}
+                                                    checked={agg.enabled}
+                                                    onCheckedChange={() => toggleAggregatorEnabled(agg.id)}
+                                                />
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(agg)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => setAggregatorToDelete(agg)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor={`agg-id-${agg.id}`}>Restaurant ID</Label>
+                                            <Input id={`agg-id-${agg.id}`} value={agg.restaurantId} readOnly disabled />
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </CardContent>
                         <CardFooter>
                             <Button onClick={handleSaveChanges}>Save Aggregator Settings</Button>
@@ -416,6 +526,56 @@ export default function ConnectedServicesSettingsPage() {
                         </CardFooter>
                     </Card>
                 )}
+
+                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogContent>
+                        <DialogHeader>
+                        <DialogTitle>{editingAggregator ? 'Edit' : 'Add New'} Aggregator</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="aggregator-name">Aggregator Name</Label>
+                            <Input
+                            id="aggregator-name"
+                            value={aggregatorName}
+                            onChange={(e) => setAggregatorName(e.target.value)}
+                            placeholder="e.g., City Eats"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="restaurant-id">Restaurant ID</Label>
+                            <Input
+                            id="restaurant-id"
+                            value={restaurantId}
+                            onChange={(e) => setRestaurantId(e.target.value)}
+                            placeholder="Enter the ID from the aggregator"
+                            />
+                        </div>
+                        </div>
+                        <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSaveAggregator}>{editingAggregator ? 'Save Changes' : 'Add Aggregator'}</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                <AlertDialog open={!!aggregatorToDelete} onOpenChange={() => setAggregatorToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action will permanently remove the "{aggregatorToDelete?.name}" aggregator.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteAggregator} className="bg-destructive hover:bg-destructive/90">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+
                 </>
             )}
         </SettingsPageLayout>
