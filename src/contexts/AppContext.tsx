@@ -1,7 +1,7 @@
 'use client';
 
-import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer } from '@/lib/types';
-import { users as initialUsersData, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders } from '@/lib/data';
+import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer, Ingredient } from '@/lib/types';
+import { users as initialUsersData, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders, ingredients as initialIngredientsData } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ interface AppContextType {
   setPastOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   tables: Table[];
   setTables: React.Dispatch<React.SetStateAction<Table[]>>;
+  ingredients: Ingredient[];
+  setIngredients: React.Dispatch<React.SetStateAction<Ingredient[]>>;
   heldOrders: AppOrder[];
   setHeldOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
   customers: Customer[];
@@ -31,6 +33,7 @@ interface AppContextType {
   addOrder: () => void;
   removeOrder: (orderId: string) => void;
   updateOrder: (orderId: string, updates: Partial<AppOrder>) => void;
+  resetCurrentOrder: () => void;
   holdOrder: (orderId: string) => void;
   resumeOrder: (orderId: string) => void;
   getOrderByTable: (tableId: string) => AppOrder | undefined;
@@ -69,6 +72,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
   const [pastOrders, setPastOrders] = useState<Order[]>(mockOrders);
   const [tables, setTables] = useState<Table[]>(initialTables);
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredientsData);
   const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
   const [users, setUsers] = useState<User[]>(initialUsersData);
@@ -327,6 +331,69 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
   };
   
+  const resetCurrentOrder = () => {
+    const activeOrder = orders.find(o => o.id === activeOrderId);
+    if (!activeOrder) return;
+
+    // Deduct inventory
+    const newIngredients = [...ingredients];
+    let consumptionLog = '';
+    
+    activeOrder.items.forEach(orderItem => {
+        if (orderItem.isMealChild) return; // Skip children, parent handles deduction implicitly or explicitly
+
+        const menuItem = menuItems.find(mi => mi.id === orderItem.baseMenuItemId);
+        if (!menuItem) return;
+        
+        let recipe: { ingredientId: string; quantity: number }[] = [];
+
+        // Check for variation recipe first
+        if (orderItem.variation && orderItem.variation.ingredients.length > 0) {
+            recipe = orderItem.variation.ingredients;
+        } 
+        // Fallback to main item recipe
+        else if (menuItem.ingredients && menuItem.ingredients.length > 0) {
+            recipe = menuItem.ingredients;
+        }
+
+        if (recipe.length > 0) {
+            recipe.forEach(recipeIngredient => {
+                const ingIndex = newIngredients.findIndex(ing => ing.id === recipeIngredient.ingredientId);
+                if (ingIndex !== -1) {
+                    const quantityToDeduct = recipeIngredient.quantity * orderItem.quantity;
+                    newIngredients[ingIndex].stock -= quantityToDeduct;
+                    consumptionLog += `Deducted ${quantityToDeduct}${newIngredients[ingIndex].baseUnit} of ${newIngredients[ingIndex].name} for ${orderItem.quantity}x ${orderItem.name}\n`;
+                }
+            });
+        }
+    });
+
+    if (consumptionLog) {
+      console.log("--- INVENTORY CONSUMPTION ---");
+      console.log(consumptionLog);
+    }
+    setIngredients(newIngredients);
+    
+    // Update loyalty points
+    const activeCustomer = customers.find(c => c.phone === activeOrder.customer.phone);
+    if (activeOrder.redeemedPoints > 0 && activeCustomer) {
+      updateCustomer(activeCustomer.id, { loyaltyPoints: activeCustomer.loyaltyPoints - activeOrder.redeemedPoints });
+    }
+
+    // Reset UI state and order
+    if (orders.length === 1) {
+      const newOrder = createNewOrder();
+      setOrders([newOrder]);
+      setActiveOrderId(newOrder.id);
+    } else {
+      removeOrder(activeOrder.id);
+    }
+
+    setSetting('discountValue', 0);
+    setSetting('discountType', 'fixed');
+    setSetting('isComplimentary', false);
+  };
+  
   const getOrderByTable = (tableId: string) => {
       const table = tables.find(t => t.id === tableId);
       if (table && table.currentOrderId) {
@@ -482,6 +549,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setUsers,
     tables,
     setTables,
+    ingredients,
+    setIngredients,
     heldOrders,
     setHeldOrders,
     activeOrderId,
@@ -489,6 +558,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     addOrder,
     removeOrder,
     updateOrder,
+    resetCurrentOrder,
     holdOrder,
     resumeOrder,
     getOrderByTable,
