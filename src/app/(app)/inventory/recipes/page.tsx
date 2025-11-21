@@ -42,7 +42,7 @@ export default function InventoryRecipesPage() {
   const [editableRecipes, setEditableRecipes] = useState<Record<string, { ingredientId: string; quantity: number }[]>>({});
 
   const handleEditRecipe = (item: MenuItem) => {
-    setEditableRecipes(prev => ({ ...prev, [item.id]: [...item.ingredients] }));
+    setEditableRecipes(prev => ({ ...prev, [item.id]: [...(item.ingredients || [])] }));
   };
 
   const handleSaveRecipe = (itemId: string) => {
@@ -72,10 +72,15 @@ export default function InventoryRecipesPage() {
      setEditableRecipes(prev => ({ ...prev, [itemId]: updatedIngredients }));
   }
 
-  const removeIngredientFromRecipe = (itemId: string, index: number) => {
-    const updatedIngredients = [...editableRecipes[itemId]];
-    updatedIngredients.splice(index, 1);
-    setEditableRecipes(prev => ({...prev, [itemId]: updatedIngredients}));
+  const removeIngredientFromRecipe = (itemId: string, indexToRemove: number) => {
+    setEditableRecipes(prev => {
+      const currentIngredients = prev[itemId] || [];
+      const updatedIngredients = currentIngredients.filter((_, index) => index !== indexToRemove);
+      return {
+        ...prev,
+        [itemId]: updatedIngredients,
+      };
+    });
   }
 
   const getIngredientName = (id: string) => {
