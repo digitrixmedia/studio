@@ -73,14 +73,11 @@ export default function InventoryRecipesPage() {
   }
 
   const removeIngredientFromRecipe = (itemId: string, indexToRemove: number) => {
-    setEditableRecipes(prev => {
-      const currentIngredients = prev[itemId] || [];
-      const updatedIngredients = currentIngredients.filter((_, index) => index !== indexToRemove);
-      return {
-        ...prev,
-        [itemId]: updatedIngredients,
-      };
-    });
+    const newIngredients = editableRecipes[itemId].filter((_, index) => index !== indexToRemove);
+    setEditableRecipes(prev => ({
+      ...prev,
+      [itemId]: newIngredients,
+    }));
   }
 
   const getIngredientName = (id: string) => {
@@ -128,7 +125,7 @@ export default function InventoryRecipesPage() {
                     )}
                   </div>
                   
-                  {recipeIngredients.length > 0 ? (
+                  {recipeIngredients && recipeIngredients.length > 0 ? (
                     <Table>
                       <TableHeader>
                         <TableRow>
