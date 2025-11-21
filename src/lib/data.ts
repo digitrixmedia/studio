@@ -136,7 +136,9 @@ export const menuItems: MenuItem[] = [
     category: 'cat-4',
     foodType: 'veg',
     isAvailable: true,
-    ingredients: [],
+    ingredients: [
+      { ingredientId: 'ing-3', quantity: 50 }
+    ],
   },
     {
     id: 'item-8',
@@ -434,5 +436,6 @@ export const auditLogs: AuditLog[] = [
 ];
 
   
+
 
 
