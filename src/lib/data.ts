@@ -33,18 +33,14 @@ export const menuItems: MenuItem[] = [
     isAvailable: true,
     isBogo: true,
     variations: [
-      { id: 'var-1-1', name: 'Regular', priceModifier: 0, ingredients: [] },
-      { id: 'var-1-2', name: 'Large', priceModifier: 40, ingredients: [] },
+      { id: 'var-1-1', name: 'Regular', priceModifier: 0, ingredients: [{ ingredientId: 'ing-1', quantity: 10 }, { ingredientId: 'ing-2', quantity: 150 }] },
+      { id: 'var-1-2', name: 'Large', priceModifier: 40, ingredients: [{ ingredientId: 'ing-1', quantity: 15 }, { ingredientId: 'ing-2', quantity: 250 }] },
     ],
     addons: [
       { id: 'addon-1', name: 'Extra Shot', price: 50 },
       { id: 'addon-2', name: 'Hazelnut Syrup', price: 30 },
     ],
-    ingredients: [
-      { ingredientId: 'ing-1', quantity: 10 },
-      { ingredientId: 'ing-2', quantity: 150 },
-      { ingredientId: 'ing-3', quantity: 5 },
-    ],
+    ingredients: [],
   },
   {
     id: 'item-2',
@@ -108,9 +104,9 @@ export const menuItems: MenuItem[] = [
     foodType: 'veg',
     isAvailable: true,
     variations: [
-      { id: 'var-11-1', name: 'Regular (8")', priceModifier: 0, ingredients: [] },
-      { id: 'var-11-2', name: 'Medium (10")', priceModifier: 100, ingredients: [] },
-      { id: 'var-11-3', name: 'Large (12")', priceModifier: 200, ingredients: [] },
+      { id: 'var-11-1', name: 'Regular (8")', priceModifier: 0, ingredients: [{ ingredientId: 'ing-7', quantity: 1 }, { ingredientId: 'ing-8', quantity: 100 }, { ingredientId: 'ing-9', quantity: 80 }] },
+      { id: 'var-11-2', name: 'Medium (10")', priceModifier: 100, ingredients: [{ ingredientId: 'ing-7', quantity: 1 }, { ingredientId: 'ing-8', quantity: 150 }, { ingredientId: 'ing-9', quantity: 120 }] },
+      { id: 'var-11-3', name: 'Large (12")', priceModifier: 200, ingredients: [{ ingredientId: 'ing-7', quantity: 1 }, { ingredientId: 'ing-8', quantity: 200 }, { ingredientId: 'ing-9', quantity: 160 }] },
     ],
     addons: [
       { id: 'addon-3', name: 'Extra Cheese', price: 60 },
@@ -190,6 +186,9 @@ export const ingredients: Ingredient[] = [
   { id: 'ing-4', name: 'Bread Loaves', baseUnit: 'pcs', stock: 8, minStock: 10, purchaseUnits: [{ unit: 'pcs', factor: 1 }] },
   { id: 'ing-5', name: 'Veggie Mix', baseUnit: 'g', stock: 2000, minStock: 500, purchaseUnits: [{ unit: 'kg', factor: 1000 }, { unit: 'g', factor: 1 }] },
   { id: 'ing-6', name: 'Cheesecake Slice', baseUnit: 'pcs', stock: 5, minStock: 4, purchaseUnits: [{ unit: 'pcs', factor: 1 }] },
+  { id: 'ing-7', name: 'Pizza Base', baseUnit: 'pcs', stock: 100, minStock: 20, purchaseUnits: [{ unit: 'pcs', factor: 1 }] },
+  { id: 'ing-8', name: 'Mozzarella Cheese', baseUnit: 'g', stock: 5000, minStock: 1000, purchaseUnits: [{ unit: 'kg', factor: 1000 }, { unit: 'g', factor: 1 }] },
+  { id: 'ing-9', name: 'Tomato Sauce', baseUnit: 'g', stock: 5000, minStock: 1000, purchaseUnits: [{ unit: 'kg', factor: 1000 }, { unit: 'g', factor: 1 }] },
 ];
 
 const orderStatuses: OrderStatus[] = ['new', 'preparing', 'ready', 'out-for-delivery', 'completed', 'cancelled'];
@@ -436,6 +435,7 @@ export const auditLogs: AuditLog[] = [
 ];
 
   
+
 
 
 
