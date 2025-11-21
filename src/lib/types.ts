@@ -288,4 +288,8 @@ export interface AppOrder {
   tableId: string;
   discount: number;
   redeemedPoints: number;
+  paymentMethod?: PaymentMethod;
+  transactionId?: string;
 }
+
+    

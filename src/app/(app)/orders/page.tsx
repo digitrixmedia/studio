@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { menuItems, menuCategories, tables } from '@/lib/data';
-import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal, Customer } from '@/lib/types';
+import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal, Customer, PaymentMethod } from '@/lib/types';
 import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift, Award } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
@@ -79,6 +79,8 @@ export default function OrdersPage() {
   const [currentNote, setCurrentNote] = useState('');
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [amountPaid, setAmountPaid] = useState<number | string>('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [transactionId, setTransactionId] = useState('');
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [billSearchQuery, setBillSearchQuery] = useState('');
@@ -295,6 +297,7 @@ export default function OrdersPage() {
     
     // In a real app with a backend, we'd persist the completed order here.
     // For now, we just reset the state.
+    console.log('Finalizing order with:', { paymentMethod, transactionId });
 
     // If points were redeemed, update the customer's loyalty points
     if (activeOrder && activeOrder.redeemedPoints > 0 && activeCustomer) {
@@ -311,6 +314,8 @@ export default function OrdersPage() {
     }
 
     setAmountPaid('');
+    setPaymentMethod('cash');
+    setTransactionId('');
     setSetting('discountValue', 0);
     setSetting('discountType', 'fixed');
     setSetting('isComplimentary', false);
@@ -438,19 +443,21 @@ export default function OrdersPage() {
             @page { 
               margin: 0mm;
             }
-            body {
-              font-family: 'Arial', 'Source Code Pro', monospace;
+            body { 
+              font-family: 'Arial', 'Source Code Pro', monospace; 
               color: #000;
-              margin: 0;
-              padding: 0;
+              width: 76mm;
+              padding: 0 2mm;
+              margin: 0 auto;
               -webkit-print-color-adjust: exact;
             }
             * { 
               box-sizing: border-box; 
+              margin: 0;
+              padding: 0;
             }
             .container { 
-              width: 72mm;
-              padding: 0 2mm; /* Added a small horizontal padding */
+              display: block;
             }
             .header { 
               text-align: center; 
@@ -1437,10 +1444,33 @@ export default function OrdersPage() {
                 </Card>
                  {!settings.isComplimentary && (
                     <>
-                        <div className="grid grid-cols-2 gap-4">
-                            <Button variant="outline">UPI / Card</Button>
-                            <Button>Cash</Button>
+                        <div className="space-y-2">
+                            <Label>Payment Method</Label>
+                            <ToggleGroup 
+                                type="single" 
+                                variant="outline"
+                                className='w-full justify-start' 
+                                value={paymentMethod}
+                                onValueChange={(value: PaymentMethod) => { if(value) setPaymentMethod(value) }}
+                            >
+                                <ToggleGroupItem value="cash">Cash</ToggleGroupItem>
+                                <ToggleGroupItem value="upi">UPI</ToggleGroupItem>
+                                <ToggleGroupItem value="card">Card</ToggleGroupItem>
+                            </ToggleGroup>
                         </div>
+                        
+                         {(paymentMethod === 'upi' || paymentMethod === 'card') && (
+                            <div className="space-y-2">
+                                <Label htmlFor="transaction-id">Transaction ID</Label>
+                                <Input 
+                                    id="transaction-id" 
+                                    placeholder="Enter payment reference number" 
+                                    value={transactionId} 
+                                    onChange={(e) => setTransactionId(e.target.value)}
+                                />
+                            </div>
+                        )}
+
                         {settings.displaySettleAmount && (
                             <div className="space-y-2">
                                 <Label htmlFor="amount-paid">Amount Paid</Label>
@@ -1584,3 +1614,6 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
 
 
+
+
+    
