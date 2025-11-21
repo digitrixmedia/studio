@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -19,6 +18,8 @@ import { KeyRound, Mail, Save, User, ReceiptText, ArrowRight, Monitor, Calculato
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
+import { useState } from 'react';
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 
 const settings = [
     {
@@ -60,8 +61,11 @@ const settings = [
 ]
 
 export default function ProfilePage() {
-  const { currentUser } = useAppContext();
+  const { currentUser, auth } = useAppContext();
   const { toast } = useToast();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [name, setName] = useState(currentUser?.name || '');
 
   if (!currentUser) {
     return <p>Loading...</p>;
@@ -76,11 +80,47 @@ export default function ProfilePage() {
     );
   }
 
-  const { name, email } = currentUser;
+  const { email } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
 
-  const handleUpdateProfile = () => {
-    // In a real app, this would handle the update logic.
+  const handleUpdateProfile = async () => {
+    // Handle password change
+    if (currentPassword && newPassword) {
+      if (!auth.currentUser) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Not logged in.",
+        });
+        return;
+      }
+      try {
+        const credential = EmailAuthProvider.credential(auth.currentUser.email!, currentPassword);
+        await reauthenticateWithCredential(auth.currentUser, credential);
+        await updatePassword(auth.currentUser, newPassword);
+        toast({
+          title: 'Password Updated',
+          description: 'Your password has been changed successfully.',
+        });
+        setCurrentPassword('');
+        setNewPassword('');
+      } catch (error) {
+        console.error("Password change error:", error);
+        toast({
+          variant: "destructive",
+          title: 'Password Change Failed',
+          description: 'The current password you entered is incorrect.',
+        });
+        return; // Stop if password change fails
+      }
+    }
+
+    // You can add logic to update other profile details like name here
+    if (name !== currentUser.name) {
+       // In a real app, you'd update this in your user database
+        console.log("Updating name to:", name);
+    }
+
     toast({
       title: 'Profile Updated',
       description: 'Your profile information has been saved.',
@@ -96,7 +136,7 @@ export default function ProfilePage() {
               <AvatarFallback className="text-3xl">{initials}</AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-3xl">{name}</CardTitle>
+              <CardTitle className="text-3xl">{currentUser.name}</CardTitle>
               <CardDescription>
                 Manage your personal information and application settings.
               </CardDescription>
@@ -108,7 +148,7 @@ export default function ProfilePage() {
             <Label htmlFor="name">Full Name</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input id="name" defaultValue={name} className="pl-10" />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="pl-10" />
             </div>
           </div>
           <div className="space-y-2">
@@ -127,14 +167,14 @@ export default function ProfilePage() {
                 <Label htmlFor="current-password">Current Password</Label>
                  <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="current-password" type="password" placeholder="••••••••" className="pl-10" />
+                    <Input id="current-password" type="password" placeholder="••••••••" className="pl-10" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
                 </div>
             </div>
              <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
                  <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="new-password" type="password" placeholder="••••••••" className="pl-10" />
+                    <Input id="new-password" type="password" placeholder="••••••••" className="pl-10" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                 </div>
             </div>
           </div>
