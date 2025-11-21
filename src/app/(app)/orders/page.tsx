@@ -295,11 +295,9 @@ export default function OrdersPage() {
   const resetCurrentOrder = () => {
     if (!activeOrderId) return;
     
-    // In a real app with a backend, we'd persist the completed order here.
-    // For now, we just reset the state.
+    updateOrder(activeOrderId, { paymentMethod, transactionId });
     console.log('Finalizing order with:', { paymentMethod, transactionId });
 
-    // If points were redeemed, update the customer's loyalty points
     if (activeOrder && activeOrder.redeemedPoints > 0 && activeCustomer) {
       const newPoints = activeCustomer.loyaltyPoints - activeOrder.redeemedPoints;
       updateCustomer(activeCustomer.id, { loyaltyPoints: newPoints });
@@ -760,12 +758,12 @@ export default function OrdersPage() {
   const handlePrintAndSettle = () => {
     handlePrintBill();
     resetCurrentOrder();
-    setIsPaymentDialogOpen(false);
   };
   
   const handleKotAndPrint = () => {
     handlePrintKOT();
     handlePrintBill();
+    resetCurrentOrder();
   };
   
   const handleSaveAndEbill = async () => {
@@ -801,7 +799,6 @@ export default function OrdersPage() {
       });
 
       resetCurrentOrder();
-      setIsPaymentDialogOpen(false);
     } catch (error) {
       console.error("Error generating or sending eBill:", error);
       toast({
@@ -1492,19 +1489,14 @@ export default function OrdersPage() {
                  )}
                  <DialogFooter className='sm:flex-col sm:space-x-0 gap-2'>
                     <div className='grid grid-cols-2 gap-2'>
-                      <Button variant="outline" onClick={handlePrintBill}>
+                      <Button variant="outline" onClick={handlePrintAndSettle}>
                         <Printer className="mr-2" /> Print Bill
                       </Button>
                        <Button variant="outline" onClick={handleKotAndPrint}>
                         <Printer className="mr-2" /> KOT & Print
                       </Button>
-                    </div>
-                    <div className='grid grid-cols-2 gap-2'>
-                      <Button variant="outline" onClick={handleSaveAndEbill}>
+                      <Button variant="outline" onClick={handleSaveAndEbill} className="col-span-2">
                         <Mail className="mr-2" /> Save & eBill
-                      </Button>
-                       <Button onClick={() => { resetCurrentOrder(); setIsPaymentDialogOpen(false); }} className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={!settings.isComplimentary && !settings.finalizeWithoutAmount && total > 0 && !amountPaid}>
-                        <CheckCircle className="mr-2"/> Confirm Payment
                       </Button>
                     </div>
                 </DialogFooter>
