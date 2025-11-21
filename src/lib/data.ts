@@ -1,5 +1,4 @@
 
-
 import type { User, MenuCategory, MenuItem, Table, Ingredient, Order, OrderStatus, Subscription, Franchise, SubscriptionStatus, PaymentMethod, Reservation, DeliveryBoy, AuditLog, Role, Vendor, PurchaseOrder } from '@/lib/types';
 import { addDays, subDays } from 'date-fns';
 
@@ -435,6 +434,7 @@ export const auditLogs: AuditLog[] = [
 ];
 
   
+
 
 
 
