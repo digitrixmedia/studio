@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer, Ingredient } from '@/lib/types';
