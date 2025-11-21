@@ -589,7 +589,7 @@ export default function MenuPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => setItemToDelete(item)} className="bg-destructive hover:bg-destructive/90">
+                        <AlertDialogAction onClick={() => { setItemToDelete(item); handleDeleteItem(); }} className="bg-destructive hover:bg-destructive/90">
                           Delete
                         </AlertDialogAction>
                       </AlertDialogFooter>
