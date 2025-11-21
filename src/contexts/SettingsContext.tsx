@@ -278,7 +278,7 @@ const defaultSettings: AppSettings = {
   invoicePrefix: '{yy}/ABC',
   invoiceNumberLength: '2',
   invoiceSuffix: '',
-  printCafeName: 'ZappyyPOS',
+  printCafeName: 'DineMitra POS',
   printAddress: '123 Coffee Lane, Bengaluru',
   printCustomDetails: 'GSTIN: 29ABCDE1234F1Z5',
   printPhone: '9876543210',
@@ -304,6 +304,8 @@ const defaultSettings: AppSettings = {
   showAddonsInBill: true,
   showOrderBarcodeOnBill: false,
   mergeEbillAndPrintBill: false,
+  
+  // Customer Settings
   phoneValidationDelivery: true,
   phoneValidationPickUp: false,
   phoneValidationDineIn: false,
@@ -312,6 +314,8 @@ const defaultSettings: AppSettings = {
   showCustomerEmail: false,
   createBillsWithTaxId: true,
   isPhoneMandatoryForDue: true,
+
+  // Billing System Settings
   closingHour: '01',
   closingMinute: '00',
   displayExtendNotification: true,
@@ -327,6 +331,8 @@ const defaultSettings: AppSettings = {
   billingScreenRefreshCount: '0',
   managerPassword: '',
   idleTime: '0',
+
+  // POS State (not really settings, but managed here for convenience)
   discountValue: 0,
   discountType: 'fixed',
   isComplimentary: false,
@@ -373,3 +379,5 @@ export function useSettings() {
   }
   return context;
 }
+
+    

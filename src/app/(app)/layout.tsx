@@ -239,7 +239,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <h1 className="text-xl font-bold">
               {isFranchiseAdmin && !selectedOutlet
                 ? 'Franchise'
-                : selectedOutlet?.name || 'ZappyyPOS'}
+                : selectedOutlet?.name || 'DineMitra POS'}
             </h1>
           </div>
         </SidebarHeader>
@@ -349,3 +349,5 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

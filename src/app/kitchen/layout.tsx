@@ -10,7 +10,7 @@ export default function KitchenLayout({
        <header className="flex-shrink-0 mb-4">
           <div className="flex items-center gap-2">
             <ZappyyIcon className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-bold">ZappyyPOS - Kitchen Display</h1>
+            <h1 className="text-xl font-bold">DineMitra POS - Kitchen Display</h1>
           </div>
        </header>
        <main className="flex-1 overflow-hidden">
@@ -19,3 +19,5 @@ export default function KitchenLayout({
     </div>
   );
 }
+
+    

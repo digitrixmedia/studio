@@ -8,7 +8,7 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'ZappyyPOS',
+  title: 'DineMitra POS',
   description: 'Comprehensive Cafe Management System',
 };
 
@@ -28,3 +28,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

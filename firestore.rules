@@ -1,5 +1,5 @@
 /**
- * @fileoverview Firestore Security Rules for ZappyyPOS.
+ * @fileoverview Firestore Security Rules for DineMitra POS.
  *
  * Core Philosophy:
  * This ruleset enforces a multi-tenant security model with path-based ownership for user data
@@ -229,3 +229,4 @@ service cloud.firestore {
     }
   }
 }
+    

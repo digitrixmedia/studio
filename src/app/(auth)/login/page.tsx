@@ -35,7 +35,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <ZappyyIcon className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold">ZappyyPOS</CardTitle>
+          <CardTitle className="text-3xl font-bold">DineMitra POS</CardTitle>
           <CardDescription>Comprehensive Cafe Management System</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -64,3 +64,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
