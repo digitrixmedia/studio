@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -123,11 +124,11 @@ export default function OperationsPage() {
 
     const handleSimulateOnlineOrder = useCallback((source: OnlineOrderSource) => {
         const randomItemsCount = Math.floor(Math.random() * 3) + 1;
-        const orderItems: OrderItem[] = Array.from({ length: randomItemsCount }, () => {
+        const orderItems: OrderItem[] = Array.from({ length: randomItemsCount }, (_, i) => {
             const item = menuItems[Math.floor(Math.random() * menuItems.length)];
             const quantity = 1;
             return {
-                id: item.id,
+                id: `${item.id}-${i}`,
                 name: item.name,
                 quantity,
                 price: item.price,
@@ -610,8 +611,8 @@ export default function OperationsPage() {
                                         <CardDescription>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</CardDescription>
                                     </CardHeader>
                                     <CardContent className="flex-1 space-y-1 text-sm">
-                                        {order.items.map(item => (
-                                            <div key={item.id} className="flex justify-between">
+                                        {order.items.map((item, index) => (
+                                            <div key={`${item.id}-${index}`} className="flex justify-between">
                                                 <span>{item.quantity} x {item.name}</span>
                                                 <span className="flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-1" />{item.totalPrice.toFixed(2)}</span>
                                             </div>
