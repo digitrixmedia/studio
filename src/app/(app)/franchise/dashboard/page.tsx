@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,9 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { ManageOutletDialog } from '@/components/franchise/ManageOutletDialog';
-import type { FranchiseOutlet, SubscriptionStatus } from '@/lib/types';
+import type { FranchiseOutlet, SubscriptionStatus, User } from '@/lib/types';
 import { useAppContext } from '@/contexts/AppContext';
-
 
 const salesChartConfig = {
   total: { label: 'Total Sales', color: 'hsl(var(--primary))' },
@@ -29,23 +27,22 @@ const trendChartConfig = {
 }
 
 export default function FranchiseDashboardPage() {
-    const { currentUser, pastOrders, selectOutlet } = useAppContext();
+    const { currentUser, pastOrders, selectOutlet, users } = useAppContext();
     const loggedInFranchiseName = currentUser?.name || "The Coffee House";
 
-    // This is a placeholder, a real implementation would fetch this from a 'subscriptions' collection.
-    const subscriptions = useMemo(() => (currentUser ? [{
-        id: currentUser.subscriptionId || 'sub-1',
-        franchiseName: loggedInFranchiseName,
-        outletName: `${loggedInFranchiseName} - Main Branch`,
-        adminName: currentUser.name,
-        adminEmail: currentUser.email,
-        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        endDate: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000),
-        status: 'active',
-        storageUsedMB: 1500,
-        totalReads: 120000,
-        totalWrites: 30000,
-    }] : []), [currentUser, loggedInFranchiseName]);
+    const subscriptions = useMemo(() => 
+        users.filter(u => u.role === 'admin' && u.subscriptionId)
+        .map(u => ({
+            id: u.subscriptionId!,
+            franchiseName: u.name, // Simplified: In a real app, this might be a separate field
+            outletName: `${u.name}'s Outlet`, // Simplified
+            adminEmail: u.email,
+            adminName: u.name,
+            startDate: new Date(), // Placeholder
+            endDate: new Date(), // Placeholder
+            status: 'active' as SubscriptionStatus, // Placeholder
+        })), [users]);
+    
 
     const outlets: FranchiseOutlet[] = useMemo(() => subscriptions
       .filter(s => s.franchiseName === loggedInFranchiseName)
@@ -54,9 +51,9 @@ export default function FranchiseDashboardPage() {
         name: sub.outletName,
         status: sub.status,
         managerName: sub.adminName || `Manager`,
-        todaySales: pastOrders.filter(o => o.createdAt >= new Date(new Date().setHours(0,0,0,0))).reduce((sum, o) => sum + o.total, 0),
+        todaySales: pastOrders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).reduce((sum, o) => sum + o.total, 0),
         totalSales: pastOrders.reduce((sum, o) => sum + o.total, 0),
-        ordersToday: pastOrders.filter(o => o.createdAt >= new Date(new Date().setHours(0,0,0,0))).length,
+        ordersToday: pastOrders.filter(o => new Date(o.createdAt).toDateString() === new Date().toDateString()).length,
     })), [subscriptions, loggedInFranchiseName, pastOrders]);
 
     const summary = useMemo(() => {
@@ -85,7 +82,7 @@ export default function FranchiseDashboardPage() {
 
     const salesTrend = useMemo(() => {
         const trend = pastOrders.reduce((acc, order) => {
-            const day = order.createdAt.toISOString().split('T')[0];
+            const day = new Date(order.createdAt).toISOString().split('T')[0];
             acc[day] = (acc[day] || 0) + order.total;
             return acc;
         }, {} as Record<string, number>);
@@ -332,3 +329,5 @@ export default function FranchiseDashboardPage() {
     </>
   );
 }
+
+    

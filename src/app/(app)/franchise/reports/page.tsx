@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -34,18 +33,17 @@ const chartConfig = {
 
 export default function FranchiseReportsPage() {
     const { menuItems, menuCategories, pastOrders: orders, users } = useAppContext();
-    const topFranchisesBySales: any[] = []; // Mocked, replace with real logic if needed
-    const dailySalesData: any[] = []; // Mocked, replace with real logic if needed
+    
+    const outlets: FranchiseOutlet[] = useMemo(() => 
+        users.filter(u => u.role === 'admin')
+        .map(u => ({
+            id: u.subscriptionId || u.id,
+            name: `${u.name}'s Outlet`,
+            status: 'active', // Simplified
+            managerName: u.name,
+            totalSales: orders.filter(o => o.createdBy === u.id).reduce((sum, o) => sum + o.total, 0),
+        })), [users, orders]);
 
-    const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
-      id: f.id,
-      name: f.name,
-      status: 'Active', // This is simplified, would need more data in a real app
-      managerName: `Manager for ${f.name}`,
-      todaySales: f.totalSales / 30, // Mocked data
-      totalSales: f.totalSales,
-      ordersToday: f.totalOutlets * 15, // Mocked data
-    }));
 
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>(['all']);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -53,27 +51,37 @@ export default function FranchiseReportsPage() {
     to: new Date(),
   });
 
-  // MOCKED DATA BASED ON FILTERS - In a real app, this would be a backend query
   const filteredOutlets = selectedOutlets[0] === 'all' 
     ? outlets 
     : outlets.filter(o => selectedOutlets.includes(o.id));
 
-  const summary = {
-      revenue: filteredOutlets.reduce((sum, o) => sum + (o.totalSales || 0), 0),
-      orders: filteredOutlets.reduce((sum, o) => sum + ((o.totalSales || 0) / 450) , 0),
-      avgOrderValue: filteredOutlets.length > 0 ? filteredOutlets.reduce((sum, o) => sum + (o.totalSales || 0), 0) / filteredOutlets.reduce((sum, o) => sum + ((o.totalSales || 0) / 450) , 0) : 0,
-  }
+  const summary = useMemo(() => {
+    const revenue = filteredOutlets.reduce((sum, o) => sum + (o.totalSales || 0), 0);
+    // Simple mock for orders
+    const totalOrders = filteredOutlets.reduce((sum, o) => sum + ((o.totalSales || 0) / 450), 0);
+    return {
+        revenue,
+        orders: totalOrders,
+        avgOrderValue: totalOrders > 0 ? revenue / totalOrders : 0,
+    }
+  }, [filteredOutlets]);
 
-  const salesTrend = dailySalesData.map(s => ({
-      ...s, 
-      sales: s.sales * (selectedOutlets.length / outlets.length) * (Math.random() * 0.4 + 0.8) // Adjust data for demo
-  }));
+
+    const salesTrend = useMemo(() => {
+        const trend = orders.reduce((acc, order) => {
+            const day = new Date(order.createdAt).toISOString().split('T')[0];
+            acc[day] = (acc[day] || 0) + order.total;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        return Object.entries(trend).map(([day, sales]) => ({ day, sales })).slice(-7);
+    }, [orders]);
 
   const itemWiseSales = menuItems
     .map(item => {
         const quantitySold = orders.reduce((sum, order) => 
         sum + order.items.reduce((itemSum, orderItem) => 
-            itemSum + (orderItem.id.startsWith(item.id) ? orderItem.quantity : 0), 0), 0);
+            itemSum + (orderItem.baseMenuItemId === item.id ? orderItem.quantity : 0), 0), 0);
         return { name: item.name, sales: quantitySold * item.price };
     })
     .filter(item => item.sales > 0)
@@ -94,7 +102,6 @@ export default function FranchiseReportsPage() {
     const rows = filteredOutlets.map(outlet => {
       const outletOrders = (outlet.totalSales || 0) / 450;
       const outletAOV = outletOrders > 0 ? (outlet.totalSales || 0) / outletOrders : 0;
-      // Sanitize data for CSV
       const sanitizedName = `"${outlet.name.replace(/"/g, '""')}"`;
       return [
         sanitizedName,
@@ -108,7 +115,7 @@ export default function FranchiseReportsPage() {
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    if (link.download !== undefined) { // feature detection
+    if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
         link.setAttribute("download", "outlet_breakdown_report.csv");
@@ -302,3 +309,5 @@ export default function FranchiseReportsPage() {
     </div>
   );
 }
+
+    

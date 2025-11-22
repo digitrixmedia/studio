@@ -26,7 +26,7 @@ import { addDays, format, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import type { Subscription, SubscriptionStatus } from '@/lib/types';
+import type { Subscription, SubscriptionStatus, User } from '@/lib/types';
 import { useAppContext } from '@/contexts/AppContext';
 
 
@@ -39,9 +39,36 @@ const subsChartConfig = {
 
 export default function SuperAdminReportsPage() {
   const router = useRouter();
-  const { users } = useAppContext(); // Assuming subscriptions would be managed here in a real app
-  const allSubscriptions: Subscription[] = []; // Mocked for now
-  const topFranchisesBySales: any[] = [];
+  const { users } = useAppContext();
+
+  const allSubscriptions: Subscription[] = useMemo(() => users.filter(u => u.role === 'admin' && u.subscriptionId).map(u => ({
+    id: u.subscriptionId!,
+    franchiseName: u.name,
+    outletName: `${u.name}'s Outlet`,
+    adminEmail: u.email,
+    adminName: u.name,
+    startDate: new Date(),
+    endDate: new Date(),
+    status: 'active',
+    storageUsedMB: Math.random() * 1024,
+    totalReads: Math.random() * 100000,
+    totalWrites: Math.random() * 20000,
+  })), [users]);
+
+
+  const topFranchisesBySales = useMemo(() => {
+     return allSubscriptions.map(sub => ({
+      id: sub.id,
+      name: sub.franchiseName,
+      totalOutlets: 1, // Simplified
+      totalSales: Math.random() * 500000,
+      totalStorage: sub.storageUsedMB / 1024,
+      totalReads: sub.totalReads,
+      totalWrites: sub.totalWrites,
+      lastActive: new Date(),
+    })).sort((a,b) => b.totalSales - a.totalSales);
+  }, [allSubscriptions]);
+
   const monthlyNewSubscriptions: any[] = [];
 
   const [date, setDate] = useState<DateRange | undefined>({
@@ -56,10 +83,9 @@ export default function SuperAdminReportsPage() {
     
     const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
     
-    // @ts-ignore
     return topFranchisesBySales.filter(f => isWithinInterval(f.lastActive, interval));
 
-  }, [date]);
+  }, [date, topFranchisesBySales]);
   
   const filteredSubscriptions = useMemo(() => {
     if (!date || !date.from) return allSubscriptions;
@@ -73,7 +99,7 @@ export default function SuperAdminReportsPage() {
     const franchise = topFranchisesBySales.find(f => f.id === selectedFranchise);
     if (!franchise) return [];
     return allSubscriptions.filter(s => s.franchiseName === franchise.name);
-  }, [selectedFranchise, allSubscriptions]);
+  }, [selectedFranchise, allSubscriptions, topFranchisesBySales]);
 
   const storageData = filteredFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
   
@@ -102,7 +128,7 @@ export default function SuperAdminReportsPage() {
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    if (link.download !== undefined) { // feature detection
+    if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
         link.setAttribute("download", "full_subscriptions_report.csv");
@@ -314,3 +340,5 @@ export default function SuperAdminReportsPage() {
         </Card>
     </div>
   );
+
+    

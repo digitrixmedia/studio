@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,11 +9,13 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
-import { BarChart3, Box, CreditCard, IndianRupee, RefreshCw, ShoppingBag, Users, Database, FileText } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Box, CreditCard, IndianRupee, RefreshCw, Users, Database, FileText } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useAppContext } from '@/contexts/AppContext';
+import { Subscription } from '@/lib/types';
+
 
 const subscriptionChartConfig = {
   active: { label: 'Active', color: 'hsl(var(--chart-1))' },
@@ -22,9 +23,7 @@ const subscriptionChartConfig = {
   suspended: { label: 'Suspended', color: 'hsl(var(--chart-3))' },
   inactive: { label: 'Inactive', color: 'hsl(var(--chart-4))' },
 };
-const activityChartConfig = {
-    outlets: { label: 'Active Outlets', color: 'hsl(var(--primary))' },
-}
+
 const storageChartConfig = {
   storage: { label: 'Storage (GB)', color: 'hsl(var(--chart-1))' },
 };
@@ -34,15 +33,14 @@ export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(false);
   const { pastOrders, users } = useAppContext();
 
-  // This is a placeholder, a real implementation would fetch this from a 'subscriptions' collection.
-  const subscriptions = useMemo(() => users.filter(u => u.role === 'admin').map(u => ({
-    id: u.subscriptionId || u.id,
-    franchiseName: 'Franchise ' + u.name.split(' ')[0],
-    outletName: u.name + ' Outlet',
+  const subscriptions: Subscription[] = useMemo(() => users.filter(u => u.role === 'admin' && u.subscriptionId).map(u => ({
+    id: u.subscriptionId!,
+    franchiseName: u.name, // Simplified
+    outletName: u.name + ' Outlet', // Simplified
     adminEmail: u.email,
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
-    endDate: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000), // 335 days from now
-    status: 'active',
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Placeholder
+    endDate: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000), // Placeholder
+    status: 'active', // Placeholder
     storageUsedMB: Math.random() * 2048,
     totalReads: Math.random() * 500000,
     totalWrites: Math.random() * 100000,
@@ -89,8 +87,6 @@ export default function SuperAdminDashboardPage() {
 
   const handleRefresh = () => {
     setLoading(true);
-    // In a real app, you might re-fetch data or rely on realtime updates.
-    // For this demo, we can just simulate a delay.
     setTimeout(() => {
       setLoading(false);
     }, 1000);
@@ -108,7 +104,7 @@ export default function SuperAdminDashboardPage() {
         </Button>
       </div>
       {/* Stat Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Subscriptions</CardTitle>
@@ -116,7 +112,7 @@ export default function SuperAdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalSubscriptions}</div>
-            <p className="text-xs text-muted-foreground">Active + Expired</p>
+            <p className="text-xs text-muted-foreground">All active tenants</p>
           </CardContent>
         </Card>
         <Card>
@@ -131,7 +127,7 @@ export default function SuperAdminDashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Storage Used</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Storage</CardTitle>
             <Box className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -140,29 +136,6 @@ export default function SuperAdminDashboardPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold flex items-center">
-                <IndianRupee className="h-6 w-6 mr-1" />
-                {(stats.totalSales / 100000).toFixed(2)}L
-            </div>
-            <p className="text-xs text-muted-foreground">From all outlets</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalOrders.toLocaleString('en-IN')}</div>
-            <p className="text-xs text-muted-foreground">From all outlets</p>
-          </CardContent>
-        </Card>
-         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Reads</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
@@ -249,3 +222,5 @@ export default function SuperAdminDashboardPage() {
     </div>
   );
 }
+
+    

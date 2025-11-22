@@ -33,7 +33,6 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import type { FranchiseOutlet, Role, User } from '@/lib/types';
-import { users } from '@/lib/data';
 import { useState }from 'react';
 import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -56,8 +55,7 @@ const initialNewStaffState = {
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  const initialStaff = users.filter(u => u.role !== 'admin' && u.role !== 'super-admin').slice(0, 3);
-  
+  const initialStaff: User[] = [];
   const [outletStatus, setOutletStatus] = useState(outlet.status);
   const [staff, setStaff] = useState<User[]>(initialStaff);
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
