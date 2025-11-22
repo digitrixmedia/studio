@@ -6,9 +6,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signOut, type User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { initializeFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
-import { addDoc, collection, doc, serverTimestamp, setDoc, writeBatch, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, serverTimestamp, setDoc, writeBatch, query, where, getDocs, orderBy, limit, Timestamp, getDoc } from 'firebase/firestore';
 import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
@@ -42,7 +42,6 @@ interface AppContextType {
   getOrderByTable: (tableId: string) => AppOrder | undefined;
   loadOrder: (order: Order) => void;
   loadOnlineOrderIntoPOS: (order: Order) => void;
-  login: (email: string, password: string) => void;
   logout: () => void;
   selectOutlet: (outlet: FranchiseOutlet) => void;
   clearSelectedOutlet: () => void;
@@ -100,30 +99,38 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const setupSuperAdmin = async () => {
-      // Check if users collection is empty
-      const usersCollection = collection(firestore, 'users');
-      const usersSnapshot = await getDocs(query(usersCollection, limit(1)));
-      if (usersSnapshot.empty) {
-        console.log("No users found. Creating Super Admin account...");
-        try {
-          const userCredential = await createUserWithEmailAndPassword(auth, 'superadmin@pos.com', 'password123');
-          const superAdminUser: User = {
-            id: userCredential.user.uid,
-            name: 'Super Admin',
-            email: 'superadmin@pos.com',
-            role: 'super-admin',
-          };
-          await setDoc(doc(firestore, 'users', userCredential.user.uid), superAdminUser);
-          console.log("Super Admin account created successfully.");
-        } catch (error: any) {
-          if (error.code === 'auth/email-already-in-use') {
-            console.log("Super Admin email already exists in Auth. Skipping creation.");
-          } else {
-            console.error("Failed to create Super Admin:", error);
-          }
+      try {
+        // Attempt to create the user. This will fail if the user already exists, which is fine.
+        await createUserWithEmailAndPassword(auth, 'superadmin@pos.com', 'password123');
+        console.log("Super Admin auth user created successfully.");
+      } catch (error: any) {
+        if (error.code !== 'auth/email-already-in-use') {
+          console.error("Error creating superadmin auth user:", error);
         }
-      } else {
-        console.log("Users collection is not empty. Skipping Super Admin setup.");
+      } finally {
+          // Whether creation succeeded or failed because it exists, check/create the Firestore doc.
+          // Temporarily sign in to get the UID.
+          try {
+            const userCredential = await signInWithEmailAndPassword(auth, 'superadmin@pos.com', 'password123');
+            const uid = userCredential.user.uid;
+            const userDocRef = doc(firestore, 'users', uid);
+            const userDoc = await getDoc(userDocRef);
+
+            if (!userDoc.exists()) {
+                const superAdminUser: User = {
+                    id: uid,
+                    name: 'Super Admin',
+                    email: 'superadmin@pos.com',
+                    role: 'super-admin',
+                };
+                await setDoc(userDocRef, superAdminUser);
+                console.log("Super Admin Firestore document created.");
+            }
+             // Sign out the temporary session
+            await auth.signOut();
+          } catch(e) {
+             console.error("Critical error during superadmin setup:", e);
+          }
       }
     };
     setupSuperAdmin();
@@ -278,17 +285,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }
   }, [currentUser, selectedOutlet, pathname, router, settings.defaultScreen]);
 
-  const login = async (email: string, password: string) => {
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-        let description = "An unknown error occurred.";
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            description = "Invalid email or password. Please try again.";
-        }
-        toast({ variant: "destructive", title: "Login Failed", description });
-    }
-  };
 
   const logout = async () => {
     await signOut(auth);
@@ -525,7 +521,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const value = { 
     currentUser, 
     selectedOutlet, 
-    login, 
     logout, 
     selectOutlet, 
     clearSelectedOutlet, 

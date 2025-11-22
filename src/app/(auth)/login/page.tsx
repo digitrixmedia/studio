@@ -14,15 +14,34 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAppContext } from '@/contexts/AppContext';
+import { useToast } from '@/hooks/use-toast';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirebase } from '@/firebase/client';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const { login } = useAppContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
-  const handleMainLogin = () => {
-    login(email, password);
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const { auth } = initializeFirebase();
+      await signInWithEmailAndPassword(auth, email, password);
+      // Let the AppContext redirect based on role after successful login
+    } catch (error: any) {
+      let description = "An unknown error occurred.";
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          description = "Invalid email or password. Please try again.";
+      }
+      console.error("Login Error:", error.code, error.message);
+      toast({ variant: "destructive", title: "Login Failed", description });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -47,11 +66,11 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
              <div className="relative">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()}/>
             </div>
           </div>
-          <Button className="w-full" onClick={handleMainLogin}>
-            Login
+          <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
           </Button>
         </CardContent>
         <CardFooter>
