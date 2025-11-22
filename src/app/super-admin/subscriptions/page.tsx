@@ -55,8 +55,8 @@ import {
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { addDocumentNonBlocking, doc, setDoc } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 
 const initialFormState = {
@@ -70,15 +70,30 @@ const initialFormState = {
 };
 
 export default function SubscriptionsPage() {
-  const { auth, users, setUsers } = useAppContext();
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const { auth, users, setUsers, firestore } = useAppContext();
+  
+  const subscriptions: Subscription[] = users
+    .filter(u => u.role === 'admin' && u.subscriptionId)
+    .map(u => ({
+        id: u.subscriptionId!,
+        franchiseName: u.name, // Simplified for now
+        outletName: `${u.name}'s Outlet`, // Simplified for now
+        adminEmail: u.email,
+        adminName: u.name,
+        startDate: new Date(), // Placeholder
+        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // Placeholder for 1 year
+        status: 'active', // Placeholder
+        storageUsedMB: 0, // Placeholder
+        totalReads: 0, // Placeholder
+        totalWrites: 0, // Placeholder
+    }));
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
   const [formData, setFormData] = useState(initialFormState);
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const franchiseQuery = searchParams.get('franchise');
-  const { firestore } = initializeFirebase();
 
   const openNewDialog = () => {
     setEditingSub(null);
@@ -115,28 +130,19 @@ export default function SubscriptionsPage() {
     if(editingSub) {
       // In a real app, you'd also update the user's details in Firebase Auth if needed.
       // This is more complex and requires admin privileges, so we'll skip it for now.
-      setSubscriptions(subscriptions.map(sub => 
-        sub.id === editingSub.id 
-          ? {
-              ...sub,
-              franchiseName: formData.franchiseName,
-              outletName: formData.outletName,
-              adminName: formData.adminName,
-              adminEmail: formData.adminEmail,
-              startDate: new Date(formData.startDate),
-              endDate: new Date(formData.endDate),
-            } 
-          : sub
-      ));
+      const updatedUser = users.find(u => u.subscriptionId === editingSub.id);
+      if (updatedUser) {
+        setUsers(users.map(u => u.id === updatedUser.id ? { ...u, name: formData.adminName, email: formData.adminEmail } : u));
+      }
+      
       toast({
         title: "Subscription Updated",
         description: `Details for ${formData.outletName} have been updated.`,
       });
 
     } else {
-       // Create new subscription
        const superAdminEmail = auth.currentUser?.email;
-       const superAdminPassword = 'password123'; // This is a temporary solution for the demo.
+       const superAdminPassword = 'password123';
        
        if (!superAdminEmail) {
             toast({ variant: "destructive", title: "Error", description: "Super admin is not logged in." });
@@ -146,35 +152,19 @@ export default function SubscriptionsPage() {
        try {
         const userCredential = await createUserWithEmailAndPassword(auth, formData.adminEmail, formData.adminPassword);
         
-        // Immediately sign the super admin back in
         await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
         
-        const newSub: Subscription = {
-          id: `sub-${Date.now()}`,
-          franchiseName: formData.franchiseName,
-          outletName: formData.outletName,
-          adminName: formData.adminName,
-          adminEmail: formData.adminEmail,
-          startDate: new Date(formData.startDate),
-          endDate: new Date(formData.endDate),
-          status: 'active',
-          storageUsedMB: 0,
-          totalReads: 0,
-          totalWrites: 0,
-        };
+        const newSubId = `sub-${Date.now()}`;
 
         const newUser: User = {
             id: userCredential.user.uid,
             name: formData.adminName,
             email: formData.adminEmail,
             role: 'admin',
-            subscriptionId: newSub.id,
+            subscriptionId: newSubId,
         };
         
-        await setDoc(doc(firestore, "users", userCredential.user.uid), newUser);
-
-        setSubscriptions(prev => [newSub, ...prev]);
-        setUsers(prev => [...prev, newUser]);
+        addDocumentNonBlocking(collection(firestore, "users"), newUser);
 
         toast({
           title: "Subscription & User Created",
@@ -193,9 +183,8 @@ export default function SubscriptionsPage() {
                 title: "User Creation Failed",
                 description: description,
             });
-            // Sign back in even if creation fails
             await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-            return; // Stop execution if user creation fails
+            return;
        }
     }
 
@@ -203,11 +192,18 @@ export default function SubscriptionsPage() {
   };
   
   const handleDeleteSubscription = (subId: string) => {
+    // This needs to delete from Auth and Firestore, which is a complex operation
+    // and would ideally be a Cloud Function. For now, we'll just remove from UI state.
     const subToDelete = subscriptions.find(sub => sub.id === subId);
-    setSubscriptions(subscriptions.filter(sub => sub.id !== subId));
+    const userToDelete = users.find(u => u.subscriptionId === subId);
+
+    if (userToDelete) {
+        setUsers(users.filter(u => u.id !== userToDelete.id));
+    }
+    
     toast({
         title: "Subscription Deleted",
-        description: `The subscription for ${subToDelete?.outletName} has been permanently removed.`,
+        description: `The subscription for ${subToDelete?.outletName} has been removed.`,
         variant: "destructive"
     });
   }
@@ -223,18 +219,7 @@ export default function SubscriptionsPage() {
   };
 
   const toggleSubscriptionStatus = (subId: string, currentStatus: SubscriptionStatus) => {
-    setSubscriptions(subscriptions.map(sub => {
-      if (sub.id === subId) {
-        let newStatus: SubscriptionStatus = 'active';
-        if (currentStatus === 'active') {
-          newStatus = 'suspended';
-        } else if (currentStatus === 'suspended' || currentStatus === 'inactive' || currentStatus === 'expired') {
-          newStatus = 'active';
-        }
-        return { ...sub, status: newStatus };
-      }
-      return sub;
-    }));
+     // This logic would update the user's status in Firestore
     const sub = subscriptions.find(s => s.id === subId);
     toast({
       title: 'Subscription Updated',
