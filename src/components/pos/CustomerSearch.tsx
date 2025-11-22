@@ -40,14 +40,22 @@ export function CustomerSearch({
     const qName = nameInput.trim().toLowerCase();
     const qPhone = phoneInput.trim();
     if (!qName && !qPhone) return [];
-    return customers
-      .filter((c) => {
-        const matchName = qName ? c.name.toLowerCase().includes(qName) : false;
-        const matchPhone = qPhone ? c.phone.includes(qPhone) : false;
-        return matchName || matchPhone;
-      })
-      .slice(0, maxResults);
-  }, [customers, nameInput, phoneInput, maxResults]);
+    
+    // Only filter based on the currently focused input
+    if (focusedField === 'name') {
+       return customers
+        .filter((c) => c.name.toLowerCase().includes(qName))
+        .slice(0, maxResults);
+    }
+    if (focusedField === 'phone') {
+        return customers
+        .filter((c) => c.phone.includes(qPhone))
+        .slice(0, maxResults);
+    }
+    
+    return [];
+
+  }, [customers, nameInput, phoneInput, maxResults, focusedField]);
 
   // show suggestions only when an input is focused AND user typed something
   const shouldShow = open && ( (focusedField === 'name' && nameInput.trim().length > 0) || (focusedField === 'phone' && phoneInput.trim().length > 0) );
