@@ -132,21 +132,33 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
   const usersQuery = useMemoFirebase(() => {
-    // Only super-admins should fetch the full list of users.
-    return isSuperAdmin ? collection(firestore, 'users') : null;
-  }, [firestore, isSuperAdmin]);
+    if (!currentUser) return null;
+    return currentUser.role === 'super-admin'
+      ? collection(firestore, 'users')
+      : null;
+  }, [firestore, currentUser]);
+
   const { data: usersData } = useCollection<User>(usersQuery);
+  
+  const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    // For super-admin, usersData will be populated by the hook.
+    // For others, it will be null, so we set an empty array.
+    if (isSuperAdmin) {
+      setUsers(usersData || []);
+    } else {
+      setUsers([]);
+    }
+  }, [usersData, isSuperAdmin]);
+
 
   const { data: menuItemsData } = useCollection<MenuItem>(useMemoFirebase(() => collection(firestore, 'menu_items'), [firestore]));
   const { data: menuCategoriesData } = useCollection<MenuCategory>(useMemoFirebase(() => collection(firestore, 'menu_categories'), [firestore]));
   const { data: tablesData, setData: setTables } = useCollection<Table>(useMemoFirebase(() => collection(firestore, 'tables'), [firestore]));
   const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]));
   const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(useMemoFirebase(() => query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(100)), [firestore]));
-  const [users, setUsers] = useState<User[]>([]);
 
-  useEffect(() => {
-    if (usersData) setUsers(usersData);
-  }, [usersData]);
 
   const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
   const menuCategories = useMemo(() => menuCategoriesData || [], [menuCategoriesData]);
