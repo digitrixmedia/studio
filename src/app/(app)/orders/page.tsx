@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -293,8 +292,8 @@ export default function OrdersPage() {
   };
   
   const resetCurrentOrder = () => {
-    if (!activeOrderId) return;
-    
+    if (!activeOrder) return;
+
     updateOrder(activeOrderId, { paymentMethod, transactionId });
     console.log('Finalizing order with:', { paymentMethod, transactionId });
 
@@ -932,7 +931,7 @@ export default function OrdersPage() {
 
       {/* Order Summary Section */}
       <div className="lg:col-span-1">
-        <Card className="h-full flex flex-col">
+        <Card className="h-full flex flex-col overflow-hidden">
           <CardHeader className="p-2">
               <ScrollArea className="max-w-full">
                 <div className="flex items-center gap-1 p-1">
@@ -964,8 +963,8 @@ export default function OrdersPage() {
                 </div>
               </ScrollArea>
             </CardHeader>
-                <div className='flex flex-col h-full'>
-                     <div className="px-6 pb-6 border-t">
+                <div className='flex flex-col h-full overflow-hidden'>
+                     <div className="px-6 pb-6 border-t relative z-20 bg-background">
                         <Accordion type="single" collapsible defaultValue="order-details" className="w-full">
                             <AccordionItem value="order-details">
                                 <AccordionTrigger className="text-sm font-semibold">Order Details</AccordionTrigger>
@@ -1012,7 +1011,7 @@ export default function OrdersPage() {
                             </div>
                         )}
                     </div>
-                    <CardContent className="flex-1 overflow-y-auto pt-0">
+                    <CardContent className="flex-1 overflow-y-auto pt-0 relative z-10">
                         {activeOrder.items.length === 0 ? (
                         <p className="text-muted-foreground">No items in order.</p>
                         ) : (
@@ -1090,7 +1089,7 @@ export default function OrdersPage() {
                         )}
                     </CardContent>
                     {activeOrder.items.length > 0 && (
-                        <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t'>
+                        <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t relative z-20 bg-background'>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                   <div className="flex items-center gap-1">
@@ -1611,3 +1610,6 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
 
 
+
+
+    
