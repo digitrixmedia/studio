@@ -931,7 +931,7 @@ export default function OrdersPage() {
 
       {/* Order Summary Section */}
       <div className="lg:col-span-1">
-        <Card className="h-full flex flex-col overflow-hidden">
+        <Card className="h-full flex flex-col">
           <CardHeader className="p-2">
               <ScrollArea className="max-w-full">
                 <div className="flex items-center gap-1 p-1">
@@ -963,59 +963,52 @@ export default function OrdersPage() {
                 </div>
               </ScrollArea>
             </CardHeader>
-                <div className='flex flex-col h-full overflow-hidden'>
-                     <div className="px-6 pb-6 border-t relative z-20 bg-background">
-                        <Accordion type="single" collapsible defaultValue="order-details" className="w-full">
-                            <AccordionItem value="order-details">
-                                <AccordionTrigger className="text-sm font-semibold">Order Details</AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="space-y-4 pt-2">
-                                        <div className="relative w-full">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input placeholder="Search Bill No / KOT No..." className="pl-10" value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
-                                        </div>
-                                        <Tabs value={activeOrder.orderType} onValueChange={(value) => updateOrder(activeOrder.id, {orderType: value as OrderType})} className="w-full">
-                                            <TabsList className="grid w-full grid-cols-3">
-                                                <TabsTrigger value="dine-in"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
-                                                <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
-                                                <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
-                                            </TabsList>
-                                        </Tabs>
-                                        <div className='space-y-2'>
-                                            {activeOrder.orderType === 'dine-in' && (
-                                                <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select Table" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {tables.map(table => (
-                                                            <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
-                                                                {table.name} ({table.status})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            )}
-                                            <CustomerSearch 
-                                                activeOrder={activeOrder}
-                                                onCustomerSelect={(customer) => updateOrder(activeOrder.id, { customer })}
-                                            />
-                                        </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
+                <div className='flex flex-col h-full overflow-y-auto'>
+                     <div className="px-6 pb-6 border-t">
+                        <div className="space-y-4">
+                            <div className="relative w-full">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input placeholder="Search Bill No / KOT No..." className="pl-10" value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
+                            </div>
+                            <Tabs value={activeOrder.orderType} onValueChange={(value) => updateOrder(activeOrder.id, {orderType: value as OrderType})} className="w-full">
+                                <TabsList className="grid w-full grid-cols-3">
+                                    <TabsTrigger value="dine-in"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
+                                    <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
+                                    <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                            <div className='space-y-2'>
+                                {activeOrder.orderType === 'dine-in' && (
+                                    <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select Table" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {tables.map(table => (
+                                                <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
+                                                    {table.name} ({table.status})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                <CustomerSearch 
+                                    activeOrder={activeOrder}
+                                    onCustomerSelect={(customer) => updateOrder(activeOrder.id, { customer })}
+                                />
+                            </div>
+                        </div>
                         {activeCustomer && (
                             <div className="mt-2 text-sm text-center bg-muted/50 p-2 rounded-md">
                                 <span className='font-semibold'>{activeCustomer.name}</span> has <span className='font-bold text-primary'>{activeCustomer.loyaltyPoints - (activeOrder.redeemedPoints || 0)}</span> points available.
                             </div>
                         )}
                     </div>
-                    <CardContent className="flex-1 overflow-y-auto pt-0 relative z-10">
+                    <CardContent className="flex-1 pt-0 overflow-y-auto">
                         {activeOrder.items.length === 0 ? (
                         <p className="text-muted-foreground">No items in order.</p>
                         ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             {activeOrder.items.map((item, index) => {
                                 const menuItem = menuItems.find(mi => mi.id === item.baseMenuItemId);
                                 const isBogoEligible = menuItem?.isBogo;
@@ -1025,54 +1018,54 @@ export default function OrdersPage() {
                                     <div className="flex items-start">
                                         <div className='flex-1 text-left'>
                                             <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
-                                                <p className={cn("font-semibold text-xs", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
+                                                <p className={cn("font-semibold", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
                                             </button>
                                             {!item.isMealChild && (
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-xs text-muted-foreground flex items-center">
-                                                    <IndianRupee className="h-3 w-3 mr-1" />
+                                            <div className="flex items-center gap-4">
+                                                <p className="text-sm text-muted-foreground flex items-center">
+                                                    <IndianRupee className="h-4 w-4 mr-1" />
                                                     {item.price.toFixed(2)}
                                                 </p>
                                                 {isBogoEligible && item.quantity >= 2 && (
-                                                    <div className="flex items-center space-x-1">
+                                                    <div className="flex items-center space-x-2">
                                                         <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
-                                                        <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
+                                                        <Label htmlFor={`bogo-${item.id}`}>BOGO</Label>
                                                     </div>
                                                 )}
                                             </div>
                                             )}
                                             {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
                                         </div>
-                                        <div className={cn("flex items-center gap-1", item.isMealChild && "opacity-0 pointer-events-none")}>
+                                        <div className={cn("flex items-center gap-2", item.isMealChild && "opacity-0 pointer-events-none")}>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-6 w-6"
+                                                className="h-8 w-8"
                                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                             >
-                                                <MinusCircle className="h-4 w-4" />
+                                                <MinusCircle className="h-5 w-5" />
                                             </Button>
-                                            <span className='text-xs w-4 text-center'>{item.quantity}</span>
+                                            <span className='font-bold text-lg'>{item.quantity}</span>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-6 w-6"
+                                                className="h-8 w-8"
                                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                             >
-                                                <PlusCircle className="h-4 w-4" />
+                                                <PlusCircle className="h-5 w-5" />
                                             </Button>
                                         </div>
-                                        <p className={cn("w-16 text-right font-semibold flex items-center justify-end text-xs", item.isMealChild && "text-muted-foreground")}>
-                                        <IndianRupee className="h-3 w-3 mr-1" />
+                                        <p className={cn("w-24 text-right font-semibold flex items-center justify-end text-lg", item.isMealChild && "text-muted-foreground")}>
+                                        <IndianRupee className="h-4 w-4 mr-1" />
                                         {item.totalPrice.toFixed(2)}
                                         </p>
                                         <Button
                                         variant="ghost"
                                         size="icon"
-                                        className={cn("h-6 w-6 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
+                                        className={cn("h-8 w-8 ml-2 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
                                         onClick={() => removeFromCart(item.id)}
                                         >
-                                        <X className="h-4 w-4" />
+                                        <X className="h-5 w-5" />
                                         </Button>
                                     </div>
                                     {item.isMealParent && (
@@ -1089,8 +1082,8 @@ export default function OrdersPage() {
                         )}
                     </CardContent>
                     {activeOrder.items.length > 0 && (
-                        <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t relative z-20 bg-background'>
-                            <div className="space-y-2 text-sm">
+                        <CardFooter className='flex-col items-stretch gap-2 !p-4 border-t'>
+                            <div className="space-y-2">
                                 <div className="flex justify-between">
                                   <div className="flex items-center gap-1">
                                     <span>Subtotal</span>
@@ -1177,10 +1170,10 @@ export default function OrdersPage() {
                                     </div>
                                 )}
                                 {pointsDiscount > 0 && !settings.isComplimentary && (
-                                    <div className="flex justify-between text-destructive">
-                                        <span>Points Redeemed</span>
-                                        <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{pointsDiscount.toFixed(2)}</span>
-                                    </div>
+                                <div className="flex justify-between text-destructive">
+                                    <span>Points Redeemed</span>
+                                    <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mx-1" />{pointsDiscount.toFixed(2)}</span>
+                                </div>
                                 )}
                                  <div className="flex justify-between">
                                   <Popover>
@@ -1371,7 +1364,7 @@ export default function OrdersPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                       <div className="space-y-2 text-sm">
+                       <div className="space-y-2">
                            {activeOrder.items.map(item => {
                                 if (item.isMealChild) return null;
                                 return (
@@ -1379,7 +1372,7 @@ export default function OrdersPage() {
                                    <div className="flex justify-between">
                                        <span>{item.quantity} x {item.name}</span>
                                        <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
-                                           <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>
+                                           <IndianRupee className="inline-block h-4 w-4 mr-1"/>
                                            {item.price.toFixed(2)}
                                         </span>
                                    </div>
@@ -1400,37 +1393,37 @@ export default function OrdersPage() {
                            <div className="border-t pt-2 mt-2 space-y-2">
                                <div className="flex justify-between">
                                     <span>Subtotal</span>
-                                    <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{subTotal.toFixed(2)}</span>
+                                    <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}><IndianRupee className="inline-block h-4 w-4 mr-1"/>{subTotal.toFixed(2)}</span>
                                </div>
                                 {bogoDiscount > 0 && !settings.isComplimentary && (
                                     <div className="flex justify-between text-destructive">
                                     <span>BOGO Discount</span>
-                                    <span className='flex items-center'>- <IndianRupee className="h-3.5 w-3.5 mr-1" />{bogoDiscount.toFixed(2)}</span>
+                                    <span className='flex items-center'>- <IndianRupee className="h-4 w-4 mr-1" />{bogoDiscount.toFixed(2)}</span>
                                     </div>
                                 )}
                                 {discountAmount > 0 && !settings.isComplimentary && (
                                 <div className="flex justify-between text-destructive">
                                     <span>Discount</span>
-                                    <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{discountAmount.toFixed(2)}</span>
+                                    <span className='flex items-center'>- <IndianRupee className="inline-block h-4 w-4 mr-1"/>{discountAmount.toFixed(2)}</span>
                                 </div>
                                )}
                                {pointsDiscount > 0 && !settings.isComplimentary && (
                                 <div className="flex justify-between text-destructive">
                                     <span>Points Redeemed</span>
-                                    <span className='flex items-center'>- <IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{pointsDiscount.toFixed(2)}</span>
+                                    <span className='flex items-center'>- <IndianRupee className="inline-block h-4 w-4 mr-1"/>{pointsDiscount.toFixed(2)}</span>
                                 </div>
                                )}
                                 {tax > 0 && (
                                 <div className="flex justify-between">
                                     <span>GST ({manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span>
-                                    <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}><IndianRupee className="inline-block h-3.5 w-3.5 mr-1"/>{tax.toFixed(2)}</span>
+                                    <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}><IndianRupee className="inline-block h-4 w-4 mr-1"/>{tax.toFixed(2)}</span>
                                </div>
                                )}
                            </div>
-                           <div className="flex justify-between font-bold pt-2 border-t text-base">
+                           <div className="flex justify-between font-bold pt-2 border-t text-lg">
                                <span>Total Amount</span>
                                <span className='flex items-center'>
-                                   <IndianRupee className="inline-block h-4 w-4 mr-1"/>
+                                   <IndianRupee className="inline-block h-5 w-5 mr-1"/>
                                    {total.toFixed(2)}
                                 </span>
                            </div>
