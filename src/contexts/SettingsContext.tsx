@@ -1,9 +1,10 @@
 
-
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface AppSettings {
   // Display settings
@@ -178,7 +179,8 @@ autoSyncTime: string;
 interface SettingsContextType {
   settings: AppSettings;
   setSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
-  saveSettings: (section: string) => void;
+  saveSettings: () => Promise<void>;
+  isSaving: boolean;
 }
 
 const defaultSettings: AppSettings = {
@@ -341,32 +343,67 @@ const defaultSettings: AppSettings = {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(() => {
-    if (typeof window !== 'undefined') {
-      const savedSettings = localStorage.getItem('appSettings');
-      if (savedSettings) {
-        return { ...defaultSettings, ...JSON.parse(savedSettings) };
-      }
-    }
-    return defaultSettings;
-  });
-  
+  const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
+
+  const settingsDocId = user?.id || 'global';
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!firestore || !user) return;
+      
+      const settingsRef = doc(firestore, 'settings', settingsDocId);
+      const docSnap = await getDoc(settingsRef);
+
+      if (docSnap.exists()) {
+        setSettings(prev => ({ ...prev, ...docSnap.data() }));
+      } else {
+        // If no settings exist for the user, save the default ones
+        await setDoc(settingsRef, defaultSettings);
+      }
+    };
+    loadSettings();
+  }, [firestore, user, settingsDocId]);
+  
 
   const setSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const saveSettings = useCallback((section: string) => {
-    localStorage.setItem('appSettings', JSON.stringify(settings));
-    toast({
-      title: `${section} Settings Saved`,
-      description: `Your ${section.toLowerCase()} settings have been updated.`,
-    });
-  }, [settings, toast]);
+  const saveSettings = useCallback(async () => {
+    if (!firestore || !user) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Cannot save settings. User not logged in.",
+        });
+        return;
+    }
+    setIsSaving(true);
+    const settingsRef = doc(firestore, 'settings', settingsDocId);
+    try {
+        await setDoc(settingsRef, settings, { merge: true });
+        toast({
+            title: "Settings Saved",
+            description: "Your settings have been saved to the database.",
+        });
+    } catch (error) {
+        console.error("Error saving settings:", error);
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: "Could not save settings to the database.",
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  }, [settings, firestore, user, settingsDocId, toast]);
 
   return (
-    <SettingsContext.Provider value={{ settings, setSetting, saveSettings }}>
+    <SettingsContext.Provider value={{ settings, setSetting, saveSettings, isSaving }}>
       {children}
     </SettingsContext.Provider>
   );
@@ -379,5 +416,3 @@ export function useSettings() {
   }
   return context;
 }
-
-    

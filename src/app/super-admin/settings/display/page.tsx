@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -23,11 +22,7 @@ const navItems = [
 ]
 
 export default function SuperAdminDisplaySettingsPage() {
-    const { settings, setSetting, saveSettings } = useSettings();
-    
-    const handleSaveChanges = () => {
-        saveSettings('Display');
-    };
+    const { settings, setSetting, saveSettings, isSaving } = useSettings();
 
     return (
         <SettingsPageLayout navItems={navItems}>
@@ -54,7 +49,7 @@ export default function SuperAdminDisplaySettingsPage() {
                                     onValueChange={(value) => setSetting('menuPreference', value as 'On the Left' | 'On the Right')}
                                     options={['On the Left', 'On the Right']}
                                 />
-                                <SettingRadioGroup
+                                 <SettingRadioGroup
                                     label="Default Screen to Display"
                                     description="Configure the default screen users see after login."
                                     value={settings.defaultScreen}
@@ -144,7 +139,7 @@ export default function SuperAdminDisplaySettingsPage() {
 
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -220,7 +215,7 @@ export default function SuperAdminDisplaySettingsPage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -294,7 +289,7 @@ export default function SuperAdminDisplaySettingsPage() {
 
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -373,7 +368,7 @@ export default function SuperAdminDisplaySettingsPage() {
                                  </div>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}

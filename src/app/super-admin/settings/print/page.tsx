@@ -19,11 +19,7 @@ const navItems = [
 ];
 
 export default function SuperAdminPrintSettingsPage() {
-    const { settings, setSetting, saveSettings } = useSettings();
-    
-    const handleSaveChanges = () => {
-        saveSettings('Print');
-    };
+    const { settings, setSetting, saveSettings, isSaving } = useSettings();
 
     return (
         <SettingsPageLayout navItems={navItems}>
@@ -60,7 +56,7 @@ export default function SuperAdminPrintSettingsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Layout</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Layout'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -84,7 +80,7 @@ export default function SuperAdminPrintSettingsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -173,7 +169,7 @@ export default function SuperAdminPrintSettingsPage() {
                                 </RadioGroup>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -265,7 +261,7 @@ export default function SuperAdminPrintSettingsPage() {
 
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}

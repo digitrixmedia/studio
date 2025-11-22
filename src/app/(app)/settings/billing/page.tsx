@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -14,11 +13,7 @@ const navItems = [
 ];
 
 export default function BillingSettingsPage() {
-    const { settings, setSetting, saveSettings } = useSettings();
-
-    const handleSaveChanges = () => {
-        saveSettings('Billing');
-    };
+    const { settings, setSetting, saveSettings, isSaving } = useSettings();
 
     return (
         <>
@@ -47,7 +42,9 @@ export default function BillingSettingsPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button onClick={handleSaveChanges}>Save Tax Settings</Button>
+                                    <Button onClick={saveSettings} disabled={isSaving}>
+                                        {isSaving ? 'Saving...' : 'Save Tax Settings'}
+                                    </Button>
                                 </CardFooter>
                             </Card>
                         )}

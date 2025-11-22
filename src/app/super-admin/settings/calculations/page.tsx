@@ -24,11 +24,7 @@ const navItems = [
 ];
 
 export default function SuperAdminCalculationsPage() {
-    const { settings, setSetting, saveSettings } = useSettings();
-
-    const handleSaveChanges = () => {
-        saveSettings('Calculations');
-    };
+    const { settings, setSetting, saveSettings, isSaving } = useSettings();
 
     return (
         <SettingsPageLayout navItems={navItems}>
@@ -111,7 +107,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -135,7 +131,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -231,7 +227,7 @@ export default function SuperAdminCalculationsPage() {
 
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -285,7 +281,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -332,7 +328,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -418,7 +414,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -435,7 +431,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -452,7 +448,7 @@ export default function SuperAdminCalculationsPage() {
                                 </div>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={saveSettings} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
