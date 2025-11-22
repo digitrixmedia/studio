@@ -18,8 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { menuItems, menuCategories, tables } from '@/lib/data';
-import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal, Customer, PaymentMethod } from '@/lib/types';
+import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal, Customer, PaymentMethod, MenuItemVariation } from '@/lib/types';
 import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift, Award } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
@@ -55,7 +54,10 @@ export default function OrdersPage() {
     currentUser,
     createNewOrder,
     customers,
-    updateCustomer
+    updateCustomer,
+    menuItems,
+    menuCategories,
+    tables
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -65,7 +67,7 @@ export default function OrdersPage() {
     return customers.find(c => c.phone === activeOrder.customer.phone) || null;
   }, [customers, activeOrder?.customer.phone]);
 
-  const [activeCategory, setActiveCategory] = useState(menuCategories[0].id);
+  const [activeCategory, setActiveCategory] = useState(menuCategories[0]?.id || '');
   
   const [customizationItem, setCustomizationItem] = useState<MenuItem | null>(null);
   const [mealUpsellParentItem, setMealUpsellParentItem] = useState<OrderItem | null>(null);
@@ -82,6 +84,11 @@ export default function OrdersPage() {
   const [manualTaxRate, setManualTaxRate] = useState<number | null>(null);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
 
+  useEffect(() => {
+    if (menuCategories.length > 0 && !activeCategory) {
+      setActiveCategory(menuCategories[0].id);
+    }
+  }, [menuCategories, activeCategory]);
   
   const updateActiveOrder = (items: OrderItem[], redeemedPoints?: number) => {
     if (activeOrderId) {
@@ -999,7 +1006,7 @@ export default function OrdersPage() {
 
                           return (
                           <div key={`${item.id}-${index}`} className="py-1">
-                            <div className="flex items-start text-[0.7rem] gap-x-2">
+                            <div className="flex items-start text-xs gap-x-2">
                               <div className="flex-1 text-left">
                                 <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
                                   <p className={cn("font-semibold leading-tight", item.isMealChild && "pl-4 text-muted-foreground text-[0.65rem]")}>{item.name}</p>
@@ -1450,7 +1457,8 @@ interface MealUpsellDialogProps {
 }
 
 function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogProps) {
-    const parentMenuItem = useMemo(() => parentItem ? menuItems.find(m => m.id === parentItem.baseMenuItemId) : null, [parentItem]);
+    const { menuItems } = useAppContext();
+    const parentMenuItem = useMemo(() => parentItem ? menuItems.find(m => m.id === parentItem.baseMenuItemId) : null, [parentItem, menuItems]);
     const mealDeal = parentMenuItem?.mealDeal;
 
     const [selectedSide, setSelectedSide] = useState<string>('');
@@ -1459,12 +1467,12 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     const sideItems = useMemo(() => {
         if (!mealDeal) return [];
         return menuItems.filter(item => mealDeal.sideItemIds.includes(item.id));
-    }, [mealDeal]);
+    }, [mealDeal, menuItems]);
 
     const drinkItems = useMemo(() => {
         if (!mealDeal) return [];
         return menuItems.filter(item => mealDeal.drinkItemIds.includes(item.id));
-    }, [mealDeal]);
+    }, [mealDeal, menuItems]);
 
     useEffect(() => {
         if (parentItem) {
@@ -1533,7 +1541,7 @@ interface CustomizationFormProps {
   onClose: () => void;
   onSelectVariation: (
     item: MenuItem,
-    variation: MenuItemVariation,
+    variation?: MenuItemVariation,
     notes?: string
   ) => void;
 }
@@ -1544,20 +1552,20 @@ function CustomizationForm({
   onSelectVariation,
 }: CustomizationFormProps) {
   const notesRef = React.useRef<HTMLTextAreaElement>(null);
+  const [selectedVariation, setSelectedVariation] = React.useState<string | undefined>(item.variations?.[0]?.id);
 
+  const handleAddToCart = () => {
+    const notes = notesRef.current?.value;
+    const variation = item.variations?.find(v => v.id === selectedVariation);
+    onSelectVariation(item, variation, notes);
+  };
+  
   const handleVariationClick = (variation: MenuItemVariation) => {
     const notes = notesRef.current?.value;
     onSelectVariation(item, variation, notes);
   };
 
   if (!item.variations || item.variations.length === 0) {
-     const handleAddToCart = () => {
-      const notes = notesRef.current?.value;
-      // Assuming a default or no variation when variations array is empty
-      const defaultVariation: MenuItemVariation = { id: 'default', name: 'Regular', priceModifier: 0, ingredients: item.ingredients };
-      onSelectVariation(item, defaultVariation, notes);
-    };
-
     return (
       <div className="space-y-4">
         <div>
@@ -1584,23 +1592,25 @@ function CustomizationForm({
     <div className="space-y-4">
       <div>
         <Label className="font-medium">Select Variation</Label>
-        <div className="mt-2 flex flex-col space-y-2">
+        <RadioGroup
+          value={selectedVariation}
+          onValueChange={setSelectedVariation}
+          className="mt-2"
+        >
           {item.variations.map((v) => (
-            <Button
-              key={v.id}
-              variant="outline"
-              className="w-full justify-between"
-              onClick={() => handleVariationClick(v)}
-            >
-              <span>{v.name}</span>
-              <span className="text-muted-foreground">
-                (+
-                <IndianRupee className="inline-block h-3.5 w-3.5" />
-                {v.priceModifier.toFixed(2)})
-              </span>
-            </Button>
+            <div key={v.id} className="flex items-center space-x-2">
+                <RadioGroupItem value={v.id} id={v.id} />
+                <Label htmlFor={v.id} className="flex justify-between w-full">
+                  <span>{v.name}</span>
+                  <span className="text-muted-foreground">
+                    (+
+                    <IndianRupee className="inline-block h-3.5 w-3.5" />
+                    {v.priceModifier.toFixed(2)})
+                  </span>
+                </Label>
+              </div>
           ))}
-        </div>
+        </RadioGroup>
       </div>
       <div>
         <Label className="font-medium">Special Notes</Label>
@@ -1614,40 +1624,10 @@ function CustomizationForm({
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
+        <Button type="button" onClick={handleAddToCart}>
+          Add to Order
+        </Button>
       </DialogFooter>
     </div>
   );
 }
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-    
-
-    
-
-
-
-
-
-
-

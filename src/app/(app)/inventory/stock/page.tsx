@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -49,18 +48,25 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { ingredients as initialIngredients } from '@/lib/data';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { Ingredient } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 
 export default function InventoryStockPage() {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
+  const { ingredients, setIngredients } = useAppContext();
+  const firestore = useFirestore();
   const [stockUpdateIngredient, setStockUpdateIngredient] = useState<Ingredient | null>(null);
   const [stockUpdateQuantity, setStockUpdateQuantity] = useState('');
   const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null);
+  
+  const [newIngredient, setNewIngredient] = useState({ name: '', stock: '', minStock: '', unit: '' });
+  
   const { toast } = useToast();
   
   const handleOpenAddStockDialog = (ingredient: Ingredient) => {
@@ -81,13 +87,8 @@ export default function InventoryStockPage() {
         return;
     }
 
-    setIngredients(prevIngredients =>
-        prevIngredients.map(ing =>
-            ing.id === stockUpdateIngredient.id
-                ? { ...ing, stock: ing.stock + quantityToAdd }
-                : ing
-        )
-    );
+    const newStock = stockUpdateIngredient.stock + quantityToAdd;
+    updateDocumentNonBlocking(doc(firestore, 'ingredients', stockUpdateIngredient.id), { stock: newStock });
 
     toast({
         title: "Stock Updated",
@@ -99,7 +100,7 @@ export default function InventoryStockPage() {
 
   const handleDeleteIngredient = () => {
     if (!ingredientToDelete) return;
-    setIngredients(prev => prev.filter(ing => ing.id !== ingredientToDelete.id));
+    deleteDocumentNonBlocking(doc(firestore, 'ingredients', ingredientToDelete.id));
     toast({
         title: "Ingredient Removed",
         description: `${ingredientToDelete.name} has been removed from the inventory.`,
@@ -107,6 +108,25 @@ export default function InventoryStockPage() {
     });
     setIngredientToDelete(null);
   };
+  
+  const handleAddNewIngredient = () => {
+    if (!newIngredient.name || !newIngredient.stock || !newIngredient.minStock || !newIngredient.unit) {
+        toast({ variant: 'destructive', title: 'Missing fields', description: 'Please fill all fields.' });
+        return;
+    }
+    const newDoc: Omit<Ingredient, 'id'> = {
+      name: newIngredient.name,
+      stock: Number(newIngredient.stock),
+      minStock: Number(newIngredient.minStock),
+      baseUnit: newIngredient.unit as any,
+      purchaseUnits: [], // This should be managed elsewhere
+    };
+    
+    addDocumentNonBlocking(collection(firestore, 'ingredients'), newDoc);
+    
+    toast({ title: 'Ingredient added', description: `${newIngredient.name} added to inventory.` });
+    setNewIngredient({ name: '', stock: '', minStock: '', unit: '' });
+  }
 
   return (
     <>
@@ -134,36 +154,24 @@ export default function InventoryStockPage() {
                 </SheetHeader>
                 <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                    Name
-                    </Label>
-                    <Input id="name" className="col-span-3" />
+                    <Label htmlFor="name" className="text-right">Name</Label>
+                    <Input id="name" value={newIngredient.name} onChange={e => setNewIngredient(p => ({...p, name: e.target.value}))} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="stock" className="text-right">
-                    Current Stock
-                    </Label>
-                    <Input id="stock" type="number" className="col-span-3" />
+                    <Label htmlFor="stock" className="text-right">Current Stock</Label>
+                    <Input id="stock" type="number" value={newIngredient.stock} onChange={e => setNewIngredient(p => ({...p, stock: e.target.value}))} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="min-stock" className="text-right">
-                    Min. Stock
-                    </Label>
-                    <Input id="min-stock" type="number" className="col-span-3" />
+                    <Label htmlFor="min-stock" className="text-right">Min. Stock</Label>
+                    <Input id="min-stock" type="number" value={newIngredient.minStock} onChange={e => setNewIngredient(p => ({...p, minStock: e.target.value}))} className="col-span-3" />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="unit" className="text-right">
-                    Base Unit
-                    </Label>
-                    <Input
-                    id="unit"
-                    placeholder="g, ml, pcs"
-                    className="col-span-3"
-                    />
+                    <Label htmlFor="unit" className="text-right">Base Unit</Label>
+                    <Input id="unit" placeholder="g, ml, pcs" value={newIngredient.unit} onChange={e => setNewIngredient(p => ({...p, unit: e.target.value}))} className="col-span-3" />
                 </div>
                 </div>
                 <SheetFooter>
-                <Button type="submit">Save Ingredient</Button>
+                <Button type="submit" onClick={handleAddNewIngredient}>Save Ingredient</Button>
                 </SheetFooter>
             </SheetContent>
             </Sheet>
@@ -226,8 +234,6 @@ export default function InventoryStockPage() {
         </CardContent>
     </Card>
 
-
-     {/* Add Stock Dialog */}
     <Dialog open={!!stockUpdateIngredient} onOpenChange={() => setStockUpdateIngredient(null)}>
       <DialogContent>
         <DialogHeader>
@@ -254,7 +260,6 @@ export default function InventoryStockPage() {
       </DialogContent>
     </Dialog>
 
-    {/* Delete Ingredient Dialog */}
     <AlertDialog open={!!ingredientToDelete} onOpenChange={() => setIngredientToDelete(null)}>
       <AlertDialogContent>
         <AlertDialogHeader>

@@ -51,7 +51,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ingredients, menuItems as initialMenuItems, menuCategories as initialMenuCategories } from '@/lib/data';
 import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles, Upload, Gift } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/types';
@@ -62,6 +61,7 @@ import {
 } from '@/components/ui/multi-select';
 import { BulkUploadDialog } from '@/components/menu/BulkUploadDialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useAppContext } from '@/contexts/AppContext';
 
 const initialFormState: Partial<MenuItem> = {
   name: '',
@@ -80,8 +80,18 @@ const initialFormState: Partial<MenuItem> = {
 
 
 export default function MenuPage() {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const { menuItems: initialMenuItems, menuCategories: initialMenuCategories, ingredients, setMenuItems } = useAppContext();
+  const [menuItems, setLocalMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>(initialMenuCategories);
+  
+  useEffect(() => {
+    setLocalMenuItems(initialMenuItems);
+  }, [initialMenuItems]);
+
+  useEffect(() => {
+    setMenuCategories(initialMenuCategories);
+  }, [initialMenuCategories]);
+
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -230,7 +240,7 @@ export default function MenuPage() {
         variations: hasCustomization ? finalVariations : [],
         mealDeal: mealDealConfig,
       };
-      setMenuItems(menuItems.map(item => item.id === editingItem.id ? updatedItem : item));
+      setLocalMenuItems(menuItems.map(item => item.id === editingItem.id ? updatedItem : item));
       toast({ title: "Item Updated", description: `${formData.name} has been updated.` });
     } else {
       // Create new item
@@ -243,7 +253,7 @@ export default function MenuPage() {
         variations: hasCustomization ? finalVariations : [],
         mealDeal: mealDealConfig,
       };
-      setMenuItems([newItem, ...menuItems]);
+      setLocalMenuItems([newItem, ...menuItems]);
       toast({ title: "Item Created", description: `${formData.name} has been added to the menu.` });
     }
     
@@ -251,7 +261,7 @@ export default function MenuPage() {
   };
 
   const toggleItemAvailability = (itemId: string, isAvailable: boolean) => {
-    setMenuItems(menuItems.map(item => item.id === itemId ? { ...item, isAvailable } : item));
+    setLocalMenuItems(menuItems.map(item => item.id === itemId ? { ...item, isAvailable } : item));
     const itemName = menuItems.find(item => item.id === itemId)?.name;
     toast({
         title: `Item ${isAvailable ? 'Available' : 'Unavailable'}`,
@@ -261,7 +271,7 @@ export default function MenuPage() {
 
   const handleDeleteItem = () => {
     if (!itemToDelete) return;
-    setMenuItems(prev => prev.filter(item => item.id !== itemToDelete.id));
+    setLocalMenuItems(prev => prev.filter(item => item.id !== itemToDelete.id));
     toast({
       variant: "destructive",
       title: "Item Removed",
@@ -287,7 +297,7 @@ export default function MenuPage() {
         category: category.id,
       };
     });
-    setMenuItems(prev => [...prev, ...newMenuItems]);
+    setLocalMenuItems(prev => [...prev, ...newMenuItems]);
     toast({
       title: "Menu Imported",
       description: `${newItems.length} items have been successfully added to your menu.`,

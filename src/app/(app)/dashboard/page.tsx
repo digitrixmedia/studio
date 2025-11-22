@@ -1,33 +1,43 @@
 
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { orders, ingredients, tables, menuItems } from '@/lib/data';
 import { IndianRupee, ClipboardList, Utensils, AlertCircle, PlusCircle, ShoppingBag, CalendarPlus } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { useMemo } from 'react';
+import { useAppContext } from '@/contexts/AppContext';
 
 export default function DashboardPage() {
-  const todaySales = orders.reduce((sum, order) => sum + (order.status === 'completed' ? order.total : 0), 0);
-  const totalOrders = orders.length;
-  const completedOrdersCount = orders.filter(o => o.status === 'completed').length;
-  const avgOrderValue = completedOrdersCount > 0 ? todaySales / completedOrdersCount : 0;
-  const activeTables = tables.filter(t => t.status === 'occupied' || t.status === 'billing').length;
-  
-  const lowStockItems = ingredients.filter(i => i.stock < i.minStock);
+  const { pastOrders, ingredients, tables, menuItems } = useAppContext();
 
-  const topSellingItems = menuItems
-    .map(item => {
-      const quantitySold = orders.reduce((sum, order) => 
-        sum + order.items.reduce((itemSum, orderItem) => 
-          itemSum + (orderItem.id === item.id ? orderItem.quantity : 0), 0), 0);
-      return { ...item, quantitySold };
-    })
-    .sort((a, b) => b.quantitySold - a.quantitySold)
-    .slice(0, 5);
+  const todaySales = useMemo(() => {
+    if (!pastOrders) return 0;
+    return pastOrders.reduce((sum, order) => sum + (order.status === 'completed' ? order.total : 0), 0);
+  }, [pastOrders]);
+
+  const totalOrders = useMemo(() => pastOrders?.length || 0, [pastOrders]);
+  const completedOrdersCount = useMemo(() => pastOrders?.filter(o => o.status === 'completed').length || 0, [pastOrders]);
+  const avgOrderValue = completedOrdersCount > 0 ? todaySales / completedOrdersCount : 0;
+  const activeTables = useMemo(() => tables.filter(t => t.status === 'occupied' || t.status === 'billing').length, [tables]);
+  
+  const lowStockItems = useMemo(() => ingredients.filter(i => i.stock < i.minStock), [ingredients]);
+
+  const topSellingItems = useMemo(() => {
+    if (!menuItems || !pastOrders) return [];
+    return menuItems
+      .map(item => {
+        const quantitySold = pastOrders.reduce((sum, order) => 
+          sum + (order.items || []).reduce((itemSum, orderItem) => 
+            itemSum + (orderItem.baseMenuItemId === item.id ? orderItem.quantity : 0), 0), 0);
+        return { ...item, quantitySold };
+      })
+      .sort((a, b) => b.quantitySold - a.quantitySold)
+      .slice(0, 5);
+  }, [menuItems, pastOrders]);
     
-  const recentOrders = [...orders].sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 5);
+  const recentOrders = useMemo(() => pastOrders?.slice(0, 5) || [], [pastOrders]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -177,7 +187,7 @@ export default function DashboardPage() {
                     <TableRow key={item.id}>
                       <TableCell>{item.name}</TableCell>
                       <TableCell className="text-right">
-                         <Badge variant="destructive">{item.stock} {item.unit}</Badge>
+                         <Badge variant="destructive">{item.stock} {item.baseUnit}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}

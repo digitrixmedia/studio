@@ -2,13 +2,15 @@
 'use client';
 
 import type { FranchiseOutlet, Role, User, MenuItem, MenuCategory, Order, OrderItem, OrderType, AppOrder, Table, Customer, Ingredient } from '@/lib/types';
-import { users as initialUsersData, menuItems as initialMenuItems, menuCategories as initialMenuCategories, subscriptions, tables as initialTables, orders as mockOrders, ingredients as initialIngredientsData } from '@/lib/data';
 import { useRouter, usePathname } from 'next/navigation';
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirebase } from '@/firebase';
+import { initializeFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, doc, serverTimestamp, setDoc, writeBatch, query, where, getDocs, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
 
 interface AppContextType {
   currentUser: User | null;
@@ -34,7 +36,7 @@ interface AppContextType {
   addOrder: () => void;
   removeOrder: (orderId: string) => void;
   updateOrder: (orderId: string, updates: Partial<AppOrder>) => void;
-  resetCurrentOrder: () => void;
+  finalizeOrder: (orderId: string) => Promise<void>;
   holdOrder: (orderId: string) => void;
   resumeOrder: (orderId: string) => void;
   getOrderByTable: (tableId: string) => AppOrder | undefined;
@@ -51,7 +53,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-let orderCounter = mockOrders.length + 1;
+let orderCounter = 1;
 
 const createNewOrder = (): AppOrder => ({
   id: `order-${Date.now()}`,
@@ -67,42 +69,38 @@ const createNewOrder = (): AppOrder => ({
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
-  const menuItems = initialMenuItems;
-  const menuCategories = initialMenuCategories;
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
-  const [pastOrders, setPastOrders] = useState<Order[]>(mockOrders);
-  const [tables, setTables] = useState<Table[]>(initialTables);
-  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredientsData);
-  const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
-  const [users, setUsers] = useState<User[]>(initialUsersData);
 
+  const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
+  
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   const { settings, setSetting } = useSettings();
 
-  const { auth } = initializeFirebase();
+  const { auth, firestore } = initializeFirebase();
 
-  // Create Firebase users from mock data on initial load
+  // Data Fetching from Firestore
+  const { data: usersData } = useCollection<User>(useMemoFirebase(() => collection(firestore, 'users'), [firestore]));
+  const { data: menuItemsData } = useCollection<MenuItem>(useMemoFirebase(() => collection(firestore, 'menu_items'), [firestore]));
+  const { data: menuCategoriesData } = useCollection<MenuCategory>(useMemoFirebase(() => collection(firestore, 'menu_categories'), [firestore]));
+  const { data: tablesData, setData: setTables } = useCollection<Table>(useMemoFirebase(() => collection(firestore, 'tables'), [firestore]));
+  const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]));
+  const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(useMemoFirebase(() => query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(100)), [firestore]));
+  const [users, setUsers] = useState<User[]>([]);
+
   useEffect(() => {
-    const createUsers = async () => {
-      for (const user of initialUsersData) {
-        try {
-          await createUserWithEmailAndPassword(auth, user.email, 'password123');
-          console.log(`User ${user.email} created successfully.`);
-        } catch (error: any) {
-          if (error.code === 'auth/email-already-in-use') {
-            // This is expected on subsequent loads, so we can ignore it.
-          } else {
-            console.error(`Error creating user ${user.email}:`, error);
-          }
-        }
-      }
-    };
-    createUsers();
-  }, [auth]);
+    if (usersData) setUsers(usersData);
+  }, [usersData]);
+
+  const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
+  const menuCategories = useMemo(() => menuCategoriesData || [], [menuCategoriesData]);
+  const tables = useMemo(() => tablesData || [], [tablesData]);
+  const ingredients = useMemo(() => ingredientsData || [], [ingredientsData]);
+  const pastOrders = useMemo(() => pastOrdersData || [], [pastOrdersData]);
+
 
     const customers = useMemo(() => {
         const customerMap = new Map<string, Customer>();
@@ -118,8 +116,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                         totalOrders: 0,
                         totalSpent: 0,
                         loyaltyPoints: 0,
-                        firstVisit: order.createdAt,
-                        lastVisit: order.createdAt,
+                        firstVisit: (order.createdAt as unknown as Timestamp).toDate(),
+                        lastVisit: (order.createdAt as unknown as Timestamp).toDate(),
                         tier: 'New',
                         birthday: order.customerPhone === '9876543200' ? '1990-11-15' : undefined,
                     };
@@ -127,8 +125,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 
                 customer.totalOrders += 1;
                 customer.totalSpent += order.total;
-                if (order.createdAt < customer.firstVisit) customer.firstVisit = order.createdAt;
-                if (order.createdAt > customer.lastVisit) customer.lastVisit = order.createdAt;
+                const orderDate = (order.createdAt as unknown as Timestamp).toDate();
+                if (orderDate < customer.firstVisit) customer.firstVisit = orderDate;
+                if (orderDate > customer.lastVisit) customer.lastVisit = orderDate;
                 
                 customer.loyaltyPoints = Math.floor(customer.totalSpent / 10);
                 if (customer.totalSpent > 5000) customer.tier = 'VIP';
@@ -141,31 +140,25 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         return Array.from(customerMap.values()).sort((a,b) => b.totalSpent - a.totalSpent);
     }, [pastOrders]);
 
-    const updateCustomer = (customerId: string, updates: Partial<Customer>) => {
-        // In a real app, this would be an API call. Here we just simulate for the loyalty points.
-        const customerToUpdate = customers.find(c => c.id === customerId);
-        if (customerToUpdate) {
-            // This is not persisted in this demo, but shows the mechanism
-            console.log("Updating customer", customerId, "with", updates);
-        }
+    const updateCustomer = async (customerId: string, updates: Partial<Customer>) => {
+        // In a real app, customer would be a top-level collection.
+        // For now, we will log the update as we don't have a /customers collection.
+        console.log("Updating customer logic would go here", customerId, updates);
     }
 
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser && firebaseUser.email) {
-            // User is signed in.
-            const appUser = users.find(u => u.email === firebaseUser.email);
-            if (appUser) {
-                setCurrentUser(appUser);
-            } else {
-                // This case can happen if a user is deleted from `data.ts` but not Firebase.
-                // Or if a new user was just created and the local `users` state hasn't updated yet.
-                // We'll rely on redirection logic to handle this gracefully.
-                setCurrentUser(null);
+            if(users.length > 0) {
+              const appUser = users.find(u => u.email === firebaseUser.email);
+              if (appUser) {
+                  setCurrentUser(appUser);
+              } else {
+                  setCurrentUser(null);
+              }
             }
         } else {
-            // User is signed out.
             setCurrentUser(null);
              if (!pathname.startsWith('/login')) {
                 router.push('/login');
@@ -174,8 +167,18 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth, users]); // Add `users` as a dependency
+  }, [auth, users, pathname, router]);
+
+  useEffect(() => {
+    if (!currentUser && users.length > 0) {
+      const fbUser = auth.currentUser;
+      if (fbUser && fbUser.email) {
+        const appUser = users.find(u => u.email === fbUser.email);
+        if (appUser) setCurrentUser(appUser);
+      }
+    }
+  }, [auth.currentUser, currentUser, users]);
+
 
   useEffect(() => {
     const storedOutlet = localStorage.getItem('selectedOutlet');
@@ -191,7 +194,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!currentUser) {
-      // If no user is logged in, and we are not on the login page, redirect to login
       if (!pathname.startsWith('/login')) {
         router.push('/login');
       }
@@ -206,58 +208,33 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     const userRole = currentUser.role;
     
     const redirectToDefaultScreen = () => {
-        if (settings.defaultScreen === 'Dashboard') {
-            router.push('/dashboard');
-        } else if (settings.defaultScreen === 'Billing') {
-            router.push('/orders');
-        } else { // Table Management
-            router.push('/tables');
-        }
+        if (settings.defaultScreen === 'Dashboard') router.push('/dashboard');
+        else if (settings.defaultScreen === 'Billing') router.push('/orders');
+        else router.push('/tables');
     }
 
-    // 1. If user is on the login page, redirect them to their correct dashboard
     if (isLoginPage) {
       if (userRole === 'super-admin') router.push('/super-admin/dashboard');
       else if (userRole === 'admin') router.push('/franchise/dashboard');
       else if (userRole === 'waiter' || userRole === 'cashier') router.push('/orders');
-      else {
-        redirectToDefaultScreen();
-      }
+      else redirectToDefaultScreen();
       return;
     }
 
-    // 2. Handle role-based access to different app sections
     switch (userRole) {
       case 'super-admin':
-        // If a Super Admin is NOT in the super admin section, redirect them.
-        if (!isSuperAdminPath) {
-          router.push('/super-admin/dashboard');
-        }
+        if (!isSuperAdminPath) router.push('/super-admin/dashboard');
         break;
       
       case 'admin':
-        // If Franchise Admin has selected an outlet, they should be in the main app.
-        if (selectedOutlet) {
-          if (!isAppPath) {
-            redirectToDefaultScreen();
-          }
-        } 
-        // If no outlet is selected, they should be in the franchise section.
-        else {
-          if (!isFranchisePath) {
-            router.push('/franchise/dashboard');
-          }
-        }
+        if (selectedOutlet) { if (!isAppPath) redirectToDefaultScreen(); } 
+        else { if (!isFranchisePath) router.push('/franchise/dashboard'); }
         break;
 
-      default: // For Manager, Cashier, Waiter, Kitchen
-        // If a regular user is NOT in the main app section, redirect them.
+      default:
         if (!isAppPath) {
-          if (userRole === 'waiter' || userRole === 'cashier') {
-            router.push('/orders');
-          } else {
-            redirectToDefaultScreen();
-          }
+          if (userRole === 'waiter' || userRole === 'cashier') router.push('/orders');
+          else redirectToDefaultScreen();
         }
         break;
     }
@@ -266,17 +243,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
         await signInWithEmailAndPassword(auth, email, password);
-        // onAuthStateChanged will handle the user state update and redirection
     } catch (error: any) {
         let description = "An unknown error occurred.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             description = "Invalid email or password. Please try again.";
         }
-        toast({
-            variant: "destructive",
-            title: "Login Failed",
-            description,
-        });
+        toast({ variant: "destructive", title: "Login Failed", description });
     }
   };
 
@@ -284,6 +256,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     setSelectedOutlet(null);
     localStorage.removeItem('selectedOutlet');
+    setCurrentUser(null);
     router.push('/login');
   };
   
@@ -291,13 +264,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (currentUser?.role === 'admin') {
       setSelectedOutlet(outlet);
       localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
-       if (settings.defaultScreen === 'Dashboard') {
-        router.push('/dashboard');
-      } else if (settings.defaultScreen === 'Billing') {
-        router.push('/orders');
-      } else {
-        router.push('/tables');
-      }
+       if (settings.defaultScreen === 'Dashboard') router.push('/dashboard');
+      else if (settings.defaultScreen === 'Billing') router.push('/orders');
+      else router.push('/tables');
     }
   };
 
@@ -332,67 +301,70 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
   };
   
-  const resetCurrentOrder = () => {
-    const activeOrder = orders.find(o => o.id === activeOrderId);
-    if (!activeOrder) return;
+  const finalizeOrder = async (orderId: string) => {
+    const orderToFinalize = orders.find(o => o.id === orderId);
+    if (!orderToFinalize || !currentUser) return;
 
-    // Deduct inventory
-    const newIngredients = [...ingredients];
-    let consumptionLog = '';
+    const batch = writeBatch(firestore);
+
+    // 1. Create the final Order document
+    const subTotal = orderToFinalize.items.reduce((acc, item) => acc + item.totalPrice, 0);
+    const tax = subTotal * (settings.taxAmount / 100); // simplified tax
+    const total = subTotal - (orderToFinalize.discount || 0) - (orderToFinalize.redeemedPoints || 0) + tax;
     
-    activeOrder.items.forEach(orderItem => {
-        if (orderItem.isMealChild) return; // Skip children, parent handles deduction implicitly or explicitly
+    const finalOrder: Omit<Order, 'id'> = {
+      orderNumber: orderToFinalize.orderNumber,
+      type: orderToFinalize.orderType,
+      tableId: orderToFinalize.tableId,
+      items: orderToFinalize.items,
+      subTotal,
+      tax,
+      discount: orderToFinalize.discount || 0,
+      total,
+      status: 'completed',
+      createdAt: serverTimestamp() as any, // Let server set the time
+      createdBy: currentUser.id,
+      paymentMethod: orderToFinalize.paymentMethod || 'cash',
+      customerName: orderToFinalize.customer.name,
+      customerPhone: orderToFinalize.customer.phone,
+    };
+    
+    const orderRef = doc(collection(firestore, 'orders'));
+    batch.set(orderRef, finalOrder);
 
-        const menuItem = menuItems.find(mi => mi.id === orderItem.baseMenuItemId);
-        if (!menuItem) return;
-        
-        let recipe: { ingredientId: string; quantity: number }[] = [];
+    // 2. Update table status if dine-in
+    if (orderToFinalize.orderType === 'dine-in' && orderToFinalize.tableId) {
+      const tableRef = doc(firestore, 'tables', orderToFinalize.tableId);
+      batch.update(tableRef, { status: 'vacant', currentOrderId: null });
+    }
 
-        // Check for variation recipe first
-        if (orderItem.variation && orderItem.variation.ingredients.length > 0) {
-            recipe = orderItem.variation.ingredients;
-        } 
-        // Fallback to main item recipe
-        else if (menuItem.ingredients && menuItem.ingredients.length > 0) {
-            recipe = menuItem.ingredients;
+    // 3. Deduct inventory
+    orderToFinalize.items.forEach(item => {
+      const menuItem = menuItems.find(mi => mi.id === item.baseMenuItemId);
+      if (!menuItem || !menuItem.ingredients) return;
+      
+      menuItem.ingredients.forEach(ing => {
+        const ingredientRef = doc(firestore, 'ingredients', ing.ingredientId);
+        const ingData = ingredients.find(i => i.id === ing.ingredientId);
+        if (ingData) {
+          const newStock = ingData.stock - (ing.quantity * item.quantity);
+          batch.update(ingredientRef, { stock: newStock });
         }
-
-        if (recipe.length > 0) {
-            recipe.forEach(recipeIngredient => {
-                const ingIndex = newIngredients.findIndex(ing => ing.id === recipeIngredient.ingredientId);
-                if (ingIndex !== -1) {
-                    const quantityToDeduct = recipeIngredient.quantity * orderItem.quantity;
-                    newIngredients[ingIndex].stock -= quantityToDeduct;
-                    consumptionLog += `Deducted ${quantityToDeduct}${newIngredients[ingIndex].baseUnit} of ${newIngredients[ingIndex].name} for ${orderItem.quantity}x ${orderItem.name}\n`;
-                }
-            });
-        }
+      });
     });
 
-    if (consumptionLog) {
-      console.log("--- INVENTORY CONSUMPTION ---");
-      console.log(consumptionLog);
+    try {
+      await batch.commit();
+      toast({ title: 'Order Finalized', description: `Order #${finalOrder.orderNumber} has been completed.` });
+      // Reset POS
+      removeOrder(orderId);
+      setSetting('discountValue', 0);
+      setSetting('discountType', 'fixed');
+      setSetting('isComplimentary', false);
+    } catch (error) {
+      console.error("Error finalizing order:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not finalize order.' });
     }
-    setIngredients(newIngredients);
-    
-    // Update loyalty points
-    const activeCustomer = customers.find(c => c.phone === activeOrder.customer.phone);
-    if (activeOrder.redeemedPoints > 0 && activeCustomer) {
-      updateCustomer(activeCustomer.id, { loyaltyPoints: activeCustomer.loyaltyPoints - activeOrder.redeemedPoints });
-    }
-
-    // Reset UI state and order
-    if (orders.length === 1) {
-      const newOrder = createNewOrder();
-      setOrders([newOrder]);
-      setActiveOrderId(newOrder.id);
-    } else {
-      removeOrder(activeOrder.id);
-    }
-
-    setSetting('discountValue', 0);
-    setSetting('discountType', 'fixed');
-    setSetting('isComplimentary', false);
   };
   
   const getOrderByTable = (tableId: string) => {
@@ -400,7 +372,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       if (table && table.currentOrderId) {
         return orders.find(o => o.id === table.currentOrderId);
       }
-      // Fallback for orders that might not have currentOrderId set on the table
       return orders.find(o => o.tableId === tableId && o.orderType === 'dine-in');
   }
 
@@ -409,20 +380,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!orderToHold) return;
 
     if (orderToHold.items.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "Cannot Hold Empty Order",
-        description: "Add items to the order before placing it on hold.",
-      });
+      toast({ variant: "destructive", title: "Cannot Hold Empty Order", description: "Add items to the order before placing it on hold." });
       return;
     }
 
     setHeldOrders(prev => [...prev, orderToHold]);
     removeOrder(orderId);
-    toast({
-      title: "Order Held",
-      description: `Order #${orderToHold.orderNumber} for ${orderToHold.customer.name || 'a customer'} has been put on hold.`,
-    });
+    toast({ title: "Order Held", description: `Order #${orderToHold.orderNumber} has been put on hold.` });
   };
 
   const resumeOrder = (orderId: string) => {
@@ -432,10 +396,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setOrders(prev => [...prev, orderToResume]);
     setHeldOrders(prev => prev.filter(o => o.id !== orderId));
     setActiveOrderId(orderToResume.id);
-    toast({
-      title: "Order Resumed",
-      description: `Order #${orderToResume.orderNumber} for ${orderToResume.customer.name || 'a customer'} is now active.`,
-    });
+    toast({ title: "Order Resumed", description: `Order #${orderToResume.orderNumber} is now active.` });
   };
 
   const loadOrder = (order: Order) => {
@@ -443,10 +404,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         id: `order-${Date.now()}`,
         orderNumber: order.orderNumber,
         items: order.items,
-        customer: {
-            name: order.customerName || '',
-            phone: order.customerPhone || '',
-        },
+        customer: { name: order.customerName || '', phone: order.customerPhone || '' },
         orderType: order.type,
         tableId: order.tableId || '',
         discount: order.discount || 0,
@@ -473,10 +431,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       id: `order-${Date.now()}`,
       orderNumber: order.orderNumber,
       items: order.items,
-      customer: {
-        name: order.customerName || 'Online Customer',
-        phone: order.customerPhone || '',
-      },
+      customer: { name: order.customerName || 'Online Customer', phone: order.customerPhone || '' },
       orderType: 'delivery',
       tableId: '',
       discount: 0,
@@ -485,7 +440,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
     const emptyOrderIndex = orders.findIndex(o => o.items.length === 0);
     if (emptyOrderIndex !== -1) {
-      // Replace an empty bill if one exists
       setOrders(prev => {
         const newOrders = [...prev];
         newOrders[emptyOrderIndex] = newBill;
@@ -493,13 +447,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       });
       setActiveOrderId(newBill.id);
     } else {
-      // Otherwise, add a new bill
       setOrders(prev => [...prev, newBill]);
       setActiveOrderId(newBill.id);
     }
   };
 
-  const startOrderForTable = (tableId: string) => {
+  const startOrderForTable = async (tableId: string) => {
       const existingOrder = getOrderByTable(tableId);
       if (existingOrder) {
           setActiveOrderId(existingOrder.id);
@@ -510,7 +463,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const newOrder = createNewOrder();
       newOrder.tableId = tableId;
       newOrder.orderType = 'dine-in';
-      newOrder.id = `order-table-${tableId}-${Date.now()}`; // More specific ID
+      newOrder.id = `order-table-${tableId}-${Date.now()}`;
       
       const emptyOrderIndex = orders.findIndex(o => o.items.length === 0 && !o.tableId);
       
@@ -526,7 +479,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           setActiveOrderId(newOrder.id);
       }
       
-      setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'occupied', currentOrderId: newOrder.id } : t));
+      await setDoc(doc(firestore, 'tables', tableId), { status: 'occupied', currentOrderId: newOrder.id }, { merge: true });
       
       router.push('/orders');
   };
@@ -544,14 +497,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     updateCustomer,
     orders,
     setOrders,
-    pastOrders,
-    setPastOrders,
-    users,
+    pastOrders: pastOrders || [],
+    setPastOrders: setPastOrders as React.Dispatch<React.SetStateAction<Order[]>>,
+    users: users || [],
     setUsers,
-    tables,
-    setTables,
-    ingredients,
-    setIngredients,
+    tables: tables || [],
+    setTables: setTables as React.Dispatch<React.SetStateAction<Table[]>>,
+    ingredients: ingredients || [],
+    setIngredients: setIngredients as React.Dispatch<React.SetStateAction<Ingredient[]>>,
     heldOrders,
     setHeldOrders,
     activeOrderId,
@@ -559,7 +512,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     addOrder,
     removeOrder,
     updateOrder,
-    resetCurrentOrder,
+    finalizeOrder,
     holdOrder,
     resumeOrder,
     getOrderByTable,

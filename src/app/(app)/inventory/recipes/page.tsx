@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -25,7 +24,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
-import { ingredients, menuItems } from '@/lib/data';
 import { PlusCircle, Edit, Save, Trash2 } from 'lucide-react';
 import {
   Select,
@@ -36,9 +34,11 @@ import {
 } from '@/components/ui/select';
 import { useState } from 'react';
 import type { MenuItem } from '@/lib/types';
+import { useAppContext } from '@/contexts/AppContext';
 
 
 export default function InventoryRecipesPage() {
+  const { ingredients, menuItems } = useAppContext();
   const [editableRecipes, setEditableRecipes] = useState<Record<string, { ingredientId: string; quantity: number }[]>>({});
 
   const handleEditRecipe = (item: MenuItem) => {

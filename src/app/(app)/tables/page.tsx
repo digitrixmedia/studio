@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { tables as initialTables, orders } from '@/lib/data';
 import type { Table, TableStatus } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
@@ -22,17 +21,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Users, Utensils, Circle, CheckCircle, IndianRupee, PlusCircle, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { collection } from 'firebase/firestore';
 
 const statusConfig: { [key in TableStatus]: { color: string; icon: React.ElementType } } = {
   vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
@@ -41,20 +42,14 @@ const statusConfig: { [key in TableStatus]: { color: string; icon: React.Element
 };
 
 export default function TablesPage() {
-  const { 
-    tables, 
-    setTables, 
-    startOrderForTable, 
-    getOrderByTable,
-    setActiveOrderId
-  } = useAppContext();
+  const { tables, setTables, startOrderForTable, getOrderByTable, setActiveOrderId, finalizeOrder } = useAppContext();
+  const firestore = useFirestore();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isAddTableOpen, setIsAddTableOpen] = useState(false);
   const [newTableName, setNewTableName] = useState('');
   const [newTableCapacity, setNewTableCapacity] = useState('4');
   const router = useRouter();
   const { toast } = useToast();
-
 
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
@@ -74,8 +69,6 @@ export default function TablesPage() {
         setActiveOrderId(order.id);
         router.push('/orders');
       } else {
-        // This case might happen if an order was cleared but table status wasn't updated
-        // For robustness, we can start a new order.
         handleStartNewOrder();
       }
       setSelectedTable(null);
@@ -84,55 +77,34 @@ export default function TablesPage() {
 
   const handleGenerateBill = () => {
     if (selectedTable) {
-      setTables(prevTables => 
-        prevTables.map(t => 
-          t.id === selectedTable.id ? { ...t, status: 'billing' } : t
-        )
-      );
-      toast({
-        title: "Bill Generated",
-        description: `${selectedTable.name} is now in billing status.`,
-      });
+      updateDocumentNonBlocking(doc(firestore, 'tables', selectedTable.id), { status: 'billing' });
+      toast({ title: "Bill Generated", description: `${selectedTable.name} is now in billing status.` });
       setSelectedTable(null);
     }
   }
   
-  const handleMarkAsPaid = () => {
-    if (selectedTable) {
-      setTables(prevTables => 
-        prevTables.map(t => 
-          t.id === selectedTable.id ? { ...t, status: 'vacant', currentOrderId: undefined } : t
-        )
-      );
-       // Here you would also likely remove the order from the active orders list
-      toast({
-        title: "Table Vacated",
-        description: `${selectedTable.name} is now available.`,
-      });
+  const handleMarkAsPaid = async () => {
+    if (selectedTable && selectedTable.currentOrderId) {
+      await finalizeOrder(selectedTable.currentOrderId);
+      toast({ title: "Table Vacated", description: `${selectedTable.name} is now available.` });
       setSelectedTable(null);
+    } else {
+        toast({ title: "Error", description: "No active order found for this table.", variant: "destructive" });
     }
   }
 
   const handleAddTable = () => {
     if (!newTableName || !newTableCapacity) {
-        toast({
-            variant: "destructive",
-            title: "Missing Information",
-            description: "Please provide a name and capacity for the table."
-        });
+        toast({ variant: "destructive", title: "Missing Information", description: "Please provide a name and capacity." });
         return;
     }
-    const newTable: Table = {
-        id: `table-${Date.now()}`,
+    const newTableData: Omit<Table, 'id'> = {
         name: newTableName,
         capacity: parseInt(newTableCapacity, 10),
         status: 'vacant',
     };
-    setTables(prev => [...prev, newTable]);
-    toast({
-        title: "Table Added",
-        description: `${newTableName} has been added to your layout.`
-    });
+    addDocumentNonBlocking(collection(firestore, 'tables'), newTableData);
+    toast({ title: "Table Added", description: `${newTableName} has been added.` });
     setIsAddTableOpen(false);
     setNewTableName('');
     setNewTableCapacity('4');
@@ -140,16 +112,14 @@ export default function TablesPage() {
 
   const handleDeleteTable = () => {
     if (selectedTable) {
-        setTables(prev => prev.filter(t => t.id !== selectedTable.id));
-        toast({
-            title: "Table Removed",
-            description: `${selectedTable.name} has been removed from your layout.`,
-            variant: "destructive"
-        });
+        deleteDocumentNonBlocking(doc(firestore, 'tables', selectedTable.id));
+        toast({ title: "Table Removed", description: `${selectedTable.name} has been removed.`, variant: "destructive" });
         setSelectedTable(null);
     }
   }
 
+  const orderForSelectedTable = selectedTable ? getOrderByTable(selectedTable.id) : undefined;
+  const orderTotal = orderForSelectedTable ? orderForSelectedTable.items.reduce((sum, item) => sum + item.totalPrice, 0) : null;
 
   return (
     <div>

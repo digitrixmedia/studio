@@ -15,7 +15,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
-import type { Role } from '@/lib/types';
 
 export default function LoginPage() {
   const { login } = useAppContext();
@@ -23,10 +22,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
 
   const handleMainLogin = () => {
-    // In a real app, role would be determined from user claims, not selected.
-    // For now, we'll pass email/password to the login function.
     login(email, password);
   };
+
+  const handleDemoLogin = (userEmail: string) => {
+    login(userEmail, 'password123'); // Assuming all demo accounts have this password
+  }
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
@@ -58,11 +59,15 @@ export default function LoginPage() {
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">Login with any of the created accounts (e.g., manager@zappyy.com)</p>
+          <p className="text-sm text-muted-foreground text-center">Or use a demo account:</p>
+          <div className='grid grid-cols-2 gap-2 w-full'>
+            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('super@zappyy.com')}>Super Admin</Button>
+            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('admin@zappyy.com')}>Franchise Admin</Button>
+            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('manager@zappyy.com')}>Manager</Button>
+            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('cashier@zappyy.com')}>Cashier</Button>
+          </div>
         </CardFooter>
       </Card>
     </div>
   );
 }
-
-    
