@@ -86,7 +86,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     return currentUser?.role === 'admin' || currentUser?.role === 'super-admin';
   }, [currentUser]);
 
-  // Data Fetching from Firestore
   const usersQuery = useMemoFirebase(() => {
     return isAdminOrSuperAdmin ? collection(firestore, 'users') : null;
   }, [firestore, isAdminOrSuperAdmin]);
@@ -98,6 +97,38 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]));
   const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(useMemoFirebase(() => query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(100)), [firestore]));
   const [users, setUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    const setupSuperAdmin = async () => {
+      // Check if users collection is empty
+      const usersCollection = collection(firestore, 'users');
+      const usersSnapshot = await getDocs(query(usersCollection, limit(1)));
+      if (usersSnapshot.empty) {
+        console.log("No users found. Creating Super Admin account...");
+        try {
+          const userCredential = await createUserWithEmailAndPassword(auth, 'superadmin@pos.com', 'password123');
+          const superAdminUser: User = {
+            id: userCredential.user.uid,
+            name: 'Super Admin',
+            email: 'superadmin@pos.com',
+            role: 'super-admin',
+          };
+          await setDoc(doc(firestore, 'users', userCredential.user.uid), superAdminUser);
+          console.log("Super Admin account created successfully.");
+        } catch (error: any) {
+          if (error.code === 'auth/email-already-in-use') {
+            console.log("Super Admin email already exists in Auth. Skipping creation.");
+          } else {
+            console.error("Failed to create Super Admin:", error);
+          }
+        }
+      } else {
+        console.log("Users collection is not empty. Skipping Super Admin setup.");
+      }
+    };
+    setupSuperAdmin();
+  }, [auth, firestore]);
+  
 
   useEffect(() => {
     if (usersData) setUsers(usersData);
@@ -162,14 +193,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
               const appUser = users.find(u => u.email === firebaseUser.email);
               if (appUser) {
                   setCurrentUser(appUser);
-              } else {
-                  // This case can happen if the user exists in Auth but not in the 'users' collection yet
-                  // We can either create a user document here, or trust that one will be created soon.
-                  // For now, we'll wait for the collection listener to provide the user.
               }
-            } else {
-                 // The 'users' collection is still loading, especially for non-admins. 
-                 // We can't determine the app user yet.
             }
         } else {
             setCurrentUser(null);
@@ -188,7 +212,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       const appUser = users.find(u => u.email === fbUser.email);
       if (appUser) setCurrentUser(appUser);
     } else if (currentUser && auth.currentUser && auth.currentUser.email !== currentUser.email) {
-      // Auth state and app user are out of sync, trust auth and find the right user.
       const appUser = users.find(u => u.email === auth.currentUser?.email);
       if (appUser) setCurrentUser(appUser);
     }

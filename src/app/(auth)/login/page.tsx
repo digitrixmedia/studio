@@ -25,10 +25,6 @@ export default function LoginPage() {
     login(email, password);
   };
 
-  const handleDemoLogin = (userEmail: string) => {
-    login(userEmail, 'password123'); // Assuming all demo accounts have this password
-  }
-
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm shadow-2xl">
@@ -58,11 +54,10 @@ export default function LoginPage() {
             Login
           </Button>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground text-center">Or use a demo account:</p>
-          <div className='grid grid-cols-1 gap-2 w-full'>
-            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('super@zappyy.com')}>Super Admin</Button>
-          </div>
+        <CardFooter>
+            <p className="text-xs text-muted-foreground text-center w-full">
+              Enter your credentials to begin.
+            </p>
         </CardFooter>
       </Card>
     </div>
