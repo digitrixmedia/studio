@@ -1,18 +1,19 @@
 
 'use client';
 
-import { orders } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { IndianRupee } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
+import { useAppContext } from '@/contexts/AppContext';
 
 export function RecentOrders() {
     const router = useRouter();
-    const recentOrders = [...orders]
-        .sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime())
-        .slice(0, 10);
+    const { pastOrders } = useAppContext();
+
+    // The pastOrders from context are already sorted by date
+    const recentOrders = pastOrders.slice(0, 10);
     
     const handleViewAll = () => {
         router.push('/operations');

@@ -1552,15 +1552,8 @@ function CustomizationForm({
   onSelectVariation,
 }: CustomizationFormProps) {
   const notesRef = React.useRef<HTMLTextAreaElement>(null);
-  const [selectedVariation, setSelectedVariation] = React.useState<string | undefined>(item.variations?.[0]?.id);
 
-  const handleAddToCart = () => {
-    const notes = notesRef.current?.value;
-    const variation = item.variations?.find(v => v.id === selectedVariation);
-    onSelectVariation(item, variation, notes);
-  };
-  
-  const handleVariationClick = (variation: MenuItemVariation) => {
+  const handleAddToCart = (variation?: MenuItemVariation) => {
     const notes = notesRef.current?.value;
     onSelectVariation(item, variation, notes);
   };
@@ -1580,7 +1573,7 @@ function CustomizationForm({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="button" onClick={handleAddToCart}>
+          <Button type="button" onClick={() => handleAddToCart()}>
             Add to Order
           </Button>
         </DialogFooter>
@@ -1592,25 +1585,23 @@ function CustomizationForm({
     <div className="space-y-4">
       <div>
         <Label className="font-medium">Select Variation</Label>
-        <RadioGroup
-          value={selectedVariation}
-          onValueChange={setSelectedVariation}
-          className="mt-2"
-        >
-          {item.variations.map((v) => (
-            <div key={v.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={v.id} id={v.id} />
-                <Label htmlFor={v.id} className="flex justify-between w-full">
-                  <span>{v.name}</span>
-                  <span className="text-muted-foreground">
-                    (+
-                    <IndianRupee className="inline-block h-3.5 w-3.5" />
-                    {v.priceModifier.toFixed(2)})
-                  </span>
-                </Label>
-              </div>
-          ))}
-        </RadioGroup>
+        <div className='mt-2 space-y-2'>
+            {item.variations.map((v) => (
+              <Button
+                key={v.id}
+                variant="outline"
+                className="w-full justify-between"
+                onClick={() => handleAddToCart(v)}
+              >
+                <span>{v.name}</span>
+                <span className="text-muted-foreground">
+                  (+
+                  <IndianRupee className="inline-block h-3.5 w-3.5" />
+                  {v.priceModifier.toFixed(2)})
+                </span>
+              </Button>
+            ))}
+        </div>
       </div>
       <div>
         <Label className="font-medium">Special Notes</Label>
@@ -1620,14 +1611,12 @@ function CustomizationForm({
           placeholder="e.g. Extra spicy, no onions..."
         />
       </div>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="button" onClick={handleAddToCart}>
-          Add to Order
-        </Button>
-      </DialogFooter>
+       <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
     </div>
   );
 }
+
