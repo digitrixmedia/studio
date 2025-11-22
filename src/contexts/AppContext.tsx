@@ -98,46 +98,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    const setupSuperAdmin = async () => {
-      try {
-        // Attempt to create the user. This will fail if the user already exists, which is fine.
-        await createUserWithEmailAndPassword(auth, 'superadmin@pos.com', 'password123');
-        console.log("Super Admin auth user created successfully.");
-      } catch (error: any) {
-        if (error.code !== 'auth/email-already-in-use') {
-          console.error("Error creating superadmin auth user:", error);
-        }
-      } finally {
-          // Whether creation succeeded or failed because it exists, check/create the Firestore doc.
-          // Temporarily sign in to get the UID.
-          try {
-            const userCredential = await signInWithEmailAndPassword(auth, 'superadmin@pos.com', 'password123');
-            const uid = userCredential.user.uid;
-            const userDocRef = doc(firestore, 'users', uid);
-            const userDoc = await getDoc(userDocRef);
-
-            if (!userDoc.exists()) {
-                const superAdminUser: User = {
-                    id: uid,
-                    name: 'Super Admin',
-                    email: 'superadmin@pos.com',
-                    role: 'super-admin',
-                };
-                await setDoc(userDocRef, superAdminUser);
-                console.log("Super Admin Firestore document created.");
-            }
-             // Sign out the temporary session
-            await auth.signOut();
-          } catch(e) {
-             console.error("Critical error during superadmin setup:", e);
-          }
-      }
-    };
-    setupSuperAdmin();
-  }, [auth, firestore]);
-  
-
-  useEffect(() => {
     if (usersData) setUsers(usersData);
   }, [usersData]);
 
