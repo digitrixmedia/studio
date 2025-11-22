@@ -1,181 +1,102 @@
-/**
- * @fileoverview Firestore Security Rules for DineMitra POS.
- *
- * Core Philosophy:
- * This ruleset enforces a multi-tenant security model with path-based ownership for user data
- * and role-based access control for administrative functions. Authorization independence is a priority,
- * achieved by denormalizing key authorization data directly onto documents.
- *
- * Data Structure:
- * - /users/{userId}: Stores private user profile data, accessible only to the user.
- * - /menu_items/{menuItemId}: Stores publicly accessible menu items.
- * - /menu_categories/{menuCategoryId}: Stores publicly accessible menu categories.
- * - /ingredients/{ingredientId}: Stores publicly accessible ingredient information.
- * - /menu_item_ingredients/{menuItemIngredientId}: Stores publicly accessible relations between menu items and ingredients.
- * - /tables/{tableId}: Stores publicly accessible table information.
- * - /orders/{orderId}: Stores order data, with customerId for owner-based authorization.
- * - /orders/{orderId}/order_items/{orderItemId}: Stores order item data, inheriting authorization from the parent order.
- * - /payments/{paymentId}: Stores payment information.
- * - /discounts/{discountId}: Stores discount information.
- * - /order_discounts/{orderDiscountId}: Stores order discount information.
- *
- * Key Security Decisions:
- * - User data is strictly private; users can only access their own data under /users/{userId}.
- * - Menu items, ingredients, tables, and discounts are publicly readable.
- * - Orders are secured using the customerId field.
- * - Administrative privileges are determined by the 'role' field in the user's document.
- * - Data validation is relaxed to allow for rapid prototyping, focusing on ownership and relational integrity only.
- *
- * Denormalization for Authorization:
- * - Orders include the customerId field to allow for direct authorization checks without additional reads.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Checks if the request is made by a signed-in user.
-     * @return {bool} True if the user is signed in, false otherwise.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the authenticated user is the owner of the resource based on the provided user ID.
-     * @param {string} userId - The user ID to check against.
-     * @return {bool} True if the user is the owner, false otherwise.
-     */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * @description Checks if the authenticated user has an admin or super-admin role.
-     * @return {bool} True if the user has an admin or super-admin role, false otherwise.
-     */
+    // Read the current user's document to check role.
+    // get() here is safe and does not require a prior 'read' rule.
     function isAdmin() {
-        let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-        return isSignedIn() && (userDoc.role == 'admin' || userDoc.role == 'super-admin');
+      return isSignedIn() &&
+        (
+          // read the user's doc and check role
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+          ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super-admin'
+        );
     }
 
-    /**
-     * @description Rules for user profiles.
-     * @path /users/{userId}
-     * @allow (read, write) - A user can only access their own profile.
-     * @allow (list) - Only admins can list all users.
-     */
+    /********** USERS **********/
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      // Allow the user to read and update their own profile
+      allow read, update: if isOwner(userId);
+
+      // Allow admins to create user documents (for new accounts) and manage any user
+      allow create: if isAdmin();           // admin or super-admin can create other users
+      allow delete: if isAdmin();           // only admins can delete user docs
+
+      // Allow listing users only to admins
       allow list: if isAdmin();
     }
 
-    /**
-     * @description Rules for menu items.
-     * @path /menu_items/{menuItemId}
-     * @allow (read) - Anyone can read menu items.
-     * @allow (write) - Only admins can create, update, or delete menu items.
-     */
+    /********** SUBSCRIPTIONS (Superadmin creates these) **********/
+    match /subscriptions/{subscriptionId} {
+      // Only admins (or super-admin) may create/update/delete subscriptions.
+      allow create, update, delete: if isAdmin();
+
+      // Allow admins to read all subscriptions; optionally allow owners to read their own subscription if you store ownerId
+      allow read: if isAdmin();
+    }
+
+    /********** OUTLETS **********/
+    match /outlets/{outletId} {
+      // Admins create and manage outlet documents.
+      allow create, update, delete: if isAdmin();
+
+      // Admins can read all outlets.
+      // Optionally, if you store an 'ownerId' or 'adminUid' in outlet doc, allow that owner read access as well:
+      allow read: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    /********** PUBLIC COLLECTIONS (unchanged) **********/
     match /menu_items/{menuItemId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    
-    /**
-     * @description Rules for menu categories.
-     * @path /menu_categories/{menuCategoryId}
-     * @allow (read) - Anyone can read menu categories.
-     * @allow (write) - Only admins can create, update, or delete menu categories.
-     */
     match /menu_categories/{menuCategoryId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    /**
-     * @description Rules for ingredients.
-     * @path /ingredients/{ingredientId}
-     * @allow (read) - Anyone can read ingredients.
-     * @allow (write) - Only admins can create, update, or delete ingredients.
-     */
     match /ingredients/{ingredientId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    /**
-     * @description Rules for menu item ingredients.
-     * @path /menu_item_ingredients/{menuItemIngredientId}
-     * @allow (read) - Anyone can read menu item ingredients.
-     * @allow (write) - Only admins can create, update, or delete menu item ingredients.
-     */
     match /menu_item_ingredients/{menuItemIngredientId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    /**
-     * @description Rules for tables.
-     * @path /tables/{tableId}
-     * @allow (read) - Anyone can read table information.
-     * @allow (write) - Only admins can create, update, or delete tables.
-     */
     match /tables/{tableId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    /**
-     * @description Rules for orders.
-     * @path /orders/{orderId}
-     * @allow (read) - Anyone can read order information.
-     * @allow (create) - Any signed-in user can create an order for themselves.
-     * @allow (update, delete) - Only the customer who placed the order or an admin can update or delete it.
-     */
+    /********** ORDERS **********/
     match /orders/{orderId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
       allow update, delete: if isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
-
-    /**
-     * @description Rules for order items within an order.
-     * @path /orders/{orderId}/order_items/{orderItemId}
-     * Inherits rules from parent order.
-     */
     match /orders/{orderId}/order_items/{orderItemId} {
-       allow read: if true;
-       allow write: if isSignedIn() && (get(/databases/$(database)/documents/orders/$(orderId)).data.createdBy == request.auth.uid || isAdmin());
+      allow read: if true;
+      allow write: if isSignedIn() && (get(/databases/$(database)/documents/orders/$(orderId)).data.createdBy == request.auth.uid || isAdmin());
     }
 
-    /**
-     * @description Rules for payments.
-     * @path /payments/{paymentId}
-     * @allow (read) - Anyone can read payment information.
-     * @allow (write) - Only admins can create, update, or delete payments.
-     */
+    /********** PAYMENTS, DISCOUNTS **********/
     match /payments/{paymentId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    /**
-     * @description Rules for discounts.
-     * @path /discounts/{discountId}
-     * @allow (read) - Anyone can read discount information.
-     * @allow (write) - Only admins can create, update, or delete discounts.
-     */
     match /discounts/{discountId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-
-    /**
-     * @description Rules for order discounts.
-     * @path /order_discounts/{orderDiscountId}
-     * @allow (read) - Anyone can read order discount information.
-     * @allow (write) - Only admins can create, update, or delete order discounts.
-     */
     match /order_discounts/{orderDiscountId} {
       allow read: if true;
       allow write: if isAdmin();
