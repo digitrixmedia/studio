@@ -132,11 +132,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
   const usersQuery = useMemoFirebase(() => {
-    if (!currentUser) return null;
-    return currentUser.role === 'super-admin'
-      ? collection(firestore, 'users')
-      : null;
-  }, [firestore, currentUser]);
+    if (!firestore || !currentUser || !isSuperAdmin) return null;
+    return collection(firestore, 'users');
+  }, [firestore, currentUser, isSuperAdmin]);
 
   const { data: usersData } = useCollection<User>(usersQuery);
   
@@ -153,11 +151,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [usersData, isSuperAdmin]);
 
 
-  const { data: menuItemsData } = useCollection<MenuItem>(useMemoFirebase(() => collection(firestore, 'menu_items'), [firestore]));
-  const { data: menuCategoriesData } = useCollection<MenuCategory>(useMemoFirebase(() => collection(firestore, 'menu_categories'), [firestore]));
-  const { data: tablesData, setData: setTables } = useCollection<Table>(useMemoFirebase(() => collection(firestore, 'tables'), [firestore]));
-  const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(useMemoFirebase(() => collection(firestore, 'ingredients'), [firestore]));
-  const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(useMemoFirebase(() => query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(100)), [firestore]));
+  const { data: menuItemsData } = useCollection<MenuItem>(useMemoFirebase(() => firestore ? collection(firestore, 'menu_items') : null, [firestore]));
+  const { data: menuCategoriesData } = useCollection<MenuCategory>(useMemoFirebase(() => firestore ? collection(firestore, 'menu_categories') : null, [firestore]));
+  const { data: tablesData, setData: setTables } = useCollection<Table>(useMemoFirebase(() => firestore ? collection(firestore, 'tables') : null, [firestore]));
+  const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(useMemoFirebase(() => firestore ? collection(firestore, 'ingredients') : null, [firestore]));
+  const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(useMemoFirebase(() => firestore ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(100)) : null, [firestore]));
 
 
   const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
@@ -226,14 +224,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             }
         } else {
             setCurrentUser(null);
-             if (!pathname.startsWith('/login')) {
-                router.push('/login');
-            }
         }
     });
 
     return () => unsubscribe();
-  }, [auth, firestore, pathname, router, isInitializing]);
+  }, [auth, firestore, isInitializing]);
 
 
   useEffect(() => {
@@ -249,12 +244,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    if (!currentUser) {
-      if (!pathname.startsWith('/login') && !isInitializing) {
-        router.push('/login');
-      }
-      return;
+    // only run on client navigations
+    if (typeof window === 'undefined') return;
+    
+    // guard: only redirect if not already on login and not on a public route
+    const publicPaths = ['/login']; // Add any other public paths here
+    if (!currentUser && !isInitializing && !publicPaths.includes(pathname)) {
+        router.replace('/login');
+        return;
     }
+    
+    if (!currentUser) return;
 
     const isLoginPage = pathname.startsWith('/login');
     const isSuperAdminPath = pathname.startsWith('/super-admin');
@@ -294,7 +294,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         }
         break;
     }
-  }, [currentUser, selectedOutlet, pathname, router, settings.defaultScreen, isInitializing]);
+  }, [currentUser, selectedOutlet, pathname, settings.defaultScreen, isInitializing, router]);
 
 
   const logout = async () => {
