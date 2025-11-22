@@ -168,7 +168,7 @@ export function CustomerSearch({
           ref={listRef}
           role="listbox"
           aria-label="Customer suggestions"
-          className="absolute left-0 right-0 mt-1 z-50 bg-white border rounded-md shadow-lg max-h-56 overflow-auto"
+          className="absolute left-0 right-0 mt-1 z-50 bg-white dark:bg-card border rounded-md shadow-lg max-h-56 overflow-auto"
           style={{ minWidth: '14rem' }}
         >
           {filtered.map((c, idx) => (
@@ -177,8 +177,8 @@ export function CustomerSearch({
               role="option"
               aria-selected={idx === activeIndex}
               className={cn(
-                'px-3 py-2 cursor-pointer hover:bg-gray-100',
-                idx === activeIndex ? 'bg-gray-100' : ''
+                'px-3 py-2 cursor-pointer hover:bg-muted',
+                idx === activeIndex ? 'bg-muted' : ''
               )}
               // use onMouseDown to ensure selection occurs BEFORE input blur
               onMouseDown={(e) => {
