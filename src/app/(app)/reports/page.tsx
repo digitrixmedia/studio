@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -19,18 +18,18 @@ import {
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Pie, PieChart, Cell } from 'recharts';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { dailySalesData as initialDailySales, menuItems, orders, menuCategories, hourlySalesData, users, purchaseOrders, vendors, ingredients } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingCart, ShoppingBag, Eye, Percent, Truck, Loader2 } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-import { addDays, format, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
+import { addDays, format, isWithinInterval, startOfDay, endOfDay, subDays, getHours } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Order, PurchaseOrder } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { useAppContext } from '@/contexts/AppContext';
 
 const chartConfig = {
   sales: {
@@ -45,12 +44,24 @@ const chartConfig = {
   delivery: { label: 'Delivery', color: 'hsl(var(--chart-3))' },
 };
 
-const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
-const getVendorName = (vendorId: string) => vendors.find(v => v.id === vendorId)?.name || 'Unknown Vendor';
-const getIngredientName = (ingredientId: string) => ingredients.find(i => i.id === ingredientId)?.name || 'Unknown Ingredient';
-
 
 export default function ReportsPage() {
+  const { 
+      pastOrders: orders, 
+      users, 
+      ingredients, 
+      menuItems,
+      menuCategories,
+  } = useAppContext();
+  
+  // NOTE: Mocking purchase data until it's in context
+  const purchaseOrders: PurchaseOrder[] = [];
+  const vendors: any[] = [];
+
+  const getUserName = (userId: string) => users.find(u => u.id === userId)?.name || 'Unknown';
+  const getVendorName = (vendorId: string) => vendors.find(v => v.id === vendorId)?.name || 'Unknown Vendor';
+  const getIngredientName = (ingredientId: string) => ingredients.find(i => i.id === ingredientId)?.name || 'Unknown Ingredient';
+
   const [activeTab, setActiveTab] = useState('overview');
   const [globalDate, setGlobalDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -29),
@@ -77,8 +88,8 @@ export default function ReportsPage() {
     });
   }
 
-  const filteredGlobalOrders = useMemo(() => filterOrdersByDate(globalDate), [globalDate]);
-  const filteredSalesReportOrders = useMemo(() => filterOrdersByDate(salesReportDate), [salesReportDate]);
+  const filteredGlobalOrders = useMemo(() => filterOrdersByDate(globalDate), [globalDate, orders]);
+  const filteredSalesReportOrders = useMemo(() => filterOrdersByDate(salesReportDate), [salesReportDate, orders]);
   
   const filteredPurchaseOrders = useMemo(() => {
     return purchaseOrders.filter(po => {
@@ -88,7 +99,7 @@ export default function ReportsPage() {
         end: globalDate.to ? endOfDay(globalDate.to) : endOfDay(globalDate.from),
       });
     });
-  }, [globalDate]);
+  }, [globalDate, purchaseOrders]);
 
 
   // Sales metrics
@@ -107,7 +118,7 @@ export default function ReportsPage() {
         const { quantitySold, totalSales } = filteredGlobalOrders.reduce(
           (acc, order) => {
             order.items.forEach(orderItem => {
-              if (orderItem.id.startsWith(item.id)) {
+              if (orderItem.baseMenuItemId === item.id) {
                 acc.quantitySold += orderItem.quantity;
                 acc.totalSales += orderItem.totalPrice;
               }
@@ -126,7 +137,7 @@ export default function ReportsPage() {
       })
       .filter(item => item.sales > 0)
       .sort((a, b) => b.sales - a.sales);
-  }, [filteredGlobalOrders]);
+  }, [filteredGlobalOrders, menuItems]);
 
     const categorySales = useMemo(() => {
         return menuCategories.map(category => {
@@ -141,10 +152,11 @@ export default function ReportsPage() {
             };
         }).filter(c => c.sales > 0)
           .sort((a, b) => b.sales - a.sales);
-    }, [itemWiseSales, totalSales]);
+    }, [itemWiseSales, totalSales, menuCategories]);
 
     const paymentMethodSales = (filteredGlobalOrders as Required<Order>[]).reduce((acc, order) => {
-        acc[order.paymentMethod] = (acc[order.paymentMethod] || 0) + order.total;
+        const method = order.paymentMethod || 'cash'; // Default to cash if undefined
+        acc[method] = (acc[method] || 0) + order.total;
         return acc;
     }, {} as Record<string, number>);
 
@@ -164,15 +176,34 @@ export default function ReportsPage() {
     }));
     
   const dailySalesData = useMemo(() => {
-    return initialDailySales.map(day => {
-      const filtered = filteredGlobalOrders.filter(order => format(order.createdAt, 'EEE') === format(day.date, 'EEE'));
-      return {
+    const salesByDay: Record<string, { date: Date, sales: number, orders: number }> = {};
+    filteredGlobalOrders.forEach(order => {
+        const day = format(order.createdAt, 'yyyy-MM-dd');
+        if (!salesByDay[day]) {
+            salesByDay[day] = { date: startOfDay(order.createdAt), sales: 0, orders: 0 };
+        }
+        salesByDay[day].sales += order.total;
+        salesByDay[day].orders += 1;
+    });
+    return Object.values(salesByDay).map(day => ({
         ...day,
-        sales: filtered.reduce((sum, o) => sum + o.total, 0),
-        orders: filtered.length,
-        aov: filtered.length > 0 ? filtered.reduce((sum, o) => sum + o.total, 0) / filtered.length : 0
-      };
-    }).filter(d => d.orders > 0);
+        aov: day.orders > 0 ? day.sales / day.orders : 0
+    })).sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [filteredGlobalOrders]);
+
+  const hourlySalesData = useMemo(() => {
+    const salesByHour: Record<number, number> = {};
+    for (let i = 0; i < 24; i++) salesByHour[i] = 0;
+    
+    filteredGlobalOrders.forEach(order => {
+        const hour = getHours(order.createdAt);
+        salesByHour[hour] += order.total;
+    });
+
+    return Object.entries(salesByHour).map(([hour, sales]) => ({
+        hour: `${hour.padStart(2, '0')}:00`,
+        sales,
+    }));
   }, [filteredGlobalOrders]);
   
   const vendorWisePurchases = useMemo(() => {
@@ -270,8 +301,10 @@ export default function ReportsPage() {
   };
   
   const handleDayClick = (dayData: { date: Date, orders: number }) => {
-    const simulatedOrders = orders.filter(o => o.status === 'completed' && format(o.createdAt, 'EEE') === format(dayData.date, 'EEE'));
-    setSelectedDay({ date: dayData.date, orders: simulatedOrders });
+    const dayStart = startOfDay(dayData.date);
+    const dayEnd = endOfDay(dayData.date);
+    const dayOrders = orders.filter(o => o.status === 'completed' && isWithinInterval(o.createdAt, { start: dayStart, end: dayEnd }));
+    setSelectedDay({ date: dayData.date, orders: dayOrders });
   };
   
   const handleExportDayDetails = () => {
@@ -562,7 +595,7 @@ export default function ReportsPage() {
                             tickLine={false} 
                             axisLine={false} 
                             tickMargin={8} 
-                            tickFormatter={(value) => format(value, 'EEE, d')}
+                            tickFormatter={(value) => format(new Date(value), 'EEE, d')}
                         />
                         <YAxis
                         tickFormatter={(value) => `₹${value / 1000}k`}
@@ -574,7 +607,7 @@ export default function ReportsPage() {
                             formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
                             labelFormatter={(label, payload) => {
                                 if (payload && payload.length > 0) {
-                                    return format(payload[0].payload.date, 'EEE, MMM d');
+                                    return format(new Date(payload[0].payload.date), 'EEE, MMM d');
                                 }
                                 return label;
                             }}
@@ -1003,4 +1036,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-

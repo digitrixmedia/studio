@@ -1,3 +1,4 @@
+
 'use client'
 
 import {
@@ -13,7 +14,6 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
-import { topFranchisesBySales, monthlyNewSubscriptions, subscriptions as allSubscriptions } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Download, IndianRupee, Calendar as CalendarIcon, Database, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -26,7 +26,8 @@ import { addDays, format, isWithinInterval } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import type { SubscriptionStatus } from '@/lib/types';
+import type { Subscription, SubscriptionStatus } from '@/lib/types';
+import { useAppContext } from '@/contexts/AppContext';
 
 
 const storageChartConfig = {
@@ -38,18 +39,24 @@ const subsChartConfig = {
 
 export default function SuperAdminReportsPage() {
   const router = useRouter();
+  const { users } = useAppContext(); // Assuming subscriptions would be managed here in a real app
+  const allSubscriptions: Subscription[] = []; // Mocked for now
+  const topFranchisesBySales: any[] = [];
+  const monthlyNewSubscriptions: any[] = [];
+
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
 
-  const [selectedFranchise, setSelectedFranchise] = useState<string>(topFranchisesBySales[0].id);
+  const [selectedFranchise, setSelectedFranchise] = useState<string>('');
 
   const filteredFranchises = useMemo(() => {
     if (!date || !date.from) return topFranchisesBySales;
     
     const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
     
+    // @ts-ignore
     return topFranchisesBySales.filter(f => isWithinInterval(f.lastActive, interval));
 
   }, [date]);
@@ -60,13 +67,13 @@ export default function SuperAdminReportsPage() {
     const interval = { start: date.from, end: date.to || new Date(8640000000000000) };
     
     return allSubscriptions.filter(s => isWithinInterval(new Date(s.endDate), interval));
-  }, [date]);
+  }, [date, allSubscriptions]);
 
   const outletsForSelectedFranchise = useMemo(() => {
     const franchise = topFranchisesBySales.find(f => f.id === selectedFranchise);
     if (!franchise) return [];
     return allSubscriptions.filter(s => s.franchiseName === franchise.name);
-  }, [selectedFranchise]);
+  }, [selectedFranchise, allSubscriptions]);
 
   const storageData = filteredFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
   
@@ -307,13 +314,3 @@ export default function SuperAdminReportsPage() {
         </Card>
     </div>
   );
-
-    
-
-    
-
-
-  
-
-
-    

@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,8 +24,8 @@ import { DateRange } from 'react-day-picker';
 import { addDays, format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Download, IndianRupee, Calendar as CalendarIcon, ShoppingBag, BarChart3 } from 'lucide-react';
-import { topFranchisesBySales, orders, menuItems, menuCategories, dailySalesData } from '@/lib/data';
-import type { FranchiseOutlet } from '@/lib/types';
+import type { FranchiseOutlet, MenuItem, MenuCategory, Order } from '@/lib/types';
+import { useAppContext } from '@/contexts/AppContext';
 
 const chartConfig = {
   sales: { label: 'Sales', color: 'hsl(var(--primary))' },
@@ -32,7 +33,11 @@ const chartConfig = {
 };
 
 export default function FranchiseReportsPage() {
-  const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
+    const { menuItems, menuCategories, pastOrders: orders, users } = useAppContext();
+    const topFranchisesBySales: any[] = []; // Mocked, replace with real logic if needed
+    const dailySalesData: any[] = []; // Mocked, replace with real logic if needed
+
+    const outlets: FranchiseOutlet[] = topFranchisesBySales.map(f => ({
       id: f.id,
       name: f.name,
       status: 'Active', // This is simplified, would need more data in a real app
