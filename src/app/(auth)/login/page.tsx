@@ -1,4 +1,3 @@
-
 'use client';
 
 import { KeyRound, Mail } from 'lucide-react';
@@ -25,21 +24,36 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const router = useRouter();
 
   const handleLogin = async () => {
     setIsLoading(true);
     try {
       const { auth } = initializeFirebase();
       await signInWithEmailAndPassword(auth, email, password);
-      // Let the AppContext redirect based on role after successful login
+      // AppContext will handle redirection on successful login via onAuthStateChanged
     } catch (error: any) {
-      let description = "An unknown error occurred.";
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          description = "Invalid email or password. Please try again.";
+      console.error("Login Error:", error);
+      let description = "An unknown error occurred during login.";
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            description = "Invalid email or password. Please try again.";
+            break;
+          case 'auth/invalid-email':
+            description = "The email address is not valid.";
+            break;
+          default:
+            description = "Could not sign in. Please check your credentials.";
+            break;
+        }
       }
-      console.error("Login Error:", error.code, error.message);
-      toast({ variant: "destructive", title: "Login Failed", description });
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -60,14 +74,29 @@ export default function LoginPage() {
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input id="email" type="email" placeholder="user@zappyy.com" className="pl-10" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@zappyy.com"
+                className="pl-10"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-             <div className="relative">
+            <div className="relative">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input id="password" type="password" placeholder="••••••••" className="pl-10" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()}/>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                className="pl-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              />
             </div>
           </div>
           <Button className="w-full" onClick={handleLogin} disabled={isLoading}>
@@ -75,9 +104,9 @@ export default function LoginPage() {
           </Button>
         </CardContent>
         <CardFooter>
-            <p className="text-xs text-muted-foreground text-center w-full">
-              Enter your credentials to begin.
-            </p>
+          <p className="text-xs text-muted-foreground text-center w-full">
+            Enter your credentials to begin.
+          </p>
         </CardFooter>
       </Card>
     </div>

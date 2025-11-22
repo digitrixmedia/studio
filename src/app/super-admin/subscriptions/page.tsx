@@ -55,6 +55,8 @@ import {
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
 
 const initialFormState = {
@@ -76,6 +78,7 @@ export default function SubscriptionsPage() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const franchiseQuery = searchParams.get('franchise');
+  const { firestore } = initializeFirebase();
 
   const openNewDialog = () => {
     setEditingSub(null);
@@ -104,7 +107,7 @@ export default function SubscriptionsPage() {
         toast({
             variant: "destructive",
             title: "Missing Information",
-            description: "Email and password are required.",
+            description: "Email and password are required for new subscriptions.",
         });
         return;
     }
@@ -141,7 +144,7 @@ export default function SubscriptionsPage() {
        }
 
        try {
-        await createUserWithEmailAndPassword(auth, formData.adminEmail, formData.adminPassword);
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.adminEmail, formData.adminPassword);
         
         // Immediately sign the super admin back in
         await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
@@ -161,12 +164,14 @@ export default function SubscriptionsPage() {
         };
 
         const newUser: User = {
-            id: `user-${Date.now()}`,
+            id: userCredential.user.uid,
             name: formData.adminName,
             email: formData.adminEmail,
             role: 'admin',
             subscriptionId: newSub.id,
         };
+        
+        await setDoc(doc(firestore, "users", userCredential.user.uid), newUser);
 
         setSubscriptions(prev => [newSub, ...prev]);
         setUsers(prev => [...prev, newUser]);
@@ -314,83 +319,90 @@ export default function SubscriptionsPage() {
           </div>
         </CardHeader>
         <CardContent>
-            <Accordion type="single" collapsible className="w-full" defaultValue={franchiseQuery ? filteredFranchiseEntries[0]?.[0] : undefined}>
-                {filteredFranchiseEntries.map(([franchiseName, subs]) => (
-                    <AccordionItem value={franchiseName} key={franchiseName}>
-                        <AccordionTrigger>
-                            <div className="flex items-center gap-4">
-                                <span className="text-lg font-semibold">{franchiseName}</span>
-                                <Badge variant="secondary">{subs.length} Outlet(s)</Badge>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                             <Table>
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead>Outlet</TableHead>
-                                    <TableHead>End Date</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Storage</TableHead>
-                                    <TableHead>Active</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {subs.map(sub => {
-                                    const isExpired = new Date(sub.endDate) < new Date();
-                                    let status = sub.status;
-                                    if (isExpired && status !== 'suspended') {
-                                        status = 'expired';
-                                    }
-                                    
-                                    return (
-                                    <TableRow key={sub.id} className={cn(status === 'expired' && 'bg-red-500/5')}>
-                                    <TableCell className="font-medium">{sub.outletName}</TableCell>
-                                    <TableCell>{format(new Date(sub.endDate), 'dd MMM, yyyy')}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusVariant(status)} className="capitalize">
-                                        {status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
-                                    <TableCell>
-                                        <Switch
-                                        checked={status === 'active'}
-                                        onCheckedChange={() => toggleSubscriptionStatus(sub.id, status)}
-                                        />
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(sub)}>
-                                        <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" className='text-destructive hover:text-destructive'>
-                                            <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This action cannot be undone. This will permanently delete the subscription for {sub.outletName} and all its data.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteSubscription(sub.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                        </AlertDialog>
-                                    </TableCell>
+            {filteredFranchiseEntries.length === 0 ? (
+                <div className="text-center text-muted-foreground py-10">
+                    <p>No subscriptions found.</p>
+                    <p>Click "Add Subscription" to create the first one.</p>
+                </div>
+            ) : (
+                <Accordion type="single" collapsible className="w-full" defaultValue={franchiseQuery ? filteredFranchiseEntries[0]?.[0] : undefined}>
+                    {filteredFranchiseEntries.map(([franchiseName, subs]) => (
+                        <AccordionItem value={franchiseName} key={franchiseName}>
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-lg font-semibold">{franchiseName}</span>
+                                    <Badge variant="secondary">{subs.length} Outlet(s)</Badge>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <Table>
+                                    <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Outlet</TableHead>
+                                        <TableHead>End Date</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Storage</TableHead>
+                                        <TableHead>Active</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                )})}
-                                </TableBody>
-                            </Table>
-                        </AccordionContent>
-                    </AccordionItem>
-                ))}
-            </Accordion>
+                                    </TableHeader>
+                                    <TableBody>
+                                    {subs.map(sub => {
+                                        const isExpired = new Date(sub.endDate) < new Date();
+                                        let status = sub.status;
+                                        if (isExpired && status !== 'suspended') {
+                                            status = 'expired';
+                                        }
+                                        
+                                        return (
+                                        <TableRow key={sub.id} className={cn(status === 'expired' && 'bg-red-500/5')}>
+                                        <TableCell className="font-medium">{sub.outletName}</TableCell>
+                                        <TableCell>{format(new Date(sub.endDate), 'dd MMM, yyyy')}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={getStatusVariant(status)} className="capitalize">
+                                            {status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{(sub.storageUsedMB / 1024).toFixed(2)} GB</TableCell>
+                                        <TableCell>
+                                            <Switch
+                                            checked={status === 'active'}
+                                            onCheckedChange={() => toggleSubscriptionStatus(sub.id, status)}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => openEditDialog(sub)}>
+                                            <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className='text-destructive hover:text-destructive'>
+                                                <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        This action cannot be undone. This will permanently delete the subscription for {sub.outletName} and all its data.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteSubscription(sub.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                            </AlertDialog>
+                                        </TableCell>
+                                        </TableRow>
+                                    )})}
+                                    </TableBody>
+                                </Table>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            )}
         </CardContent>
       </Card>
     </div>

@@ -65,8 +65,55 @@ const createNewOrder = (): AppOrder => ({
   redeemedPoints: 0,
 });
 
+async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestore: ReturnType<typeof getFirestore>) {
+    const superAdminEmail = 'superadmin@pos.com';
+    const superAdminPassword = 'password123';
+
+    try {
+        // Check if user exists in Auth
+        // This is a bit of a hack. A better way would be a Cloud Function, but this works for client-side setup.
+        // We try to sign in. If it fails with 'user-not-found', we create the user.
+        await signInWithEmailAndPassword(auth, 'check-user-existence@fake.com', 'invalidpassword');
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+             // This is not a reliable way to check, but for a quick setup, we assume if one user is missing all are.
+             // Let's check Firestore for the user doc.
+             const userDocRef = doc(firestore, 'users', 'superadmin@pos.com');
+             const userDoc = await getDoc(userDocRef);
+             if (!userDoc.exists()) {
+                 console.log("Super admin does not exist, creating...");
+                 try {
+                     const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+                     const superAdminUser: User = {
+                         id: userCredential.user.uid,
+                         name: 'Super Admin',
+                         email: superAdminEmail,
+                         role: 'super-admin',
+                     };
+                     await setDoc(doc(firestore, 'users', userCredential.user.uid), superAdminUser);
+                     console.log("Super admin created successfully.");
+                     // IMPORTANT: Sign out immediately so the user has to log in manually.
+                     await signOut(auth);
+                 } catch (creationError) {
+                     console.error("Error creating super admin:", creationError);
+                     const typedError = creationError as { code?: string };
+                     if (typedError.code !== 'auth/email-already-in-use') {
+                        // If it's not 'email-already-in-use', it's an unexpected error
+                        throw creationError;
+                     }
+                      console.log("Super admin already exists in Auth, ensuring Firestore doc is present.");
+                      // The user exists in Auth, but maybe not in Firestore. Let's ensure the Firestore doc.
+                      // This part is tricky without an admin SDK. We'll rely on the user to exist for now.
+                 }
+             }
+        }
+    }
+}
+
+
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
   
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
@@ -80,6 +127,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { settings, setSetting } = useSettings();
 
   const { auth, firestore } = initializeFirebase();
+  
+  useEffect(() => {
+    const setup = async () => {
+        await ensureSuperAdminExists(auth, firestore);
+        setIsInitializing(false); // Signal that setup is done
+    };
+    setup();
+  }, [auth, firestore]);
   
   const isAdminOrSuperAdmin = useMemo(() => {
     return currentUser?.role === 'admin' || currentUser?.role === 'super-admin';
@@ -154,13 +209,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    if (isInitializing) return; // Wait for initial setup
+    
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser && firebaseUser.email) {
-            if(users.length > 0) {
-              const appUser = users.find(u => u.email === firebaseUser.email);
-              if (appUser) {
-                  setCurrentUser(appUser);
-              }
+            const userDoc = await getDoc(doc(firestore, 'users', firebaseUser.uid));
+            if (userDoc.exists()) {
+                setCurrentUser(userDoc.data() as User);
+            } else {
+                 console.error("User document not found in Firestore for UID:", firebaseUser.uid);
+                 setCurrentUser(null);
+                 await signOut(auth); // Log out if Firestore user doc is missing
             }
         } else {
             setCurrentUser(null);
@@ -171,18 +230,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, users, pathname, router]);
-
-  useEffect(() => {
-    if (!currentUser && auth.currentUser && users.length > 0) {
-      const fbUser = auth.currentUser;
-      const appUser = users.find(u => u.email === fbUser.email);
-      if (appUser) setCurrentUser(appUser);
-    } else if (currentUser && auth.currentUser && auth.currentUser.email !== currentUser.email) {
-      const appUser = users.find(u => u.email === auth.currentUser?.email);
-      if (appUser) setCurrentUser(appUser);
-    }
-  }, [auth.currentUser, currentUser, users]);
+  }, [auth, firestore, pathname, router, isInitializing]);
 
 
   useEffect(() => {
@@ -199,7 +247,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!currentUser) {
-      if (!pathname.startsWith('/login')) {
+      if (!pathname.startsWith('/login') && !isInitializing) {
         router.push('/login');
       }
       return;
@@ -243,7 +291,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         }
         break;
     }
-  }, [currentUser, selectedOutlet, pathname, router, settings.defaultScreen]);
+  }, [currentUser, selectedOutlet, pathname, router, settings.defaultScreen, isInitializing]);
 
 
   const logout = async () => {
@@ -515,6 +563,10 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     startOrderForTable,
     auth
   };
+
+  if (isInitializing) {
+    return <div className="flex h-screen w-full items-center justify-center"><p>Initializing application...</p></div>
+  }
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
