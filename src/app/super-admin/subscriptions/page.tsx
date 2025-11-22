@@ -72,7 +72,10 @@ const initialFormState = {
 export default function SubscriptionsPage() {
   const { auth, firestore } = useAppContext();
   
-  const usersQuery = useMemoFirebase(() => collection(firestore, 'users'), [firestore]);
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
   const { data: usersData, setData: setUsers } = useCollection<User>(usersQuery);
 
   const users = usersData || [];
@@ -203,7 +206,7 @@ export default function SubscriptionsPage() {
     const subToDelete = subscriptions.find(sub => sub.id === subId);
     const userToDelete = users.find(u => u.subscriptionId === subId);
 
-    if (userToDelete) {
+    if (userToDelete && setUsers) {
         setUsers(users.filter(u => u.id !== userToDelete.id));
     }
     
@@ -399,5 +402,3 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
-
-    
