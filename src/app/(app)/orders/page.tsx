@@ -854,7 +854,7 @@ export default function OrdersPage() {
       setPointsToRedeem(0);
       updateOrder(activeOrder.id, { redeemedPoints: 0 });
     }
-  }, [activeOrder?.items.length]);
+  }, [activeOrder, updateOrder]);
 
   if (!activeOrder) {
     return (
@@ -973,41 +973,48 @@ export default function OrdersPage() {
               </ScrollArea>
             </CardHeader>
                 <div className='flex flex-col h-full'>
-                    <div className='px-6 pb-6 border-t'>
-                        <div className="relative w-full my-4">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="Search Bill No / KOT No..." className="pl-10" value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
-                        </div>
-                        <Tabs value={activeOrder.orderType} onValueChange={(value) => updateOrder(activeOrder.id, {orderType: value as OrderType})} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="dine-in"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
-                            <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
-                            <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
-                        </TabsList>
-                        <CardDescription>
-                          <div className='py-4 space-y-2'>
-                              {activeOrder.orderType === 'dine-in' && (
-                                  <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
-                                      <SelectTrigger>
-                                          <SelectValue placeholder="Select Table" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                          {tables.map(table => (
-                                              <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
-                                                  {table.name} ({table.status})
-                                              </SelectItem>
-                                          ))}
-                                      </SelectContent>
-                                  </Select>
-                              )}
-                              <CustomerSearch 
-                                activeOrder={activeOrder}
-                                onCustomerSelect={(customer) => updateOrder(activeOrder.id, { customer })}
-                              />
-                          </div>
-                        </CardDescription>
-                        </Tabs>
-                         {activeCustomer && (
+                     <div className="px-4 pb-4 border-t">
+                        <Accordion type="single" collapsible defaultValue="order-details" className="w-full">
+                            <AccordionItem value="order-details">
+                                <AccordionTrigger className="text-sm font-semibold">Order Details</AccordionTrigger>
+                                <AccordionContent>
+                                    <div className="space-y-4 pt-2">
+                                        <div className="relative w-full">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input placeholder="Search Bill No / KOT No..." className="pl-10" value={billSearchQuery} onChange={(e) => setBillSearchQuery(e.target.value)} />
+                                        </div>
+                                        <Tabs value={activeOrder.orderType} onValueChange={(value) => updateOrder(activeOrder.id, {orderType: value as OrderType})} className="w-full">
+                                            <TabsList className="grid w-full grid-cols-3">
+                                                <TabsTrigger value="dine-in"><Utensils className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Dine-In</span></TabsTrigger>
+                                                <TabsTrigger value="takeaway"><Package className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Takeaway</span></TabsTrigger>
+                                                <TabsTrigger value="delivery"><Truck className="mr-0 sm:mr-2 h-4 w-4"/> <span className='hidden sm:inline'>Delivery</span></TabsTrigger>
+                                            </TabsList>
+                                        </Tabs>
+                                        <div className='space-y-2'>
+                                            {activeOrder.orderType === 'dine-in' && (
+                                                <Select value={activeOrder.tableId} onValueChange={(value) => updateOrder(activeOrder.id, { tableId: value })}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select Table" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {tables.map(table => (
+                                                            <SelectItem key={table.id} value={table.id} disabled={table.status !== 'vacant'}>
+                                                                {table.name} ({table.status})
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                            <CustomerSearch 
+                                                activeOrder={activeOrder}
+                                                onCustomerSelect={(customer) => updateOrder(activeOrder.id, { customer })}
+                                            />
+                                        </div>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                        {activeCustomer && (
                             <div className="mt-2 text-sm text-center bg-muted/50 p-2 rounded-md">
                                 <span className='font-semibold'>{activeCustomer.name}</span> has <span className='font-bold text-primary'>{activeCustomer.loyaltyPoints - (activeOrder.redeemedPoints || 0)}</span> points available.
                             </div>
@@ -1609,4 +1616,5 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
 
     
+
 
