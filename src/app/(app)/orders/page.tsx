@@ -996,7 +996,7 @@ export default function OrdersPage() {
               )}
               <CardContent className="flex-1 pt-0 overflow-y-auto px-4">
                   {activeOrder.items.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-4 text-center">No items in order.</p>
+                  <p className="text-muted-foreground text-center py-4 text-[0.8rem]">No items in order.</p>
                   ) : (
                   <div className="space-y-3">
                       {activeOrder.items.map((item, index) => {
@@ -1004,58 +1004,58 @@ export default function OrdersPage() {
                           const isBogoEligible = menuItem?.isBogo;
 
                           return (
-                          <div key={`${item.id}-${index}`}>
-                              <div className="flex items-start text-xs">
+                          <div key={`${item.id}-${index}`} className={cn(item.isMealChild && 'py-0 my-0')}>
+                              <div className="flex items-start text-[0.7rem]">
                                   <div className='flex-1 text-left'>
                                       <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
-                                          <p className={cn("font-semibold", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
+                                          <p className={cn("font-semibold leading-tight", item.isMealChild && "pl-4 text-muted-foreground text-[0.65rem]")}>{item.name}</p>
                                       </button>
                                       {!item.isMealChild && (
-                                      <div className="flex items-center gap-4">
-                                          <p className="text-xs text-muted-foreground flex items-center">
-                                              <IndianRupee className="h-3 w-3 mr-1" />
+                                      <div className="flex items-center gap-4 mt-0.5">
+                                          <p className="text-muted-foreground flex items-center leading-tight">
+                                              <IndianRupee className="h-3 w-3 mr-0.5" />
                                               {item.price.toFixed(2)}
                                           </p>
                                           {isBogoEligible && item.quantity >= 2 && (
                                               <div className="flex items-center space-x-2">
-                                                  <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} />
+                                                  <Checkbox id={`bogo-${item.id}`} checked={!!item.isBogo} onCheckedChange={(checked) => toggleBogoForItem(item.id, !!checked)} className="h-3.5 w-3.5" />
                                                   <Label htmlFor={`bogo-${item.id}`} className="text-xs">BOGO</Label>
                                               </div>
                                           )}
                                       </div>
                                       )}
-                                      {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
+                                      {item.notes && <p className='text-amber-700 dark:text-amber-500 flex items-center gap-1 text-[0.65rem] leading-tight'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
                                   </div>
                                   <div className={cn("flex items-center gap-1", item.isMealChild && "opacity-0 pointer-events-none")}>
                                       <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-7 w-7"
+                                          className="h-6 w-6"
                                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                       >
-                                          <MinusCircle className="h-4 w-4" />
+                                          <MinusCircle className="h-3.5 w-3.5" />
                                       </Button>
-                                      <span className='font-semibold w-4 text-center'>{item.quantity}</span>
+                                      <span className='font-semibold w-4 text-center text-xs'>{item.quantity}</span>
                                       <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-7 w-7"
+                                          className="h-6 w-6"
                                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                       >
-                                          <PlusCircle className="h-4 w-4" />
+                                          <PlusCircle className="h-3.5 w-3.5" />
                                       </Button>
                                   </div>
-                                  <p className={cn("w-16 text-right font-semibold flex items-center justify-end", item.isMealChild && "text-muted-foreground")}>
-                                  <IndianRupee className="h-3 w-3 mr-1" />
+                                  <p className={cn("w-14 text-right font-semibold flex items-center justify-end leading-tight", item.isMealChild && "text-muted-foreground text-[0.65rem]")}>
+                                  <IndianRupee className="h-3 w-3 mr-0.5" />
                                   {item.totalPrice.toFixed(2)}
                                   </p>
                                   <Button
                                   variant="ghost"
                                   size="icon"
-                                  className={cn("h-7 w-7 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
+                                  className={cn("h-6 w-6 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
                                   onClick={() => removeFromCart(item.id)}
                                   >
-                                  <X className="h-4 w-4" />
+                                  <X className="h-3.5 w-3.5" />
                                   </Button>
                               </div>
                               {item.isMealParent && (
@@ -1143,32 +1143,32 @@ export default function OrdersPage() {
                             )}
                         </div>
                         <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
-                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                            <IndianRupee className="h-3 w-3 mr-0.5" />
                             {subTotal.toFixed(2)}
                         </span>
                       </div>
                       {bogoDiscount > 0 && !settings.isComplimentary && (
-                          <div className="flex justify-between text-destructive text-xs">
+                          <div className="flex justify-between text-destructive">
                           <span>BOGO Discount</span>
-                          <span className='flex items-center'>- <IndianRupee className="h-3 w-3 mr-1" />{bogoDiscount.toFixed(2)}</span>
+                          <span className='flex items-center'>- <IndianRupee className="h-3 w-3 mr-0.5" />{bogoDiscount.toFixed(2)}</span>
                           </div>
                       )}
                       {discountAmount > 0 && !settings.isComplimentary && (
-                          <div className="flex justify-between text-destructive text-xs">
+                          <div className="flex justify-between text-destructive">
                           <span>Discount ({settings.discountValue}{settings.discountType === 'percentage' ? '%' : ''})</span>
-                          <span className='flex items-center'>- <IndianRupee className="h-3 w-3 mr-1" />{discountAmount.toFixed(2)}</span>
+                          <span className='flex items-center'>- <IndianRupee className="h-3 w-3 mr-0.5" />{discountAmount.toFixed(2)}</span>
                           </div>
                       )}
                       {pointsDiscount > 0 && !settings.isComplimentary && (
-                      <div className="flex justify-between text-destructive text-xs">
+                      <div className="flex justify-between text-destructive">
                           <span>Points Redeemed</span>
-                          <span className='flex items-center'>- <IndianRupee className="h-3 w-3 mr-1" />{pointsDiscount.toFixed(2)}</span>
+                          <span className='flex items-center'>- <IndianRupee className="h-3 w-3 mr-0.5" />{pointsDiscount.toFixed(2)}</span>
                       </div>
                       )}
                        <div className="flex justify-between">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-pointer text-xs">
+                            <div className="flex items-center gap-2 cursor-pointer">
                               <span>GST ({manualTaxRate !== null ? manualTaxRate : settings.taxAmount}%)</span>
                               <Tag className="h-3 w-3 text-muted-foreground" />
                             </div>
@@ -1194,8 +1194,8 @@ export default function OrdersPage() {
                             </div>
                           </PopoverContent>
                         </Popover>
-                      <span className={cn('flex items-center text-xs', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}>
-                          <IndianRupee className="h-3 w-3 mr-1" />
+                      <span className={cn('flex items-center', settings.isComplimentary && settings.disableTaxOnComplimentary && 'line-through')}>
+                          <IndianRupee className="h-3 w-3 mr-0.5" />
                           {tax.toFixed(2)}
                       </span>
                       </div>
@@ -1597,5 +1597,6 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
 
