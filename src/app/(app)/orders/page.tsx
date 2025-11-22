@@ -124,29 +124,22 @@ export default function OrdersPage() {
        }
     }
   };
+  
+    const handleAddCustomizedItem = (itemToAdd: MenuItem, variation?: MenuItemVariation, notes?: string) => {
+    if (!activeOrder) return;
 
-  const handleCustomizationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!customizationItem || !activeOrder) return;
+    let basePrice = itemToAdd.price;
+    let finalName = itemToAdd.name;
+    const uniqueCartId = `${itemToAdd.id}-${variation?.id || 'base'}-${notes || ''}-${Date.now()}`;
 
-    const formData = new FormData(e.currentTarget);
-    const variationId = formData.get('variation') as string;
-    const notes = formData.get('notes') as string;
-    
-    const selectedVariation = customizationItem.variations?.find(v => v.id === variationId);
-    
-    let basePrice = customizationItem.price;
-    let finalName = customizationItem.name;
-    const uniqueCartId = `${customizationItem.id}-${selectedVariation?.id || 'base'}-${notes || ''}-${Date.now()}`;
-
-    if (selectedVariation) {
-      basePrice += selectedVariation.priceModifier;
-      finalName += ` (${selectedVariation.name})`;
+    if (variation) {
+      basePrice += variation.priceModifier;
+      finalName += ` (${variation.name})`;
     }
-    
+
     const existingItem = activeOrder.items.find(cartItem => 
-        cartItem.baseMenuItemId === customizationItem.id &&
-        (cartItem.variation?.id || 'base') === (selectedVariation?.id || 'base') &&
+        cartItem.baseMenuItemId === itemToAdd.id &&
+        (cartItem.variation?.id || 'base') === (variation?.id || 'base') &&
         (cartItem.notes || '') === (notes || '')
     );
 
@@ -155,14 +148,14 @@ export default function OrdersPage() {
     } else {
         const newOrderItem: OrderItem = {
           id: uniqueCartId,
-          baseMenuItemId: customizationItem.id,
+          baseMenuItemId: itemToAdd.id,
           name: finalName,
           quantity: 1,
           price: basePrice,
           totalPrice: basePrice,
-          variation: selectedVariation,
+          variation: variation,
           notes: notes || undefined,
-          isMealParent: !!customizationItem.mealDeal,
+          isMealParent: !!itemToAdd.mealDeal,
           isBogo: false,
         };
         updateActiveOrder([...activeOrder.items, newOrderItem]);
@@ -1005,11 +998,12 @@ export default function OrdersPage() {
                           const isBogoEligible = menuItem?.isBogo;
 
                           return (
-                          <div key={`${item.id}-${index}`} className={cn("grid grid-cols-[1fr_auto_auto] items-start gap-x-2 py-0.5 text-[0.7rem]")}>
-                              <div className='text-left col-start-1'>
-                                  <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
-                                      <p className={cn("font-semibold leading-tight", item.isMealChild && "pl-4 text-muted-foreground text-[0.65rem]")}>{item.name}</p>
-                                  </button>
+                          <div key={`${item.id}-${index}`} className={cn("py-0.5")}>
+                            <div className="flex items-start text-[0.7rem] gap-x-2">
+                              <div className="w-[100px] flex-grow text-left">
+                                <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
+                                  <p className={cn("font-semibold leading-tight", item.isMealChild && "pl-4 text-muted-foreground text-[0.65rem]")}>{item.name}</p>
+                                </button>
                                   {!item.isMealChild && (
                                   <div className="flex items-center gap-4 mt-0.5">
                                       <p className="text-muted-foreground flex items-center leading-tight">
@@ -1026,39 +1020,21 @@ export default function OrdersPage() {
                                   )}
                                   {item.notes && <p className='text-amber-700 dark:text-amber-500 flex items-center gap-1 text-[0.65rem] leading-tight'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
                               </div>
-                              <div className={cn("flex items-center gap-1 col-start-2", item.isMealChild && "opacity-0 pointer-events-none")}>
-                                  <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6"
-                                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                  >
-                                      <MinusCircle className="h-3.5 w-3.5" />
-                                  </Button>
+                              <div className={cn("w-[70px] flex items-center gap-1 shrink-0", item.isMealChild && "opacity-0 pointer-events-none")}>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-3.5 w-3.5" /></Button>
                                   <span className='font-semibold w-4 text-center text-xs'>{item.quantity}</span>
-                                  <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-6 w-6"
-                                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                  >
-                                      <PlusCircle className="h-3.5 w-3.5" />
-                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-3.5 w-3.5" /></Button>
                               </div>
-                              <div className="col-start-3 flex items-center">
+                              <div className="w-[60px] flex items-center shrink-0">
                                   <p className={cn("w-14 text-right font-semibold flex items-center justify-end leading-tight", item.isMealChild && "text-muted-foreground text-[0.65rem]")}>
-                                  <IndianRupee className="h-3 w-3 mr-0.5" />
-                                  {item.totalPrice.toFixed(2)}
+                                      <IndianRupee className="h-3 w-3 mr-0.5" />
+                                      {item.totalPrice.toFixed(2)}
                                   </p>
-                                  <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className={cn("h-6 w-6 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
-                                  onClick={() => removeFromCart(item.id)}
-                                  >
-                                  <X className="h-3.5 w-3.5" />
+                                  <Button variant="ghost" size="icon" className={cn("h-6 w-6 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")} onClick={() => removeFromCart(item.id)}>
+                                      <X className="h-3.5 w-3.5" />
                                   </Button>
                               </div>
+                            </div>
                               {item.isMealParent && (
                                   <div className="col-start-1 col-span-3 pl-4 mt-1">
                                       <Button size="sm" variant="outline" className="h-auto py-1 text-xs" onClick={() => setMealUpsellParentItem(item)}>
@@ -1237,7 +1213,7 @@ export default function OrdersPage() {
                     <CustomizationForm 
                         item={customizationItem} 
                         onClose={() => setCustomizationItem(null)}
-                        onSubmit={handleCustomizationSubmit}
+                        onSelectVariation={handleAddCustomizedItem}
                     />
                 )}
             </DialogContent>
@@ -1553,47 +1529,69 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 }
 
 interface CustomizationFormProps {
-    item: MenuItem;
-    onClose: () => void;
-    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  item: MenuItem;
+  onClose: () => void;
+  onSelectVariation: (
+    item: MenuItem,
+    variation: MenuItemVariation,
+    notes?: string
+  ) => void;
 }
 
-function CustomizationForm({ item, onClose, onSubmit }: CustomizationFormProps) {
-  const [selectedVariation, setSelectedVariation] = useState<string>(item.variations?.[0]?.id || '');
-  
+function CustomizationForm({
+  item,
+  onClose,
+  onSelectVariation,
+}: CustomizationFormProps) {
+  const notesRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const handleVariationClick = (variation: MenuItemVariation) => {
+    const notes = notesRef.current?.value;
+    onSelectVariation(item, variation, notes);
+  };
+
+  if (!item.variations || item.variations.length === 0) {
+    return (
+      <div className="p-4 text-center">This item has no variations.</div>
+    );
+  }
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      {item.variations && item.variations.length > 0 && (
-        <div>
-          <Label className="font-medium">Select Variation</Label>
-          <RadioGroup 
-            name="variation" 
-            defaultValue={item.variations[0].id}
-            value={selectedVariation}
-            onValueChange={setSelectedVariation}
-            className="mt-2 space-y-2"
-          >
-            {item.variations.map(v => (
-              <div key={v.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={v.id} id={v.id} />
-                <Label htmlFor={v.id} className="flex justify-between w-full">
-                  <span>{v.name}</span>
-                  <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier.toFixed(2)})</span>
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
+    <div className="space-y-4">
+      <div>
+        <Label className="font-medium">Select Variation</Label>
+        <div className="mt-2 flex flex-col space-y-2">
+          {item.variations.map((v) => (
+            <Button
+              key={v.id}
+              variant="outline"
+              className="w-full justify-between"
+              onClick={() => handleVariationClick(v)}
+            >
+              <span>{v.name}</span>
+              <span className="text-muted-foreground">
+                (+
+                <IndianRupee className="inline-block h-3.5 w-3.5" />
+                {v.priceModifier.toFixed(2)})
+              </span>
+            </Button>
+          ))}
         </div>
-      )}
+      </div>
       <div>
         <Label className="font-medium">Special Notes</Label>
-        <Textarea name="notes" placeholder="e.g. Extra spicy, no onions..." />
+        <Textarea
+          ref={notesRef}
+          name="notes"
+          placeholder="e.g. Extra spicy, no onions..."
+        />
       </div>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-        <Button type="submit" className="w-full">Add to Order</Button>
+       <DialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
       </DialogFooter>
-    </form>
+    </div>
   );
 }
 
@@ -1622,6 +1620,7 @@ function CustomizationForm({ item, onClose, onSubmit }: CustomizationFormProps) 
     
 
     
+
 
 
 
