@@ -132,6 +132,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [currentUser]);
 
   const usersQuery = useMemoFirebase(() => {
+    // Only super-admins should fetch the full list of users.
     return isSuperAdmin ? collection(firestore, 'users') : null;
   }, [firestore, isSuperAdmin]);
   const { data: usersData } = useCollection<User>(usersQuery);
