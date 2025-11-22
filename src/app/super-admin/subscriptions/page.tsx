@@ -56,6 +56,7 @@ import {
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, doc, setDoc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase } from '@/firebase';
 
 
 const initialFormState = {
@@ -69,8 +70,13 @@ const initialFormState = {
 };
 
 export default function SubscriptionsPage() {
-  const { auth, users, setUsers, firestore } = useAppContext();
+  const { auth, firestore } = useAppContext();
   
+  const usersQuery = useMemoFirebase(() => collection(firestore, 'users'), [firestore]);
+  const { data: usersData, setData: setUsers } = useCollection<User>(usersQuery);
+
+  const users = usersData || [];
+
   const subscriptions: Subscription[] = users
     .filter(u => u.role === 'admin' && u.subscriptionId)
     .map(u => ({
@@ -393,3 +399,5 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
+
+    
