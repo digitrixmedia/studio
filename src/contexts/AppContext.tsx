@@ -81,9 +81,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { settings, setSetting } = useSettings();
 
   const { auth, firestore } = initializeFirebase();
+  
+  const isAdminOrSuperAdmin = useMemo(() => {
+    return currentUser?.role === 'admin' || currentUser?.role === 'super-admin';
+  }, [currentUser]);
 
   // Data Fetching from Firestore
-  const { data: usersData } = useCollection<User>(useMemoFirebase(() => collection(firestore, 'users'), [firestore]));
+  const usersQuery = useMemoFirebase(() => {
+    return isAdminOrSuperAdmin ? collection(firestore, 'users') : null;
+  }, [firestore, isAdminOrSuperAdmin]);
+  const { data: usersData } = useCollection<User>(usersQuery);
+
   const { data: menuItemsData } = useCollection<MenuItem>(useMemoFirebase(() => collection(firestore, 'menu_items'), [firestore]));
   const { data: menuCategoriesData } = useCollection<MenuCategory>(useMemoFirebase(() => collection(firestore, 'menu_categories'), [firestore]));
   const { data: tablesData, setData: setTables } = useCollection<Table>(useMemoFirebase(() => collection(firestore, 'tables'), [firestore]));
@@ -155,8 +163,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
               if (appUser) {
                   setCurrentUser(appUser);
               } else {
-                  setCurrentUser(null);
+                  // This case can happen if the user exists in Auth but not in the 'users' collection yet
+                  // We can either create a user document here, or trust that one will be created soon.
+                  // For now, we'll wait for the collection listener to provide the user.
               }
+            } else {
+                 // The 'users' collection is still loading, especially for non-admins. 
+                 // We can't determine the app user yet.
             }
         } else {
             setCurrentUser(null);
@@ -170,12 +183,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [auth, users, pathname, router]);
 
   useEffect(() => {
-    if (!currentUser && users.length > 0) {
+    if (!currentUser && auth.currentUser && users.length > 0) {
       const fbUser = auth.currentUser;
-      if (fbUser && fbUser.email) {
-        const appUser = users.find(u => u.email === fbUser.email);
-        if (appUser) setCurrentUser(appUser);
-      }
+      const appUser = users.find(u => u.email === fbUser.email);
+      if (appUser) setCurrentUser(appUser);
+    } else if (currentUser && auth.currentUser && auth.currentUser.email !== currentUser.email) {
+      // Auth state and app user are out of sync, trust auth and find the right user.
+      const appUser = users.find(u => u.email === auth.currentUser?.email);
+      if (appUser) setCurrentUser(appUser);
     }
   }, [auth.currentUser, currentUser, users]);
 
