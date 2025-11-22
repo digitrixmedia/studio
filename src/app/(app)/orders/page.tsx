@@ -1005,7 +1005,7 @@ export default function OrdersPage() {
 
                           return (
                           <div key={`${item.id}-${index}`}>
-                              <div className="flex items-start text-sm">
+                              <div className="flex items-start text-xs">
                                   <div className='flex-1 text-left'>
                                       <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
                                           <p className={cn("font-semibold", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
@@ -1013,7 +1013,7 @@ export default function OrdersPage() {
                                       {!item.isMealChild && (
                                       <div className="flex items-center gap-4">
                                           <p className="text-xs text-muted-foreground flex items-center">
-                                              <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                              <IndianRupee className="h-3 w-3 mr-1" />
                                               {item.price.toFixed(2)}
                                           </p>
                                           {isBogoEligible && item.quantity >= 2 && (
@@ -1045,7 +1045,7 @@ export default function OrdersPage() {
                                           <PlusCircle className="h-4 w-4" />
                                       </Button>
                                   </div>
-                                  <p className={cn("w-20 text-right font-semibold flex items-center justify-end text-xs", item.isMealChild && "text-muted-foreground")}>
+                                  <p className={cn("w-16 text-right font-semibold flex items-center justify-end", item.isMealChild && "text-muted-foreground")}>
                                   <IndianRupee className="h-3 w-3 mr-1" />
                                   {item.totalPrice.toFixed(2)}
                                   </p>
@@ -1073,7 +1073,7 @@ export default function OrdersPage() {
               </CardContent>
               
               <CardFooter className='flex-col items-stretch gap-2 !p-2 border-t'>
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
                         <div className="flex items-center gap-1">
                           <span>Subtotal</span>
@@ -1143,7 +1143,7 @@ export default function OrdersPage() {
                             )}
                         </div>
                         <span className={cn('flex items-center', settings.isComplimentary && 'line-through')}>
-                            <IndianRupee className="h-4 w-4 mr-1" />
+                            <IndianRupee className="h-3.5 w-3.5 mr-1" />
                             {subTotal.toFixed(2)}
                         </span>
                       </div>
@@ -1199,10 +1199,10 @@ export default function OrdersPage() {
                           {tax.toFixed(2)}
                       </span>
                       </div>
-                      <div className="flex justify-between font-bold text-base pt-1 border-t">
+                      <div className="flex justify-between font-bold text-sm pt-1 border-t">
                       <span>Total</span>
                       <span className='flex items-center'>
-                          <IndianRupee className="h-4 w-4 mr-1" />
+                          <IndianRupee className="h-3.5 w-3.5 mr-1" />
                           {total.toFixed(2)}
                       </span>
                       </div>
@@ -1597,4 +1597,5 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     
 
     
+
 
