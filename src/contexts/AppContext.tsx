@@ -136,8 +136,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [outlets, setOutlets] = useState<FranchiseOutlet[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-
+  
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -164,10 +163,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
       try {
         const uDoc = await getDoc(doc(firestore, 'users', fbUser.uid));
-        if (uDoc.exists()) setCurrentUser(uDoc.data() as User);
+        if (uDoc.exists()) {
+          setCurrentUser(uDoc.data() as User);
+        }
         else {
-          // if no user doc, sign out for safety
-          await signOut(auth);
+          await signOut(auth); // Log out if Firestore user doc is missing
           setCurrentUser(null);
         }
       } catch (err) {
@@ -177,6 +177,21 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     });
     return () => unsub();
   }, [auth, firestore, isInitializing]);
+
+  const { data: usersData, setData: setUsers } = useCollection<User>(
+    useMemoFirebase(() => {
+      if (!firestore) return null;
+      // super-admin gets all users, franchise-admin gets all users under their subscription
+      // for this app, we will assume a franchise admin can see all other admins (tenants)
+      if (currentUser?.role === 'super-admin' || currentUser?.role === 'admin') {
+         return collection(firestore, 'users');
+      }
+      return null;
+    }, [firestore, currentUser])
+  );
+
+  const users = useMemo(() => usersData || [], [usersData]);
+
 
   // real-time collection hooks (keeps the rest of the app updated)
   const { data: menuItemsData } = useCollection<MenuItem>(
@@ -194,22 +209,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(
     useMemoFirebase(() => (firestore ? query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(100)) : null), [firestore])
   );
-   const { data: allUsersData } = useCollection<User>(
-    useMemoFirebase(() => (firestore && currentUser?.role === 'super-admin' ? collection(firestore, 'users') : null), [firestore, currentUser])
-  );
-
 
   const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
   const menuCategories = useMemo(() => menuCategoriesData || [], [menuCategoriesData]);
   const tables = useMemo(() => tablesData || [], [tablesData]);
   const ingredients = useMemo(() => ingredientsData || [], [ingredientsData]);
   const pastOrders = useMemo(() => pastOrdersData || [], [pastOrdersData]);
-
-  useEffect(() => {
-    if (allUsersData) {
-      setUsers(allUsersData);
-    }
-  }, [allUsersData]);
+  
 
   // derived customers from completed past orders
   const customers = useMemo(() => {
@@ -247,92 +253,43 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     // implement if you add a /customers collection; for now it's a placeholder
     console.log('updateCustomer called', customerId, updates);
   };
-
-  /**
-   * Load subscriptions + outlets:
-   * - For super-admin: get all subscriptions and all outlets
-   * - For admin (franchise owner): get subscriptions where franchiseId == currentUser.id
-   *   and outlets where ownerId == currentUser.id, then merge to show only outlets with active subscription
-   *
-   * NOTE: we guard building queries — we never call where(..., currentUser.id) if currentUser.id is undefined
-   */
+  
+  // This logic derives outlets and subscriptions directly from the users list
   useEffect(() => {
-    if (!firestore || !currentUser?.id) {
-      setSubscriptions([]);
+    if (!users || users.length === 0) {
       setOutlets([]);
+      setSubscriptions([]);
       return;
     }
+    const adminUsers = users.filter(u => u.role === 'admin');
+    
+    const derivedOutlets: FranchiseOutlet[] = adminUsers.map(user => ({
+      id: user.subscriptionId || user.id, // Use subscriptionId if available
+      name: `${user.name}'s Outlet`, // Simplified outlet name
+      status: 'active', // Placeholder status
+      managerName: user.name,
+      // Sales data would be calculated from pastOrders filtered by outlet
+    }));
+    
+    const derivedSubscriptions = adminUsers.map(user => ({
+      id: user.subscriptionId || user.id,
+      franchiseName: user.name,
+      outletName: `${user.name}'s Outlet`,
+      adminEmail: user.email,
+      adminName: user.name,
+      startDate: new Date(), // Placeholder
+      endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // Placeholder
+      status: 'active', // Placeholder
+      // Usage data would come from Firebase project analytics
+      storageUsedMB: 0, 
+      totalReads: 0,
+      totalWrites: 0,
+    }));
+    
+    setOutlets(derivedOutlets);
+    setSubscriptions(derivedSubscriptions);
+  }, [users]);
 
-    let mounted = true;
-
-    const load = async () => {
-      try {
-        // Subscriptions
-        let subsSnap;
-        if (currentUser.role === 'super-admin') {
-          subsSnap = await getDocs(collection(firestore, 'subscriptions'));
-        } else {
-          // only query when currentUser.id is defined
-          subsSnap = await getDocs(query(collection(firestore, 'subscriptions'), where('franchiseId', '==', currentUser.id)));
-        }
-        const subs = subsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        if (!mounted) return;
-        setSubscriptions(subs);
-
-        // Outlets
-        let outletsSnap;
-        if (currentUser.role === 'super-admin') {
-          outletsSnap = await getDocs(collection(firestore, 'outlets'));
-        } else {
-          outletsSnap = await getDocs(query(collection(firestore, 'outlets'), where('ownerId', '==', currentUser.id)));
-        }
-        const outletsList = outletsSnap.docs.map((d) => ({ id: d.id, ...d.data() })) as FranchiseOutlet[];
-
-        // Merge: attach subscription status/name to outlets
-        const merged: FranchiseOutlet[] = [];
-        if (currentUser.role === 'super-admin') {
-          const subMap = new Map(subs.map((s: any) => [s.outletId, s]));
-          outletsList.forEach((o) => {
-            const s = subMap.get(o.id);
-            merged.push({
-              ...o,
-              name: o.name || (s && s.outletName) || o.id,
-              status: (s && s.status) || o.status || 'active',
-            });
-          });
-        } else {
-          // admin only sees outlets that have a subscription under their franchise
-          const subsSet = new Set(subs.map((s: any) => s.outletId));
-          outletsList.forEach((o) => {
-            if (subsSet.has(o.id)) {
-              const s = subs.find((x: any) => x.outletId === o.id);
-              merged.push({
-                ...o,
-                name: o.name || (s && s.outletName) || o.id,
-                status: (s && s.status) || o.status || 'active',
-              });
-            }
-          });
-        }
-
-        if (!mounted) return;
-        setOutlets(merged);
-      } catch (err) {
-        console.error('Error loading subscriptions/outlets:', err);
-        // Keep state safe on error
-        if (mounted) {
-          setSubscriptions([]);
-          setOutlets([]);
-        }
-      }
-    };
-
-    load();
-
-    return () => {
-      mounted = false;
-    };
-  }, [firestore, currentUser]);
 
   // routing / local storage selected outlet rehydrate
   useEffect(() => {
@@ -347,14 +304,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // only run on client navigations
     if (typeof window === 'undefined') return;
-    // guard: only redirect if not already on login and not on a public route
+  
     const publicPaths = ['/login'];
-    if (!currentUser && !isInitializing && !publicPaths.includes(pathname)) {
+    if (!isInitializing && !currentUser && !publicPaths.includes(pathname)) {
         if (pathname !== '/login') router.replace('/login');
         return;
     }
+
     if (!currentUser) return;
 
     const isLoginPage = pathname.startsWith('/login');
@@ -572,7 +529,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     pastOrders: pastOrders || [],
     setPastOrders: setPastOrders as any,
     users,
-    setUsers,
+    setUsers: setUsers as any,
     tables: tables || [],
     setTables: setTables as any,
     ingredients: ingredients || [],
