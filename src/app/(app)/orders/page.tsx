@@ -35,6 +35,7 @@ import { Badge } from '@/components/ui/badge';
 import { generateSmsBill } from '@/ai/flows/generate-sms-bill-flow';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CustomerSearch } from '@/components/pos/CustomerSearch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 export default function OrdersPage() {
@@ -1004,7 +1005,7 @@ export default function OrdersPage() {
                           const isBogoEligible = menuItem?.isBogo;
 
                           return (
-                          <div key={`${item.id}-${index}`} className={cn("grid grid-cols-[1fr_auto_auto] items-start gap-x-2 text-[0.7rem] py-1", item.isMealChild && 'py-0 my-0')}>
+                          <div key={`${item.id}-${index}`} className={cn("grid grid-cols-[1fr_auto_auto] items-start gap-x-2 py-0.5 text-[0.7rem]")}>
                               <div className='text-left col-start-1'>
                                   <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
                                       <p className={cn("font-semibold leading-tight", item.isMealChild && "pl-4 text-muted-foreground text-[0.65rem]")}>{item.name}</p>
@@ -1233,32 +1234,11 @@ export default function OrdersPage() {
                     <DialogTitle>Customize {customizationItem?.name}</DialogTitle>
                 </DialogHeader>
                 {customizationItem && (
-                    <form onSubmit={handleCustomizationSubmit} className="space-y-4">
-                        {customizationItem.variations && customizationItem.variations.length > 0 && (
-                            <div>
-                                <Label className="font-medium">Select Variation</Label>
-                                <Select name="variation" defaultValue={customizationItem.variations[0].id}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a variation" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {customizationItem.variations.map(v => (
-                                            <SelectItem key={v.id} value={v.id}>
-                                                {v.name} (+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier.toFixed(2)})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-                        <div>
-                            <Label className="font-medium">Special Notes</Label>
-                            <Textarea name="notes" placeholder="e.g. Extra spicy, no onions..." />
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit" className="w-full">Add to Order</Button>
-                        </DialogFooter>
-                    </form>
+                    <CustomizationForm 
+                        item={customizationItem} 
+                        onClose={() => setCustomizationItem(null)}
+                        onSubmit={handleCustomizationSubmit}
+                    />
                 )}
             </DialogContent>
         </Dialog>
@@ -1572,31 +1552,77 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
     )
 }
 
+interface CustomizationFormProps {
+    item: MenuItem;
+    onClose: () => void;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+}
+
+function CustomizationForm({ item, onClose, onSubmit }: CustomizationFormProps) {
+  const [selectedVariation, setSelectedVariation] = useState<string>(item.variations?.[0]?.id || '');
+  
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      {item.variations && item.variations.length > 0 && (
+        <div>
+          <Label className="font-medium">Select Variation</Label>
+          <RadioGroup 
+            name="variation" 
+            defaultValue={item.variations[0].id}
+            value={selectedVariation}
+            onValueChange={setSelectedVariation}
+            className="mt-2 space-y-2"
+          >
+            {item.variations.map(v => (
+              <div key={v.id} className="flex items-center space-x-2">
+                <RadioGroupItem value={v.id} id={v.id} />
+                <Label htmlFor={v.id} className="flex justify-between w-full">
+                  <span>{v.name}</span>
+                  <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier.toFixed(2)})</span>
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+      )}
+      <div>
+        <Label className="font-medium">Special Notes</Label>
+        <Textarea name="notes" placeholder="e.g. Extra spicy, no onions..." />
+      </div>
+      <DialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+        <Button type="submit" className="w-full">Add to Order</Button>
+      </DialogFooter>
+    </form>
+  );
+}
+
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
     
 
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-    
-
-    
 
 
 
