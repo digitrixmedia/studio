@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -29,44 +30,15 @@ import {
 import { PlusCircle, IndianRupee } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { ingredients, menuItems, users } from '@/lib/data';
 import type { Wastage, WastageItem, Ingredient } from '@/lib/types';
 import { AddWastageDialog } from '@/components/inventory/AddWastageDialog';
+import { useAppContext } from '@/contexts/AppContext';
 
-
-// Mock data for initial state
-const initialWastageEntries: Wastage[] = [
-  {
-    id: 'wastage-1',
-    wastageNumber: 'WT-001',
-    date: new Date(),
-    wastageFor: 'Raw Material',
-    items: [
-      { id: 'wi-1', itemId: 'ing-1', name: 'Coffee Beans', quantity: 0.5, unit: 'kg', amount: 400 },
-      { id: 'wi-2', itemId: 'ing-5', name: 'Veggie Mix', quantity: 1, unit: 'kg', amount: 150 },
-    ],
-    totalAmount: 550,
-    userId: 'user-2',
-    reason: 'Spoiled',
-  },
-  {
-    id: 'wastage-2',
-    wastageNumber: 'WT-002',
-    date: new Date(Date.now() - 86400000), // Yesterday
-    wastageFor: 'Item',
-    items: [
-      { id: 'wi-3', itemId: 'item-5', name: 'Veggie Sandwich', quantity: 2, unit: 'pcs', amount: 440 },
-    ],
-    totalAmount: 440,
-    userId: 'user-2',
-    reason: 'Burnt during preparation',
-  },
-];
 
 export default function WastagePage() {
-  const [wastageEntries, setWastageEntries] = useState(initialWastageEntries);
+  const { users } = useAppContext();
+  const [wastageEntries, setWastageEntries] = useState<Wastage[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [ingredientsState, setIngredientsState] = useState(ingredients);
   const [viewingEntry, setViewingEntry] = useState<Wastage | null>(null);
 
 
@@ -76,22 +48,7 @@ export default function WastagePage() {
 
   const handleSaveWastage = (newWastage: Wastage) => {
     setWastageEntries(prev => [newWastage, ...prev]);
-     // Deduct stock logic
-    if (newWastage.wastageFor === 'Raw Material') {
-      setIngredientsState(prevIngredients => {
-        const updatedIngredients = [...prevIngredients];
-        newWastage.items.forEach(wItem => {
-          const ingIndex = updatedIngredients.findIndex(ing => ing.id === wItem.itemId);
-          if (ingIndex !== -1) {
-            updatedIngredients[ingIndex].stock -= wItem.quantity;
-          }
-        });
-        return updatedIngredients;
-      });
-    } else {
-      // For menu items, you would deduct from the raw materials based on recipe mapping.
-      // This is a complex logic that would be implemented here in a real application.
-    }
+     // In a real app, stock deduction would happen here via context/API
   };
 
   return (
@@ -138,6 +95,13 @@ export default function WastagePage() {
                   </TableCell>
                 </TableRow>
               ))}
+               {wastageEntries.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No wastage entries recorded yet.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

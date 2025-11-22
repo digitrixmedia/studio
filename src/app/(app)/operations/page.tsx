@@ -42,13 +42,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { reservations as initialReservations, deliveryBoys as initialDeliveryBoys, menuItems } from '@/lib/data';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer, OnlineOrderSource } from '@/lib/types';
 import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban, ArrowRight } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -88,13 +86,14 @@ export default function OperationsPage() {
         startOrderForTable,
         loadOrder,
         customers,
-        loadOnlineOrderIntoPOS
+        loadOnlineOrderIntoPOS,
+        menuItems,
     } = useAppContext();
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const [reservations, setReservations] = useState<Reservation[]>(initialReservations);
-    const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>(initialDeliveryBoys);
+    const [reservations, setReservations] = useState<Reservation[]>([]);
+    const [deliveryBoys, setDeliveryBoys] = useState<DeliveryBoy[]>([]);
     
     const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | 'all'>('all');
     const [orderTypeFilter, setOrderTypeFilter] = useState<OrderType | 'all'>('all');
@@ -170,13 +169,14 @@ export default function OperationsPage() {
     }, [menuItems, router, setOrders, toast]);
 
     useEffect(() => {
+        if (!menuItems || menuItems.length === 0) return;
         const interval = setInterval(() => {
             const source: OnlineOrderSource = Math.random() > 0.5 ? 'zomato' : 'swiggy';
             handleSimulateOnlineOrder(source);
         }, 15000); // Generate a new order every 15 seconds
 
         return () => clearInterval(interval); // Clean up on component unmount
-    }, [handleSimulateOnlineOrder]);
+    }, [handleSimulateOnlineOrder, menuItems]);
     
     useEffect(() => {
         if (viewCustomer) {

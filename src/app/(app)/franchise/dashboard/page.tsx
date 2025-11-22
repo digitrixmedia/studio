@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,8 +13,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'rec
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from 'lucide-react';
-import { superAdminStats, topFranchisesBySales, dailySalesData, subscriptions } from '@/lib/data';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ManageOutletDialog } from '@/components/franchise/ManageOutletDialog';
 import type { FranchiseOutlet, SubscriptionStatus } from '@/lib/types';
 import { useAppContext } from '@/contexts/AppContext';
@@ -29,43 +29,72 @@ const trendChartConfig = {
 }
 
 export default function FranchiseDashboardPage() {
-    // Simulate being logged in as the admin for "The Coffee House"
-    const loggedInFranchiseName = "The Coffee House";
+    const { currentUser, pastOrders, selectOutlet } = useAppContext();
+    const loggedInFranchiseName = currentUser?.name || "The Coffee House";
 
-    const outlets: FranchiseOutlet[] = subscriptions
+    // This is a placeholder, a real implementation would fetch this from a 'subscriptions' collection.
+    const subscriptions = useMemo(() => (currentUser ? [{
+        id: currentUser.subscriptionId || 'sub-1',
+        franchiseName: loggedInFranchiseName,
+        outletName: `${loggedInFranchiseName} - Main Branch`,
+        adminName: currentUser.name,
+        adminEmail: currentUser.email,
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        endDate: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000),
+        status: 'active',
+        storageUsedMB: 1500,
+        totalReads: 120000,
+        totalWrites: 30000,
+    }] : []), [currentUser, loggedInFranchiseName]);
+
+    const outlets: FranchiseOutlet[] = useMemo(() => subscriptions
       .filter(s => s.franchiseName === loggedInFranchiseName)
       .map(sub => ({
         id: sub.id,
         name: sub.outletName,
         status: sub.status,
         managerName: sub.adminName || `Manager`,
-        todaySales: (sub.totalReads + sub.totalWrites) / 100, // Mocked data
-        totalSales: (sub.totalReads + sub.totalWrites) * 30 / 100, // Mocked data
-        ordersToday: Math.floor(((sub.totalReads + sub.totalWrites) / 100) / 450), // Mocked data
-    }));
+        todaySales: pastOrders.filter(o => o.createdAt >= new Date(new Date().setHours(0,0,0,0))).reduce((sum, o) => sum + o.total, 0),
+        totalSales: pastOrders.reduce((sum, o) => sum + o.total, 0),
+        ordersToday: pastOrders.filter(o => o.createdAt >= new Date(new Date().setHours(0,0,0,0))).length,
+    })), [subscriptions, loggedInFranchiseName, pastOrders]);
 
-    const summary = {
-      totalSales: outlets.reduce((sum, o) => sum + (o.totalSales || 0), 0),
-      todaySales: outlets.reduce((sum, o) => sum + (o.todaySales || 0), 0),
-      totalOrders: outlets.reduce((sum, o) => sum + (o.ordersToday || 0), 0),
-      activeOutlets: outlets.filter(o => o.status === 'active').length,
-      inactiveOutlets: outlets.filter(o => o.status !== 'active').length,
-      topPerformer: { name: topFranchisesBySales[0].name, sales: topFranchisesBySales[0].totalSales / 30 },
-      lowPerformer: { name: topFranchisesBySales[topFranchisesBySales.length - 1].name, sales: topFranchisesBySales[topFranchisesBySales.length - 1].totalSales / 30 },
-      avgOrderValue: superAdminStats.totalOrders > 0 ? superAdminStats.totalSales / superAdminStats.totalOrders : 0,
-    };
+    const summary = useMemo(() => {
+        const totalSales = outlets.reduce((sum, o) => sum + (o.totalSales || 0), 0);
+        const todaySales = outlets.reduce((sum, o) => sum + (o.todaySales || 0), 0);
+        const totalOrders = outlets.reduce((sum, o) => sum + (o.ordersToday || 0), 0);
+        const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+        
+        return {
+            totalSales,
+            todaySales,
+            totalOrders,
+            activeOutlets: outlets.filter(o => o.status === 'active').length,
+            inactiveOutlets: outlets.filter(o => o.status !== 'active').length,
+            topPerformer: { name: outlets[0]?.name || 'N/A', sales: outlets[0]?.todaySales || 0 },
+            lowPerformer: { name: outlets[outlets.length - 1]?.name || 'N/A', sales: outlets[outlets.length - 1]?.todaySales || 0 },
+            avgOrderValue,
+        };
+    }, [outlets]);
 
-    const salesPerOutlet = outlets.map(o => ({
+    const salesPerOutlet = useMemo(() => outlets.map(o => ({
         name: o.name.replace(`${loggedInFranchiseName} - `, ''),
         total: o.totalSales,
         today: o.todaySales,
-    }));
+    })), [outlets, loggedInFranchiseName]);
 
-    const salesTrend = dailySalesData.map(d => ({ day: d.date, sales: d.sales }));
+    const salesTrend = useMemo(() => {
+        const trend = pastOrders.reduce((acc, order) => {
+            const day = order.createdAt.toISOString().split('T')[0];
+            acc[day] = (acc[day] || 0) + order.total;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        return Object.entries(trend).map(([day, sales]) => ({ day, sales })).slice(-7);
+    }, [pastOrders]);
 
 
     const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
-    const { selectOutlet } = useAppContext();
 
     const getStatusVariant = (status: SubscriptionStatus) => {
         switch (status) {
@@ -76,6 +105,15 @@ export default function FranchiseDashboardPage() {
         default: return 'outline';
         }
     };
+
+    if (outlets.length === 0) {
+        return (
+            <div className="flex flex-col gap-8 text-center items-center justify-center h-full">
+                <h1 className='text-3xl font-bold'>Franchise Dashboard</h1>
+                <p className="text-muted-foreground">No outlets found for your franchise. Please contact Super Admin.</p>
+            </div>
+        )
+    }
 
   return (
     <>

@@ -60,11 +60,8 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground text-center">Or use a demo account:</p>
-          <div className='grid grid-cols-2 gap-2 w-full'>
+          <div className='grid grid-cols-1 gap-2 w-full'>
             <Button variant="outline" size="sm" onClick={() => handleDemoLogin('super@zappyy.com')}>Super Admin</Button>
-            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('admin@zappyy.com')}>Franchise Admin</Button>
-            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('manager@zappyy.com')}>Manager</Button>
-            <Button variant="outline" size="sm" onClick={() => handleDemoLogin('cashier@zappyy.com')}>Cashier</Button>
           </div>
         </CardFooter>
       </Card>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -27,25 +28,28 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { purchaseOrders as initialPurchaseOrders, vendors, ingredients as initialIngredients } from '@/lib/data';
 import type { PurchaseOrder, Ingredient } from '@/lib/types';
 import { PlusCircle, IndianRupee, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { NewPurchaseOrderDialog } from '@/components/inventory/NewPurchaseOrderDialog';
+import { useAppContext } from '@/contexts/AppContext';
 
 export default function PurchaseOrdersPage() {
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(initialPurchaseOrders);
-  const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
+  const { ingredients } = useAppContext();
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [liveIngredients, setLiveIngredients] = useState<Ingredient[]>(ingredients);
   const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [viewingOrder, setViewingOrder] = useState<PurchaseOrder | null>(null);
 
+  // This is a placeholder, a real app would fetch vendors from a collection.
+  const vendors: any[] = []; 
   const getVendorName = (vendorId: string) => {
     return vendors.find(v => v.id === vendorId)?.name || 'Unknown Vendor';
   };
   
   const getIngredientName = (ingredientId: string) => {
-    return initialIngredients.find(i => i.id === ingredientId)?.name || 'Unknown';
+    return ingredients.find(i => i.id === ingredientId)?.name || 'Unknown';
   }
 
   const getStatusVariant = (status: 'pending' | 'completed' | 'cancelled') => {
@@ -135,6 +139,13 @@ export default function PurchaseOrdersPage() {
                   </TableCell>
                 </TableRow>
               ))}
+              {purchaseOrders.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No purchase orders recorded yet.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -143,7 +154,7 @@ export default function PurchaseOrdersPage() {
         isOpen={isNewOrderDialogOpen} 
         onClose={handleDialogClose} 
         onSave={handleSaveOrder}
-        setIngredients={setIngredients}
+        setIngredients={setLiveIngredients}
         editingOrder={editingOrder}
       />
        <Dialog open={!!viewingOrder} onOpenChange={() => setViewingOrder(null)}>

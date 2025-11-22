@@ -11,11 +11,10 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
-
-import { superAdminStats as initialStats, topFranchisesBySales as initialFranchises, dailyActiveOutlets as initialActivity, subscriptionStatusDistribution as initialSubs } from '@/lib/data';
 import { BarChart3, Box, CreditCard, IndianRupee, RefreshCw, ShoppingBag, Users, Database, FileText } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { useAppContext } from '@/contexts/AppContext';
 
 const subscriptionChartConfig = {
   active: { label: 'Active', color: 'hsl(var(--chart-1))' },
@@ -33,23 +32,71 @@ const storageChartConfig = {
 
 export default function SuperAdminDashboardPage() {
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState(initialStats);
-  const [franchises, setFranchises] = useState(initialFranchises);
-  const [activity, setActivity] = useState(initialActivity);
-  const [subscriptions, setSubscriptions] = useState(initialSubs);
+  const { pastOrders, users } = useAppContext();
+
+  // This is a placeholder, a real implementation would fetch this from a 'subscriptions' collection.
+  const subscriptions = useMemo(() => users.filter(u => u.role === 'admin').map(u => ({
+    id: u.subscriptionId || u.id,
+    franchiseName: 'Franchise ' + u.name.split(' ')[0],
+    outletName: u.name + ' Outlet',
+    adminEmail: u.email,
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+    endDate: new Date(Date.now() + 335 * 24 * 60 * 60 * 1000), // 335 days from now
+    status: 'active',
+    storageUsedMB: Math.random() * 2048,
+    totalReads: Math.random() * 500000,
+    totalWrites: Math.random() * 100000,
+  })), [users]);
+
+  const stats = useMemo(() => {
+    const totalSales = pastOrders.reduce((sum, order) => sum + order.total, 0);
+    const totalOrders = pastOrders.length;
+    const totalReads = subscriptions.reduce((sum, sub) => sum + sub.totalReads, 0);
+    const totalWrites = subscriptions.reduce((sum, sub) => sum + sub.totalWrites, 0);
+    const totalStorageUsedGB = subscriptions.reduce((sum, sub) => sum + (sub.storageUsedMB / 1024), 0);
+    const activeOutlets = subscriptions.filter(s => s.status === 'active').length;
+
+    return {
+      totalSubscriptions: subscriptions.length,
+      activeOutlets,
+      totalStorageUsedGB: totalStorageUsedGB.toFixed(2),
+      totalSales,
+      totalOrders,
+      totalReads,
+      totalWrites,
+    }
+  }, [pastOrders, subscriptions]);
+
+  const topFranchises = useMemo(() => {
+    // This is simplified. A real implementation would group outlets by franchise.
+    return subscriptions.map(sub => ({
+        id: sub.id,
+        name: sub.franchiseName,
+        totalSales: pastOrders.length > 0 ? (stats.totalSales / subscriptions.length) * (Math.random() * 0.4 + 0.8) : 0,
+        totalStorage: sub.storageUsedMB / 1024,
+    })).sort((a,b) => b.totalSales - a.totalSales);
+  }, [subscriptions, pastOrders, stats.totalSales]);
+
+  const subscriptionStatusDist = useMemo(() => {
+    const statusCount = subscriptions.reduce((acc, sub) => {
+        acc[sub.status] = (acc[sub.status] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(statusCount).map(([status, count]) => ({ status, count }));
+  }, [subscriptions]);
+
 
   const handleRefresh = () => {
     setLoading(true);
+    // In a real app, you might re-fetch data or rely on realtime updates.
+    // For this demo, we can just simulate a delay.
     setTimeout(() => {
-      // Simulate data fetching and update
-      setStats(prev => ({ ...prev, totalOrders: prev.totalOrders + Math.floor(Math.random() * 100) }));
-      setFranchises(prev => prev.map(f => ({ ...f, totalSales: f.totalSales + Math.floor(Math.random() * 1000) })).sort((a, b) => b.totalSales - a.totalSales));
-      setActivity(prev => prev.map(a => ({ ...a, count: a.count + Math.floor(Math.random() * 3) - 1 })));
       setLoading(false);
     }, 1000);
   };
   
-  const storageData = franchises.map(f => ({ name: f.name, storage: f.totalStorage }));
+  const storageData = topFranchises.map(f => ({ name: f.name, storage: f.totalStorage }));
 
   return (
     <div className="flex flex-col gap-8">
@@ -151,7 +198,7 @@ export default function SuperAdminDashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {franchises.slice(0, 5).map(f => (
+                {topFranchises.slice(0, 5).map(f => (
                   <TableRow key={f.id}>
                     <TableCell>{f.name}</TableCell>
                     <TableCell className="text-right flex items-center justify-end">
@@ -173,8 +220,8 @@ export default function SuperAdminDashboardPage() {
             <ChartContainer config={subscriptionChartConfig} className="min-h-[250px] w-full">
               <PieChart>
                 <ChartTooltip content={<ChartTooltipContent nameKey="count" hideLabel />} />
-                <Pie data={subscriptions} dataKey="count" nameKey="status" innerRadius={50}>
-                   {subscriptions.map((entry) => (
+                <Pie data={subscriptionStatusDist} dataKey="count" nameKey="status" innerRadius={50}>
+                   {subscriptionStatusDist.map((entry) => (
                     <Cell key={entry.status} fill={`var(--color-${entry.status.toLowerCase()})`} />
                   ))}
                 </Pie>
@@ -190,7 +237,7 @@ export default function SuperAdminDashboardPage() {
              <ChartContainer config={storageChartConfig} className="min-h-[250px] w-full">
                <BarChart data={storageData} layout="vertical" margin={{ left: 20 }}>
                  <CartesianGrid horizontal={false} />
-                 <XAxis type="number" dataKey="storage" tickFormatter={(val) => `${val}GB`} />
+                 <XAxis type="number" dataKey="storage" tickFormatter={(val) => `${val.toFixed(2)}GB`} />
                  <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                  <ChartTooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent />} />
                  <Bar dataKey="storage" fill="var(--color-storage)" radius={4} />
@@ -202,5 +249,3 @@ export default function SuperAdminDashboardPage() {
     </div>
   );
 }
-
-  

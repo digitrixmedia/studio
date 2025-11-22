@@ -6,19 +6,24 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { orders as initialOrders } from '@/lib/data';
 import type { Order } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Clock, Check, CookingPot, MessageSquarePlus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAppContext } from '@/contexts/AppContext';
 
 export default function KitchenPage() {
+  const { pastOrders, setPastOrders } = useAppContext();
   const [orders, setOrders] = useState<Order[]>(
-    initialOrders.filter(o => o.status === 'new' || o.status === 'preparing')
+    pastOrders.filter(o => o.status === 'new' || o.status === 'preparing')
   );
 
+  useEffect(() => {
+    setOrders(pastOrders.filter(o => o.status === 'new' || o.status === 'preparing'));
+  }, [pastOrders]);
+
   const updateOrderStatus = (orderId: string, status: 'preparing' | 'ready') => {
-    setOrders(currentOrders =>
+    setPastOrders(currentOrders =>
       currentOrders.map(o => (o.id === orderId ? { ...o, status } : o))
     );
   };

@@ -30,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { vendors as initialVendors, ingredients } from '@/lib/data';
 import type { PurchaseOrder, PurchaseOrderItem, Vendor, Ingredient, Unit } from '@/lib/types';
 import { PlusCircle, Trash2, Save, Tag } from 'lucide-react';
 import { format } from 'date-fns';
@@ -38,6 +37,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useAppContext } from '@/contexts/AppContext';
 
 
 interface NewPurchaseOrderDialogProps {
@@ -76,6 +76,7 @@ interface OtherCharge {
 }
 
 export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients, editingOrder }: NewPurchaseOrderDialogProps) {
+    const { ingredients } = useAppContext();
     const [po, setPo] = useState<Omit<PurchaseOrder, 'id' | 'status'>>({
         poNumber: `PO-${Date.now()}`,
         vendorId: '',
@@ -97,7 +98,7 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
     const [updateInventory, setUpdateInventory] = useState(true);
     const { toast } = useToast();
     
-    const [vendors, setVendors] = useState<Vendor[]>(initialVendors);
+    const [vendors, setVendors] = useState<Vendor[]>([]);
     const [isAddVendorOpen, setIsAddVendorOpen] = useState(false);
     const [newVendor, setNewVendor] = useState(initialNewVendorState);
 
@@ -236,7 +237,13 @@ export function NewPurchaseOrderDialog({ isOpen, onClose, onSave, setIngredients
 
     const getPurchaseUnitsForIngredient = (ingredientId: string): { unit: Unit, factor: number }[] => {
         const ingredient = ingredients.find(i => i.id === ingredientId);
-        return ingredient?.purchaseUnits || [];
+        if (!ingredient) return [];
+        const units = ingredient.purchaseUnits || [];
+        // Ensure base unit is always an option
+        if (!units.some(u => u.unit === ingredient.baseUnit)) {
+            return [{unit: ingredient.baseUnit, factor: 1}, ...units];
+        }
+        return units;
     };
 
     const handleAddNewVendor = () => {

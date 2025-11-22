@@ -38,7 +38,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CalendarIcon, PlusCircle, Save, Trash2 } from 'lucide-react';
-import { ingredients as initialIngredients, menuItems as initialMenuItems, users } from '@/lib/data';
 import type { Ingredient, MenuItem, Wastage, WastageItem } from '@/lib/types';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -64,16 +63,13 @@ const initialWastageItemState: Omit<WastageItem, 'id'> = {
 
 export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogProps) {
   const { toast } = useToast();
-  const { currentUser } = useAppContext();
+  const { currentUser, ingredients, menuItems } = useAppContext();
   
   const [date, setDate] = useState<Date>(new Date());
   const [wastageFor, setWastageFor] = useState<'Raw Material' | 'Item'>('Raw Material');
   const [wastageItems, setWastageItems] = useState<Omit<WastageItem, 'id'>[]>([]);
   const [reason, setReason] = useState('');
   
-  const [ingredients] = useState<Ingredient[]>(initialIngredients);
-  const [menuItems] = useState<MenuItem[]>(initialMenuItems);
-
   const handleItemChange = (index: number, field: keyof Omit<WastageItem, 'id'>, value: string | number) => {
     setWastageItems(prevItems => {
         const updatedItems = [...prevItems];
@@ -90,7 +86,7 @@ export function AddWastageDialog({ isOpen, onClose, onSave }: AddWastageDialogPr
                 : menuItems.find(i => i.id === value);
             
             if (selectedSourceItem) {
-                currentItem.unit = 'unit' in selectedSourceItem ? selectedSourceItem.unit : 'pcs';
+                currentItem.unit = 'baseUnit' in selectedSourceItem ? selectedSourceItem.baseUnit : 'pcs';
                 currentItem.name = selectedSourceItem.name;
                 // A real app would fetch avg. purchase price. Here we use item price for menu items.
                 currentItem.purchasePrice = 'price' in selectedSourceItem ? selectedSourceItem.price : 0; 

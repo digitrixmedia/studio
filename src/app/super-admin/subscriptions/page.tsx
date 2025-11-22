@@ -38,11 +38,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { subscriptions as initialSubscriptions } from '@/lib/data';
 import type { Subscription, SubscriptionStatus, User } from '@/lib/types';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -71,7 +69,7 @@ const initialFormState = {
 
 export default function SubscriptionsPage() {
   const { auth, users, setUsers } = useAppContext();
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>(initialSubscriptions);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSub, setEditingSub] = useState<Subscription | null>(null);
   const [formData, setFormData] = useState(initialFormState);
@@ -398,5 +396,3 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
-
-    
