@@ -9,6 +9,7 @@
  * Data Structure:
  * - /users/{userId}: Stores private user profile data, accessible only to the user.
  * - /menu_items/{menuItemId}: Stores publicly accessible menu items.
+ * - /menu_categories/{menuCategoryId}: Stores publicly accessible menu categories.
  * - /ingredients/{ingredientId}: Stores publicly accessible ingredient information.
  * - /menu_item_ingredients/{menuItemIngredientId}: Stores publicly accessible relations between menu items and ingredients.
  * - /tables/{tableId}: Stores publicly accessible table information.
@@ -67,6 +68,15 @@ service cloud.firestore {
     function isAdmin() {
       return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
+    
+    /**
+     * @description Checks if the authenticated user is an admin or super-admin by checking their user document.
+     * @return {bool} True if the user has an admin or super-admin role, false otherwise.
+     */
+    function isRoleAdminOrSuperAdmin() {
+        let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        return isSignedIn() && (userDoc.role == 'admin' || userDoc.role == 'super-admin');
+    }
 
     /**
      * @description Rules for user profiles.
@@ -78,7 +88,7 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow list: if isRoleAdminOrSuperAdmin();
       allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
@@ -92,6 +102,20 @@ service cloud.firestore {
      * @principle Public read access with admin-only writes.
      */
     match /menu_items/{menuItemId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && resource != null;
+      allow delete: if isAdmin() && resource != null;
+    }
+    
+    /**
+     * @description Rules for menu categories.
+     * @path /menu_categories/{menuCategoryId}
+     * @allow (get, list) - Anyone can read menu categories.
+     * @allow (create, update, delete) - Only admins can create, update, or delete menu categories.
+     * @principle Public read access with admin-only writes.
+     */
+    match /menu_categories/{menuCategoryId} {
       allow get, list: if true;
       allow create: if isAdmin();
       allow update: if isAdmin() && resource != null;
@@ -229,4 +253,3 @@ service cloud.firestore {
     }
   }
 }
-    
