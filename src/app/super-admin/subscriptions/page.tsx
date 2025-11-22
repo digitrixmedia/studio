@@ -55,7 +55,6 @@ import {
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { addDocumentNonBlocking } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 
 
@@ -164,7 +163,7 @@ export default function SubscriptionsPage() {
             subscriptionId: newSubId,
         };
         
-        // Correctly save the new user document to Firestore
+        // Correctly save the new user document to Firestore using setDoc
         await setDoc(doc(firestore, "users", userCredential.user.uid), newUser);
 
         toast({
@@ -394,5 +393,3 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
-
-    

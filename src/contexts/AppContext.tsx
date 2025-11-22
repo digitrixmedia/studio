@@ -209,7 +209,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             if (userDoc.exists()) {
                 setCurrentUser(userDoc.data() as User);
             } else {
-                 console.error("User document not found in Firestore for UID:", firebaseUser.uid);
                  setCurrentUser(null);
                  await signOut(auth); // Log out if Firestore user doc is missing
             }
