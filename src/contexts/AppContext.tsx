@@ -70,17 +70,18 @@ async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestor
     const superAdminPassword = 'password123';
 
     try {
-        const userDocRef = doc(firestore, 'users', 'superadmin@pos.com');
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-             console.log("Super admin does not exist, creating...");
+        // We will check for the user in Auth first.
+        // It's not a perfect system as we can't query users by email on the client,
+        // but we can try to sign in. If it fails with 'user-not-found', we create it.
+        // A more robust solution would be a callable function.
+        await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+        // If sign-in succeeds, user exists. We immediately sign them out.
+        await signOut(auth);
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+             console.log("Super admin does not exist in Auth, creating...");
             try {
-                // Temporarily sign out if anyone is logged in
-                if (auth.currentUser) {
-                    await signOut(auth);
-                }
-
+                if (auth.currentUser) { await signOut(auth); }
                 const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
                 const superAdminUser: User = {
                     id: userCredential.user.uid,
@@ -89,20 +90,14 @@ async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestor
                     role: 'super-admin',
                 };
                 await setDoc(doc(firestore, "users", userCredential.user.uid), superAdminUser);
-                console.log("Super admin created successfully.");
-                
-                // IMPORTANT: Sign out immediately so the user has to log in manually.
-                await signOut(auth);
-            } catch (creationError: any) {
-                if (creationError.code === 'auth/email-already-in-use') {
-                    console.log("Super admin already exists in Auth, but not Firestore. This state should be resolved manually for now.");
-                } else {
-                     console.error("Error creating super admin:", creationError);
-                }
+                console.log("Super admin user created in Auth and Firestore.");
+                await signOut(auth); // Sign out after creation
+            } catch (creationError) {
+                 console.error("Error creating super admin:", creationError);
             }
+        } else if (error.code !== 'auth/wrong-password') {
+            console.error("Error checking for super admin during sign-in:", error);
         }
-    } catch (e) {
-        console.error("Error checking for super admin:", e);
     }
 }
 
@@ -132,13 +127,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     setup();
   }, [auth, firestore]);
   
-  const isAdminOrSuperAdmin = useMemo(() => {
-    return currentUser?.role === 'admin' || currentUser?.role === 'super-admin';
+  const isSuperAdmin = useMemo(() => {
+    return currentUser?.role === 'super-admin';
   }, [currentUser]);
 
   const usersQuery = useMemoFirebase(() => {
-    return isAdminOrSuperAdmin ? collection(firestore, 'users') : null;
-  }, [firestore, isAdminOrSuperAdmin]);
+    return isSuperAdmin ? collection(firestore, 'users') : null;
+  }, [firestore, isSuperAdmin]);
   const { data: usersData } = useCollection<User>(usersQuery);
 
   const { data: menuItemsData } = useCollection<MenuItem>(useMemoFirebase(() => collection(firestore, 'menu_items'), [firestore]));
