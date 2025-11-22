@@ -998,9 +998,9 @@ export default function OrdersPage() {
                           const isBogoEligible = menuItem?.isBogo;
 
                           return (
-                          <div key={`${item.id}-${index}`} className={cn("py-0.5")}>
+                          <div key={`${item.id}-${index}`} className="py-1">
                             <div className="flex items-start text-[0.7rem] gap-x-2">
-                              <div className="w-[100px] flex-grow text-left">
+                              <div className="flex-1 text-left">
                                 <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
                                   <p className={cn("font-semibold leading-tight", item.isMealChild && "pl-4 text-muted-foreground text-[0.65rem]")}>{item.name}</p>
                                 </button>
@@ -1551,8 +1551,32 @@ function CustomizationForm({
   };
 
   if (!item.variations || item.variations.length === 0) {
+     const handleAddToCart = () => {
+      const notes = notesRef.current?.value;
+      // Assuming a default or no variation when variations array is empty
+      const defaultVariation: MenuItemVariation = { id: 'default', name: 'Regular', priceModifier: 0, ingredients: item.ingredients };
+      onSelectVariation(item, defaultVariation, notes);
+    };
+
     return (
-      <div className="p-4 text-center">This item has no variations.</div>
+      <div className="space-y-4">
+        <div>
+          <Label className="font-medium">Special Notes</Label>
+          <Textarea
+            ref={notesRef}
+            name="notes"
+            placeholder="e.g. Extra spicy, no onions..."
+          />
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleAddToCart}>
+            Add to Order
+          </Button>
+        </DialogFooter>
+      </div>
     );
   }
 
@@ -1586,7 +1610,7 @@ function CustomizationForm({
           placeholder="e.g. Extra spicy, no onions..."
         />
       </div>
-       <DialogFooter>
+      <DialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
@@ -1620,6 +1644,7 @@ function CustomizationForm({
     
 
     
+
 
 
 
