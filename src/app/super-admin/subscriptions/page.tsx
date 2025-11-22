@@ -55,8 +55,8 @@ import {
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { addDocumentNonBlocking, doc, setDoc } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking } from '@/firebase';
+import { collection, doc, setDoc } from 'firebase/firestore';
 
 
 const initialFormState = {
@@ -142,7 +142,7 @@ export default function SubscriptionsPage() {
 
     } else {
        const superAdminEmail = auth.currentUser?.email;
-       const superAdminPassword = 'password123';
+       const superAdminPassword = 'password123'; // This is insecure and should be managed securely
        
        if (!superAdminEmail) {
             toast({ variant: "destructive", title: "Error", description: "Super admin is not logged in." });
@@ -164,7 +164,8 @@ export default function SubscriptionsPage() {
             subscriptionId: newSubId,
         };
         
-        addDocumentNonBlocking(collection(firestore, "users"), newUser);
+        // Correctly save the new user document to Firestore
+        await setDoc(doc(firestore, "users", userCredential.user.uid), newUser);
 
         toast({
           title: "Subscription & User Created",
@@ -393,3 +394,5 @@ export default function SubscriptionsPage() {
     </div>
   );
 }
+
+    
