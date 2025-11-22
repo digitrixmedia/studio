@@ -70,43 +70,39 @@ async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestor
     const superAdminPassword = 'password123';
 
     try {
-        // Check if user exists in Auth
-        // This is a bit of a hack. A better way would be a Cloud Function, but this works for client-side setup.
-        // We try to sign in. If it fails with 'user-not-found', we create the user.
-        await signInWithEmailAndPassword(auth, 'check-user-existence@fake.com', 'invalidpassword');
-    } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-             // This is not a reliable way to check, but for a quick setup, we assume if one user is missing all are.
-             // Let's check Firestore for the user doc.
-             const userDocRef = doc(firestore, 'users', 'superadmin@pos.com');
-             const userDoc = await getDoc(userDocRef);
-             if (!userDoc.exists()) {
-                 console.log("Super admin does not exist, creating...");
-                 try {
-                     const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-                     const superAdminUser: User = {
-                         id: userCredential.user.uid,
-                         name: 'Super Admin',
-                         email: superAdminEmail,
-                         role: 'super-admin',
-                     };
-                     await setDoc(doc(firestore, 'users', userCredential.user.uid), superAdminUser);
-                     console.log("Super admin created successfully.");
-                     // IMPORTANT: Sign out immediately so the user has to log in manually.
-                     await signOut(auth);
-                 } catch (creationError) {
+        const userDocRef = doc(firestore, 'users', 'superadmin@pos.com');
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+             console.log("Super admin does not exist, creating...");
+            try {
+                // Temporarily sign out if anyone is logged in
+                if (auth.currentUser) {
+                    await signOut(auth);
+                }
+
+                const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+                const superAdminUser: User = {
+                    id: userCredential.user.uid,
+                    name: 'Super Admin',
+                    email: superAdminEmail,
+                    role: 'super-admin',
+                };
+                await setDoc(doc(firestore, "users", userCredential.user.uid), superAdminUser);
+                console.log("Super admin created successfully.");
+                
+                // IMPORTANT: Sign out immediately so the user has to log in manually.
+                await signOut(auth);
+            } catch (creationError: any) {
+                if (creationError.code === 'auth/email-already-in-use') {
+                    console.log("Super admin already exists in Auth, but not Firestore. This state should be resolved manually for now.");
+                } else {
                      console.error("Error creating super admin:", creationError);
-                     const typedError = creationError as { code?: string };
-                     if (typedError.code !== 'auth/email-already-in-use') {
-                        // If it's not 'email-already-in-use', it's an unexpected error
-                        throw creationError;
-                     }
-                      console.log("Super admin already exists in Auth, ensuring Firestore doc is present.");
-                      // The user exists in Auth, but maybe not in Firestore. Let's ensure the Firestore doc.
-                      // This part is tricky without an admin SDK. We'll rely on the user to exist for now.
-                 }
-             }
+                }
+            }
         }
+    } catch (e) {
+        console.error("Error checking for super admin:", e);
     }
 }
 
