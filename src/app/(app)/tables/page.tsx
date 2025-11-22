@@ -31,9 +31,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { addDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { collection } from 'firebase/firestore';
+import { doc, addDoc, collection } from 'firebase/firestore';
+import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 const statusConfig: { [key in TableStatus]: { color: string; icon: React.ElementType } } = {
   vacant: { color: 'border-green-500 bg-green-500/10', icon: Circle },
@@ -93,7 +95,7 @@ export default function TablesPage() {
     }
   }
 
-  const handleAddTable = () => {
+  const handleAddTable = async () => {
     if (!newTableName || !newTableCapacity) {
         toast({ variant: "destructive", title: "Missing Information", description: "Please provide a name and capacity." });
         return;
@@ -103,8 +105,22 @@ export default function TablesPage() {
         capacity: parseInt(newTableCapacity, 10),
         status: 'vacant',
     };
-    addDocumentNonBlocking(collection(firestore, 'tables'), newTableData);
-    toast({ title: "Table Added", description: `${newTableName} has been added.` });
+    
+    const tablesCollection = collection(firestore, 'tables');
+    try {
+        await addDoc(tablesCollection, newTableData);
+        toast({ title: "Table Added", description: `${newTableName} has been added.` });
+    } catch (error) {
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: tablesCollection.path,
+                operation: 'create',
+                requestResourceData: newTableData,
+            })
+        );
+    }
+
     setIsAddTableOpen(false);
     setNewTableName('');
     setNewTableCapacity('4');
@@ -253,3 +269,5 @@ export default function TablesPage() {
     </div>
   );
 }
+
+    
