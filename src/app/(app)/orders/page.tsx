@@ -872,7 +872,7 @@ export default function OrdersPage() {
           <CardHeader>
             <CardTitle className='hidden sm:block'>Point of Sale</CardTitle>
              <Tabs
-              defaultValue={activeCategory}
+              value={activeCategory}
               onValueChange={setActiveCategory}
               className="w-full"
             >
@@ -1027,12 +1027,12 @@ export default function OrdersPage() {
                                     <div className="flex items-start">
                                         <div className='flex-1 text-left'>
                                             <button onClick={() => openNoteEditor(item)} disabled={item.isMealChild}>
-                                                <p className={cn("font-semibold text-sm", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
+                                                <p className={cn("font-semibold text-xs", item.isMealChild && "pl-4 text-muted-foreground")}>{item.name}</p>
                                             </button>
                                             {!item.isMealChild && (
                                             <div className="flex items-center gap-2">
-                                                <p className="text-sm text-muted-foreground flex items-center">
-                                                    <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                                <p className="text-xs text-muted-foreground flex items-center">
+                                                    <IndianRupee className="h-3 w-3 mr-1" />
                                                     {item.price.toFixed(2)}
                                                 </p>
                                                 {isBogoEligible && item.quantity >= 2 && (
@@ -1045,7 +1045,7 @@ export default function OrdersPage() {
                                             )}
                                             {item.notes && <p className='text-xs text-amber-700 dark:text-amber-500 flex items-center gap-1'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
                                         </div>
-                                        <div className={cn("flex items-center gap-1 sm:gap-2", item.isMealChild && "opacity-0 pointer-events-none")}>
+                                        <div className={cn("flex items-center gap-1", item.isMealChild && "opacity-0 pointer-events-none")}>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -1054,7 +1054,7 @@ export default function OrdersPage() {
                                             >
                                                 <MinusCircle className="h-4 w-4" />
                                             </Button>
-                                            <span className='text-sm'>{item.quantity}</span>
+                                            <span className='text-xs w-4 text-center'>{item.quantity}</span>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -1064,14 +1064,14 @@ export default function OrdersPage() {
                                                 <PlusCircle className="h-4 w-4" />
                                             </Button>
                                         </div>
-                                        <p className={cn("w-20 text-right font-semibold flex items-center justify-end text-sm", item.isMealChild && "text-muted-foreground")}>
-                                        <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                        <p className={cn("w-16 text-right font-semibold flex items-center justify-end text-xs", item.isMealChild && "text-muted-foreground")}>
+                                        <IndianRupee className="h-3 w-3 mr-1" />
                                         {item.totalPrice.toFixed(2)}
                                         </p>
                                         <Button
                                         variant="ghost"
                                         size="icon"
-                                        className={cn("h-6 w-6 ml-1 sm:ml-2 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
+                                        className={cn("h-6 w-6 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")}
                                         onClick={() => removeFromCart(item.id)}
                                         >
                                         <X className="h-4 w-4" />
@@ -1609,3 +1609,4 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
 
     
+
