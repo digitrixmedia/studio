@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -17,12 +18,8 @@ import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from "l
 
 import { ManageOutletDialog } from "@/components/franchise/ManageOutletDialog";
 
-import { initializeFirebase } from "@/firebase";
-const { firestore: db } = initializeFirebase();
-
-import { collection, query, where, getDocs } from "firebase/firestore";
-
 import type { FranchiseOutlet, SubscriptionStatus } from "@/lib/types";
+
 
 const salesChartConfig = {
   total: { label: "Total Sales", color: "hsl(var(--primary))" },
@@ -34,47 +31,14 @@ const trendChartConfig = {
 };
 
 export default function FranchiseDashboardPage() {
-  const { currentUser, pastOrders, selectOutlet } = useAppContext();
-
-  const [subscriptions, setSubscriptions] = useState([]);
-
-  useEffect(() => {
-    if (!currentUser?.id) return;
-
-    async function loadSubscriptions() {
-      const q = query(
-        collection(db, "subscriptions"),
-        where("franchiseId", "==", currentUser.id)
-      );
-
-      const snap = await getDocs(q);
-      const subs = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setSubscriptions(subs);
-    }
-
-    loadSubscriptions();
-  }, [currentUser]);
-
-  const outlets: FranchiseOutlet[] = useMemo(
-    () =>
-      subscriptions.map((sub: any) => ({
-        id: sub.outletId,
-        name: sub.outletName,
-        status: sub.status || "active",
-        managerName: sub.managerName || "Manager",
-        todaySales: 0,
-        totalSales: 0,
-        ordersToday: 0,
-      })),
-    [subscriptions]
-  );
+  const { pastOrders, selectOutlet, outlets } = useAppContext();
 
   const summary = useMemo(() => {
     const totalSales = outlets.reduce((sum, o) => sum + (o.totalSales || 0), 0);
     const todaySales = outlets.reduce((sum, o) => sum + (o.todaySales || 0), 0);
     const totalOrders = outlets.reduce((sum, o) => sum + (o.ordersToday || 0), 0);
 
-    const sorted = [...outlets].sort((a, b) => b.todaySales - a.todaySales);
+    const sorted = [...outlets].sort((a, b) => (b.todaySales || 0) - (a.todaySales || 0));
 
     return {
       totalSales,
@@ -92,17 +56,18 @@ export default function FranchiseDashboardPage() {
     () =>
       outlets.map((o) => ({
         name: o.name,
-        total: o.totalSales,
-        today: o.todaySales,
+        total: o.totalSales || 0,
+        today: o.todaySales || 0,
       })),
     [outlets]
   );
 
   const salesTrend = useMemo(() => {
-    const trend = pastOrders.reduce((acc, order) => {
-      if (!order.createdAt?.toDate) return acc;
+    const trend = (pastOrders || []).reduce((acc, order) => {
+      if (!order.createdAt) return acc;
+      const orderDate = (order.createdAt as any).toDate ? (order.createdAt as any).toDate() : new Date(order.createdAt);
 
-      const day = order.createdAt.toDate().toISOString().split("T")[0];
+      const day = orderDate.toISOString().split("T")[0];
       acc[day] = (acc[day] || 0) + order.total;
 
       return acc;
@@ -271,9 +236,9 @@ export default function FranchiseDashboardPage() {
                         {outlet.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{outlet.todaySales}</TableCell>
-                    <TableCell>{outlet.totalSales}</TableCell>
-                    <TableCell>{outlet.ordersToday}</TableCell>
+                    <TableCell>{outlet.todaySales || 0}</TableCell>
+                    <TableCell>{outlet.totalSales || 0}</TableCell>
+                    <TableCell>{outlet.ordersToday || 0}</TableCell>
                     <TableCell>{outlet.managerName}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="outline" size="sm" className="mr-2"
