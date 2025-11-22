@@ -848,14 +848,6 @@ export default function OrdersPage() {
     return placeholder?.imageUrl || "https://picsum.photos/seed/placeholder/200/200";
   }
 
-  useEffect(() => {
-    if (activeOrder && activeOrder.items.length === 0) {
-      setManualTaxRate(null);
-      setPointsToRedeem(0);
-      updateOrder(activeOrder.id, { redeemedPoints: 0 });
-    }
-  }, [activeOrder, updateOrder]);
-
   if (!activeOrder) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -973,7 +965,7 @@ export default function OrdersPage() {
               </ScrollArea>
             </CardHeader>
                 <div className='flex flex-col h-full'>
-                     <div className="px-4 pb-4 border-t">
+                     <div className="px-6 pb-6 border-t">
                         <Accordion type="single" collapsible defaultValue="order-details" className="w-full">
                             <AccordionItem value="order-details">
                                 <AccordionTrigger className="text-sm font-semibold">Order Details</AccordionTrigger>
@@ -1616,5 +1608,6 @@ function MealUpsellDialog({ parentItem, onClose, onAddMeal }: MealUpsellDialogPr
 
 
     
+
 
 
