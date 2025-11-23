@@ -43,6 +43,7 @@ import {
   DocumentData,
   Query,
   Timestamp,
+  collectionGroup,
 } from 'firebase/firestore';
 
 interface AppContextType {
@@ -109,18 +110,20 @@ async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestor
     }
 
     try {
-        // This is a lightweight way to check if a user exists without trying to log in.
-        // It will fail if the user doesn't exist, which is what we want.
         await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-        // If sign-in succeeds, immediately sign out. We don't want to keep this session.
         await signOut(auth);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-             // User doesn't exist, so create them.
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+                const superAdminUserDoc = {
+                    id: userCredential.user.uid,
+                    name: 'Super Admin',
+                    email: superAdminEmail,
+                    role: 'super-admin',
+                };
+                await setDoc(doc(firestore, "users", userCredential.user.uid), superAdminUserDoc);
                 console.log('Super Admin user created successfully.');
-                 // And sign them out.
                 if (auth.currentUser?.uid === userCredential.user.uid) {
                     await signOut(auth);
                 }
@@ -128,7 +131,6 @@ async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestor
                  console.error('Failed to create super-admin:', creationError);
             }
         } else if (error.code !== 'auth/wrong-password' && error.code !== 'auth/too-many-requests') {
-           // Log other unexpected auth errors during the check
            console.error('Error checking for super-admin:', error);
         }
     }
@@ -215,11 +217,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const { data: usersData, setData: setUsers } = useCollection<User>(
     useMemoFirebase(() => {
-      // Only fetch all users if the current user is a super-admin
       if (firestore && currentUser?.role === 'super-admin') {
         return collection(firestore, 'users');
       }
-      // For all other users, or when not logged in, do not attempt to fetch the collection.
       return null;
     }, [firestore, currentUser])
   );
@@ -308,10 +308,24 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(
     useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet || !currentUser) return null;
-      return query(collection(firestore, `outlets/${selectedOutlet.id}/orders`), orderBy('createdAt', 'desc'), limit(100));
+        if (!firestore || !currentUser) return null;
+        
+        if (currentUser.role === 'super-admin') {
+            return collectionGroup(firestore, 'orders');
+        }
+
+        if (selectedOutlet) {
+            return query(
+                collection(firestore, `outlets/${selectedOutlet.id}/orders`),
+                orderBy('createdAt', 'desc'),
+                limit(100)
+            );
+        }
+
+        return null;
     }, [firestore, selectedOutlet, currentUser])
   );
+
 
   const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
   const menuCategories = useMemo(() => menuCategoriesData || [], [menuCategoriesData]);

@@ -54,7 +54,7 @@ service cloud.firestore {
      */
     function belongsToOutlet(outletId) {
         let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        return userDoc.data.outletId == outletId;
+        return isSignedIn() && userDoc != null && userDoc.data.outletId == outletId;
     }
 
 
@@ -83,10 +83,11 @@ service cloud.firestore {
      *  - Any authenticated user belonging to an outlet can read/write data within that outlet's subcollections.
      **********/
     match /outlets/{outletId} {
-      // Super admins have full access. Franchise Admins can read their own outlet doc.
-      // Staff users (waiter, cashier) can also read their OWN outlet doc.
-      allow read: if isSuperAdmin() || (isSignedIn() && belongsToOutlet(outletId));
-      allow write, create, delete: if isSuperAdmin();
+      // Super admins have full access. Franchise Admins & their staff can read their own outlet doc.
+      allow read: if isSuperAdmin() || belongsToOutlet(outletId);
+      
+      // Only Super Admins can create or delete outlets.
+      allow create, delete: if isSuperAdmin();
 
       // Franchise owner can update their own outlet document.
       allow update: if getUserRole() == 'admin' && belongsToOutlet(outletId);
@@ -95,7 +96,7 @@ service cloud.firestore {
       // Rule for outlet settings subcollection
       match /settings/{settingId} {
         // Allow read for any user belonging to the outlet.
-        allow read: if isSignedIn() && belongsToOutlet(outletId);
+        allow read: if belongsToOutlet(outletId);
         // Only allow write for the super-admin or the admin of that specific outlet.
         allow write: if isSuperAdmin() || (getUserRole() == 'admin' && belongsToOutlet(outletId));
       }
@@ -104,7 +105,7 @@ service cloud.firestore {
       match /{subcollection}/{docId=**} {
          // Any user (cashier, waiter, manager) who belongs to the outlet can read/write data within it.
          // This rule excludes the 'settings' subcollection, which has its own more specific rule above.
-         allow read, write: if isSignedIn() && belongsToOutlet(outletId) && subcollection != 'settings';
+         allow read, write: if belongsToOutlet(outletId) && subcollection != 'settings';
       }
     }
   }
