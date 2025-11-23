@@ -1,3 +1,4 @@
+
 'use client';
 
 import { KeyRound, Mail } from 'lucide-react';
@@ -15,8 +16,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirebase } from '@/firebase/client';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { initializeFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {

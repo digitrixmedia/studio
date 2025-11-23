@@ -1,50 +1,12 @@
 'use client';
 
-import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeFirebaseClient } from './client';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// ---------------------------------------------
-// FIX 1 — Prevent server-side initialization
-// ---------------------------------------------
+// IMPORTANT: This function should be the SINGLE SOURCE OF TRUTH for getting Firebase services.
 export function initializeFirebase() {
-  // If running on server (SSR/RSC), never create a new app
-  if (typeof window === "undefined") {
-    if (!getApps().length) {
-      // create a dummy app using config — Hosting env won't be here on server
-      const firebaseApp = initializeApp(firebaseConfig);
-      return getSdks(firebaseApp);
-    }
-    return getSdks(getApp());
-  }
-
-  // ---------------------------------------------
-  // CLIENT-SIDE INITIALIZATION (REAL APP)
-  // ---------------------------------------------
-  if (!getApps().length) {
-    let firebaseApp;
-    try {
-      // Try Firebase Hosting automatic initialization
-      firebaseApp = initializeApp();
-    } catch (e) {
-      if (process.env.NODE_ENV === "production") {
-        console.warn(
-          'Automatic initialization failed. Falling back to firebase config object.',
-          e
-        );
-      }
-      firebaseApp = initializeApp(firebaseConfig);
-    }
-
-    return getSdks(firebaseApp);
-  }
-
-  // return existing app if already initialized
-  return getSdks(getApp());
-}
-
-export function getSdks(firebaseApp: FirebaseApp) {
+  const firebaseApp = initializeFirebaseClient();
   return {
     firebaseApp,
     auth: getAuth(firebaseApp),
