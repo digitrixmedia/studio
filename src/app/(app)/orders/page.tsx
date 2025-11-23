@@ -140,7 +140,8 @@ export default function OrdersPage() {
     const uniqueCartId = `${itemToAdd.id}-${variation?.id || 'base'}-${notes || ''}-${Date.now()}`;
 
     if (variation) {
-      basePrice += variation.priceModifier;
+      // priceModifier is the full price of the variation
+      basePrice = variation.priceModifier;
       finalName += ` (${variation.name})`;
     }
 

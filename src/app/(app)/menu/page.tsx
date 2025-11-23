@@ -166,7 +166,6 @@ export default function MenuPage() {
     }
     variation.ingredients = newIngredients;
     newVariations[vIndex] = variation;
-    setVariations(newVariations);
   }
 
   const addIngredientToVariation = (vIndex: number) => {
@@ -225,7 +224,8 @@ export default function MenuPage() {
       mealDealConfig = formData.mealDeal;
     }
     
-    const finalPrice = hasCustomization ? (finalVariations[0]?.priceModifier || 0) : Number(basePrice);
+    // If there are customizations, the base price is 0. The price is determined by the variation.
+    const finalPrice = hasCustomization ? 0 : Number(basePrice);
 
     const collectionRef = collection(firestore, `outlets/${selectedOutlet.id}/menu_items`);
 
@@ -436,7 +436,7 @@ export default function MenuPage() {
                                         <Input placeholder="e.g., Large" value={variation.name || ''} onChange={e => handleVariationChange(vIndex, 'name', e.target.value)} />
                                       </div>
                                       <div className="flex-1 space-y-2">
-                                        <Label>Price Modifier (₹)</Label>
+                                        <Label>Price (₹)</Label>
                                         <Input type="number" placeholder="e.g., 20" value={variation.priceModifier || ''} onChange={e => handleVariationChange(vIndex, 'priceModifier', e.target.value)} />
                                       </div>
                                       <div>
@@ -567,7 +567,11 @@ export default function MenuPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {menuItems.map(item => (
+              {menuItems.map(item => {
+                const displayPrice = item.variations && item.variations.length > 0 
+                    ? item.variations[0].priceModifier 
+                    : item.price;
+                return (
                 <TableRow key={item.id}>
                   <TableCell className="font-medium flex items-center gap-2">
                       {item.name}
@@ -582,7 +586,7 @@ export default function MenuPage() {
                   <TableCell>
                     <div className="flex items-center">
                       <IndianRupee className="h-4 w-4 mr-1" />
-                      {item.price.toFixed(2)}
+                      {displayPrice.toFixed(2)}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -615,7 +619,7 @@ export default function MenuPage() {
                     </AlertDialog>
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         </CardContent>
@@ -679,7 +683,7 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
                 <RadioGroupItem value={v.id} id={v.id} />
                 <Label htmlFor={v.id} className="flex justify-between w-full">
                   <span>{v.name}</span>
-                  <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier.toFixed(2)})</span>
+                  <span className='text-muted-foreground'>(<IndianRupee className="h-3.5 w-3.5 inline-block" />{v.priceModifier.toFixed(2)})</span>
                 </Label>
               </div>
             ))}
@@ -701,5 +705,3 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
     </form>
   );
 }
-
-    
