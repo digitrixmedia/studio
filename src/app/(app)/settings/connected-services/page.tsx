@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -60,7 +61,7 @@ const initialAggregators: Aggregator[] = [
 ];
 
 export default function ConnectedServicesSettingsPage() {
-    const { settings, setSetting, saveSettings } = useSettings();
+    const { settings, setSetting, saveSettings, isSaving } = useSettings();
     const { toast } = useToast();
     const [aggregators, setAggregators] = useState<Aggregator[]>(initialAggregators);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -183,7 +184,7 @@ export default function ConnectedServicesSettingsPage() {
                             )}
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Aggregator Settings</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Aggregator Settings'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -226,7 +227,7 @@ export default function ConnectedServicesSettingsPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -267,7 +268,7 @@ export default function ConnectedServicesSettingsPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -319,7 +320,7 @@ export default function ConnectedServicesSettingsPage() {
                             </RadioGroup>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -350,7 +351,7 @@ export default function ConnectedServicesSettingsPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                           <Button onClick={handleSaveChanges}>Save Changes</Button>
+                           <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -393,7 +394,7 @@ export default function ConnectedServicesSettingsPage() {
                             </RadioGroup>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -459,7 +460,7 @@ export default function ConnectedServicesSettingsPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -483,7 +484,7 @@ export default function ConnectedServicesSettingsPage() {
                             </div>
                         </CardContent>
                          <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -522,7 +523,7 @@ export default function ConnectedServicesSettingsPage() {
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveChanges}>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                         </CardFooter>
                     </Card>
                 )}

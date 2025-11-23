@@ -42,7 +42,7 @@ export default function BillingSettingsPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button onClick={saveSettings} disabled={isSaving}>
+                                    <Button onClick={() => saveSettings('Billing')} disabled={isSaving}>
                                         {isSaving ? 'Saving...' : 'Save Tax Settings'}
                                     </Button>
                                 </CardFooter>
