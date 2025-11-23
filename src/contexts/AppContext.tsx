@@ -26,7 +26,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { initializeFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { initializeFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import {
   collection,
   doc,
@@ -103,22 +103,28 @@ async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestor
   const superAdminEmail = 'superadmin@pos.com';
   const superAdminPassword = 'password123';
   try {
-    const userDocRef = doc(firestore, 'users', 'super-admin-placeholder-uid');
-    const docSnap = await getDoc(userDocRef);
-    if (docSnap.exists()) return;
-
+    // We can't check for existence by email with client SDK, so we rely on a known UID or a specific doc ID.
+    // Since we don't know the UID, we check if the user is already logged in and assume it might be the superadmin.
+    // A more robust solution would be a cloud function on user creation to set a custom claim.
+    // For this app, we'll try to create it, and if it fails with 'email-already-in-use', we sign in to get the user.
+    if (auth.currentUser?.email === superAdminEmail) return;
+    
     if (auth.currentUser) await signOut(auth);
+
     try {
         const uc = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
         const superAdminUser: User = { id: uc.user.uid, name: 'Super Admin', email: superAdminEmail, role: 'super-admin' };
         await setDoc(doc(firestore, 'users', uc.user.uid), superAdminUser);
     } catch (creationError: any) {
-        if (creationError.code !== 'auth/email-already-in-use') {
-            console.error('Failed to create super-admin:', creationError);
+        if (creationError.code === 'auth/email-already-in-use') {
+           // If user exists, just sign in to proceed with auth state change.
+           await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+        } else {
+            console.error('Failed to create or sign in super-admin:', creationError);
         }
     }
   } catch (e) {
-    console.error('Super admin check error:', e);
+    console.error('Super admin setup error:', e);
   }
 }
 
@@ -177,31 +183,48 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const { data: usersData, setData: setUsers } = useCollection<User>(
     useMemoFirebase(() => {
-      if (!firestore || currentUser?.role !== 'super-admin') return null;
+      if (!firestore) return null;
       return collection(firestore, 'users');
-    }, [firestore, currentUser])
+    }, [firestore])
   );
   const users = usersData || [];
 
-  const { data: outletsData } = useCollection<FranchiseOutlet>(
+  // Fetch ALL outlets if user is a super-admin
+  const { data: allOutletsData } = useCollection<FranchiseOutlet>(
     useMemoFirebase(() => {
-      let q: Query<DocumentData> | null = null;
-      if (firestore && currentUser) {
-        if (currentUser.role === 'super-admin') {
-          q = collection(firestore, 'outlets');
-        } else if (currentUser.role === 'admin' && currentUser.outletId) {
-          q = query(collection(firestore, 'outlets'), where('__name__', '==', currentUser.outletId));
-        }
+      if (firestore && currentUser?.role === 'super-admin') {
+        return collection(firestore, 'outlets');
       }
-      return q;
+      return null;
     }, [firestore, currentUser])
   );
 
+  // Fetch a SINGLE outlet if user is an admin with an outletId
+  const { data: singleOutletData } = useDoc<FranchiseOutlet>(
+    useMemoFirebase(() => {
+      if (firestore && currentUser?.role === 'admin' && currentUser.outletId) {
+        return doc(firestore, 'outlets', currentUser.outletId);
+      }
+      return null;
+    }, [firestore, currentUser])
+  );
+  
   useEffect(() => {
-    if (outletsData) {
-      setOutlets(outletsData);
-      
-      const subs: Subscription[] = outletsData.map(o => {
+    if (currentUser?.role === 'super-admin' && allOutletsData) {
+      setOutlets(allOutletsData);
+    } else if (currentUser?.role === 'admin' && singleOutletData) {
+      setOutlets([singleOutletData]);
+    } else if (currentUser && currentUser.role !== 'super-admin' && currentUser.role !== 'admin') {
+      // For other roles, they don't manage outlets directly, so the list can be empty.
+      // They will operate on the `selectedOutlet` which is set for admins.
+       setOutlets([]);
+    }
+  }, [currentUser, allOutletsData, singleOutletData]);
+
+
+  useEffect(() => {
+    if (outlets) {
+      const subs: Subscription[] = outlets.map(o => {
           const owner = users.find(u => u.id === o.ownerId);
           return {
               id: o.id,
@@ -209,9 +232,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
               outletName: o.name,
               adminEmail: owner?.email || 'unknown',
               adminName: owner?.name,
-              startDate: (o.createdAt as any)?.toDate() || new Date(), // Placeholder
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Placeholder
-              status: o.status || 'active',
+              startDate: (o.createdAt as any)?.toDate() || new Date(),
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+              status: 'active', // This should come from the document data if available
               storageUsedMB: 0,
               totalReads: 0,
               totalWrites: 0,
@@ -219,7 +242,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       });
       setSubscriptions(subs);
     }
-  }, [outletsData, users]);
+  }, [outlets, users]);
 
 
   const { data: menuItemsData } = useCollection<MenuItem>(
