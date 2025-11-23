@@ -66,11 +66,16 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 
-  const { data: staffData, setData: setStaffData } = useCollection<User>(useMemoFirebase(() =>
-    firestore.collection('users').where('outletId', '==', outlet.id), [firestore, outlet.id]
-  ));
+  const { data: staffData } = useCollection<User>(useMemoFirebase(() => {
+    if (!firestore) return null;
+    return firestore.collection('users').where('outletId', '==', outlet.id)
+  }, [firestore, outlet.id]));
 
   const outletStaff = staffData || [];
+
+  const handleInputChange = (field: keyof typeof newStaff, value: string) => {
+    setNewStaff(prev => ({...prev, [field]: value}));
+  };
 
   const handleCreateOrUpdateAccount = async () => {
     if (!newStaff.name || !newStaff.email || !newStaff.role) {
