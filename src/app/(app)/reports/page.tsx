@@ -561,7 +561,7 @@ export default function ReportsPage() {
                             <TableRow className="font-bold bg-muted hover:bg-muted">
                                 <TableCell>Total</TableCell>
                                 <TableCell colSpan={4}></TableCell>
-                                <TableCell className='text-right'>{filteredSalesReportOrders.reduce((sum, o) => sum + o.discount, 0).toFixed(2)}</TableCell>
+                                <TableCell className='text-right'>{(filteredSalesReportOrders.reduce((sum, o) => sum + (o.discount || 0), 0)).toFixed(2)}</TableCell>
                                 <TableCell className='text-right'>{filteredSalesReportOrders.reduce((sum, o) => sum + o.total, 0).toFixed(2)}</TableCell>
                             </TableRow>
                             {filteredSalesReportOrders.map(order => (
@@ -571,7 +571,7 @@ export default function ReportsPage() {
                                     <TableCell className="capitalize">{order.paymentMethod}</TableCell>
                                     <TableCell className="capitalize">{order.type.replace(/-/g, ' ')}</TableCell>
                                     <TableCell>{getUserName(order.createdBy)}</TableCell>
-                                    <TableCell className="text-right">{order.discount.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">{(order.discount || 0).toFixed(2)}</TableCell>
                                     <TableCell className="text-right font-medium">{order.total.toFixed(2)}</TableCell>
                                 </TableRow>
                             ))}
