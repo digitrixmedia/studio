@@ -1,3 +1,4 @@
+
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
 
 export interface User {
@@ -6,6 +7,7 @@ export interface User {
   email: string;
   role: Role;
   subscriptionId?: string;
+  outletId?: string;
   avatar?: string;
 }
 
