@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useAppContext } from './AppContext';
 
 export interface AppSettings {
   // Display settings
@@ -181,6 +182,7 @@ interface SettingsContextType {
   setSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
   saveSettings: (pageName?: string) => Promise<void>;
   isSaving: boolean;
+  loadSettingsForOutlet: (outletId: string) => void;
 }
 
 const defaultSettings: AppSettings = {
@@ -345,27 +347,28 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [isSaving, setIsSaving] = useState(false);
-  const { user } = useUser();
+  const [currentOutletId, setCurrentOutletId] = useState<string | null>(null);
+
   const firestore = useFirestore();
   const { toast } = useToast();
+  
+  const settingsDocId = 'app_settings'; // Use a consistent ID
 
-  const settingsDocId = 'app_settings'; // Use a consistent ID for the settings document within the subcollection.
+  const loadSettingsForOutlet = useCallback(async (outletId: string) => {
+    if (!firestore || !outletId) return;
+    setCurrentOutletId(outletId);
+    
+    const settingsRef = doc(firestore, `outlets/${outletId}/settings`, settingsDocId);
+    const docSnap = await getDoc(settingsRef);
 
-  useEffect(() => {
-    const loadSettings = async () => {
-      if (!firestore || !user) return;
-      
-      const settingsRef = doc(firestore, `users/${user.uid}/settings`, settingsDocId);
-      const docSnap = await getDoc(settingsRef);
-
-      if (docSnap.exists()) {
-        setSettings(prev => ({ ...prev, ...docSnap.data() }));
-      } else {
-        await setDoc(settingsRef, defaultSettings);
-      }
-    };
-    loadSettings();
-  }, [firestore, user, settingsDocId]);
+    if (docSnap.exists()) {
+      setSettings(prev => ({ ...defaultSettings, ...docSnap.data() }));
+    } else {
+      // If no settings exist for the outlet, create them with defaults
+      await setDoc(settingsRef, defaultSettings);
+      setSettings(defaultSettings);
+    }
+  }, [firestore]);
   
 
   const setSetting = useCallback(<K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -373,16 +376,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveSettings = useCallback(async (pageName?: string) => {
-    if (!firestore || !user) {
+    if (!firestore || !currentOutletId) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Cannot save settings. User not logged in.",
+            description: "Cannot save settings. No outlet selected.",
         });
         return;
     }
     setIsSaving(true);
-    const settingsRef = doc(firestore, `users/${user.uid}/settings`, settingsDocId);
+    const settingsRef = doc(firestore, `outlets/${currentOutletId}/settings`, settingsDocId);
     try {
         await setDoc(settingsRef, settings, { merge: true });
         toast({
@@ -399,10 +402,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     } finally {
         setIsSaving(false);
     }
-  }, [settings, firestore, user, settingsDocId, toast]);
+  }, [settings, firestore, currentOutletId, toast]);
 
   return (
-    <SettingsContext.Provider value={{ settings, setSetting, saveSettings, isSaving }}>
+    <SettingsContext.Provider value={{ settings, setSetting, saveSettings, isSaving, loadSettingsForOutlet }}>
       {children}
     </SettingsContext.Provider>
   );

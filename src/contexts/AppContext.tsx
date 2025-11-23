@@ -1,3 +1,4 @@
+
 // src/contexts/AppContext.tsx
 'use client';
 
@@ -146,7 +147,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const { settings } = useSettings();
+  const { settings, loadSettingsForOutlet } = useSettings();
 
   const { auth, firestore } = initializeFirebase();
 
@@ -338,9 +339,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = localStorage.getItem('selectedOutlet');
     if (stored) {
-      try { setSelectedOutlet(JSON.parse(stored)); } catch { localStorage.removeItem('selectedOutlet'); }
+      try { 
+        const outlet = JSON.parse(stored);
+        setSelectedOutlet(outlet);
+        loadSettingsForOutlet(outlet.id);
+      } catch { localStorage.removeItem('selectedOutlet'); }
     }
-  }, []);
+  }, [loadSettingsForOutlet]);
+
 
   useEffect(() => {
     if (isInitializing) return;
@@ -401,6 +407,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (currentUser?.role === 'admin') {
       setSelectedOutlet(outlet);
       localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
+      loadSettingsForOutlet(outlet.id);
       if (settings.defaultScreen === 'Dashboard') router.push('/dashboard');
       else if (settings.defaultScreen === 'Billing') router.push('/orders');
       else router.push('/tables');

@@ -253,12 +253,6 @@
         }
       },
       {
-        "path": "/settings/{userId}",
-        "definition": {
-          "description": "Stores user-specific application settings."
-        }
-      },
-      {
         "path": "/outlets/{outletId}",
         "definition": {
           "entityName": "Outlet",
@@ -266,6 +260,12 @@
             "$ref": "#/backend/entities/Outlet"
           },
           "description": "Top-level collection for all franchise outlets. Each document represents one outlet."
+        }
+      },
+      {
+        "path": "/outlets/{outletId}/settings/{settingsId}",
+        "definition": {
+          "description": "Stores user-specific application settings for a given outlet."
         }
       },
       {

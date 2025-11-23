@@ -3,9 +3,10 @@
  * @fileoverview Firestore Security Rules for DineMitra POS.
  *
  * Core Philosophy:
- * This ruleset enforces a multi-tenant security model with path-based ownership for user data
- * and role-based access control for administrative functions. Authorization independence is a priority,
- * achieved by denormalizing key authorization data directly onto documents.
+ * This ruleset enforces a multi-tenant security model. Each 'admin' user owns one or more 'outlets'.
+ * Data for each outlet (menu, tables, orders) is stored in subcollections under that outlet's document.
+ * Access is granted based on a user's `outletId` claim, which must match the `outletId` in the resource path.
+ * This ensures strict data isolation between different franchise outlets.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -46,65 +47,51 @@ service cloud.firestore {
     function isSuperAdmin() {
       return getUserRole() == 'super-admin';
     }
-
-    /**
-     * @description Checks if the authenticated user has the 'admin' role.
-     */
-    function isAdmin() {
-      return getUserRole() == 'admin';
-    }
     
     /**
-     * @description Checks if the user is a super-admin or a franchise admin.
+     * @description Checks if the user belongs to the target outlet.
+     *              The user document must contain an 'outletId' that matches the outletId from the URL.
      */
-    function isAnAdmin() {
-      let role = getUserRole();
-      return role == 'super-admin' || role == 'admin';
+    function belongsToOutlet(outletId) {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId == outletId;
     }
+
 
     /**********
      *  USERS
      *
      *  - Super Admins can manage any user document.
      *  - Users can read and update their own document.
-     *  - This allows a super-admin to create new franchise admins.
+     *  - Franchise Admins can create/manage users for their own outlet.
      **********/
     match /users/{userId} {
-      allow read: if isOwner(userId) || isSuperAdmin();
-      allow list: if isSuperAdmin();
-      allow create, update, delete: if isSuperAdmin();
-      allow update: if isOwner(userId);
-
-      /********** 
-       *  SETTINGS (Subcollection of User)
-       *
-       *  - Users can read and write their own settings document.
-       *  - This is used to persist UI preferences and other user-specific configurations.
-       **********/
-      match /settings/{settingsId} {
-        allow read, write: if isOwner(userId);
-      }
+      allow read, update: if isOwner(userId);
+      allow create, update, delete, list: if isSuperAdmin();
+      // Allow a franchise admin to manage users in their own outlet
+      allow create, list: if getUserRole() == 'admin' && request.resource.data.outletId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId;
+      allow read, update, delete: if getUserRole() == 'admin' && get(/databases/$(database)/documents/users/$(userId)).data.outletId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId;
     }
     
     /********** 
      *  OUTLETS
      *
-     *  - An "Outlet" is conceptually managed by a user with the 'admin' role.
-     *  - This ruleset scopes data (tables, menu_items, etc.) to an outlet ID.
-     *  - All authenticated users belonging to an outlet can read/write data within it.
+     *  - An "Outlet" is the top-level document for a franchise location.
+     *  - Super Admins can manage all outlets.
+     *  - Franchise Admins ('admin' role) can manage their own outlet document.
+     *  - All data for an outlet (menu, orders, tables, settings) is stored in subcollections.
+     *  - Any authenticated user belonging to an outlet can read/write data within that outlet's subcollections.
      **********/
     match /outlets/{outletId} {
-      allow read, write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId == outletId;
-      allow read, write: if isSuperAdmin();
+      // Super admins have full access.
+      allow read, write, create, delete: if isSuperAdmin();
 
-      match /{subcollection}/{docId} {
-        allow read, write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId == outletId;
-        allow read, write: if isSuperAdmin();
+      // Franchise owner can read/write their own outlet document.
+      allow read, update: if getUserRole() == 'admin' && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId == outletId;
 
-        match /{nestedSubcollection}/{nestedDocId} {
-           allow read, write: if isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId == outletId;
-           allow read, write: if isSuperAdmin();
-        }
+      // Rule for all subcollections within an outlet.
+      match /{subcollection}/{docId=**} {
+         // Any user (cashier, waiter, manager) who belongs to the outlet can read/write data within it.
+         allow read, write: if isSignedIn() && belongsToOutlet(outletId);
       }
     }
   }
