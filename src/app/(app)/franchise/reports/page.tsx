@@ -32,18 +32,7 @@ const chartConfig = {
 };
 
 export default function FranchiseReportsPage() {
-    const { menuItems, menuCategories, pastOrders: orders, users } = useAppContext();
-    
-    const outlets: FranchiseOutlet[] = useMemo(() => 
-        users.filter(u => u.role === 'admin')
-        .map(u => ({
-            id: u.subscriptionId || u.id,
-            name: `${u.name}'s Outlet`,
-            status: 'active', // Simplified
-            managerName: u.name,
-            totalSales: orders.filter(o => o.createdBy === u.id).reduce((sum, o) => sum + o.total, 0),
-        })), [users, orders]);
-
+    const { menuItems, menuCategories, pastOrders: orders, outlets } = useAppContext();
 
   const [selectedOutlets, setSelectedOutlets] = useState<string[]>(['all']);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -309,5 +298,7 @@ export default function FranchiseReportsPage() {
     </div>
   );
 }
+
+    
 
     
