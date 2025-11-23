@@ -20,7 +20,7 @@ const navItems = [
 ];
 
 export default function PrintSettingsPage() {
-    const { settings, setSetting, saveSettings } = useSettings();
+    const { settings, setSetting, saveSettings, isSaving } = useSettings();
     
     const handleSaveChanges = () => {
         saveSettings('Print');
@@ -61,7 +61,9 @@ export default function PrintSettingsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Layout</Button>
+                                <Button onClick={handleSaveChanges} disabled={isSaving}>
+                                    {isSaving ? 'Saving...' : 'Save Layout'}
+                                </Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -85,7 +87,7 @@ export default function PrintSettingsPage() {
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -174,7 +176,7 @@ export default function PrintSettingsPage() {
                                 </RadioGroup>
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
@@ -266,7 +268,7 @@ export default function PrintSettingsPage() {
 
                             </CardContent>
                              <CardFooter>
-                                <Button onClick={handleSaveChanges}>Save Changes</Button>
+                                <Button onClick={handleSaveChanges} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Changes'}</Button>
                             </CardFooter>
                         </Card>
                     )}
