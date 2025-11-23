@@ -31,7 +31,7 @@ const trendChartConfig = {
 };
 
 export default function FranchiseDashboardPage() {
-  const { pastOrders, selectOutlet, outlets } = useAppContext();
+  const { pastOrders, selectOutlet, outlets, auth, firestore } = useAppContext();
 
   const summary = useMemo(() => {
     const totalSales = outlets.reduce((sum, o) => sum + (o.totalSales || 0), 0);
@@ -258,11 +258,13 @@ export default function FranchiseDashboardPage() {
         </Card>
       </div>
 
-      {selectedOutlet && (
+      {selectedOutlet && auth && firestore && (
         <ManageOutletDialog
           outlet={selectedOutlet}
           isOpen={!!selectedOutlet}
           onClose={() => setSelectedOutlet(null)}
+          auth={auth}
+          firestore={firestore}
         />
       )}
     </>

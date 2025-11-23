@@ -37,14 +37,16 @@ import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, doc, deleteDoc, query, where } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { createUserWithEmailAndPassword, type Auth } from 'firebase/auth';
+import { collection, doc, deleteDoc, query, where, type Firestore } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 
 interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
   isOpen: boolean;
   onClose: () => void;
+  auth: Auth;
+  firestore: Firestore;
 }
 
 const staffRoles: Exclude<Role, 'admin' | 'super-admin'>[] = ['manager', 'cashier', 'waiter', 'kitchen'];
@@ -56,9 +58,8 @@ const initialNewStaffState = {
   password: '',
 };
 
-export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
+export function ManageOutletDialog({ outlet, isOpen, onClose, auth, firestore }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  const { auth, firestore, users, setUsers } = useAppContext();
   
   const [outletName, setOutletName] = useState(outlet.name || '');
   const [managerName, setManagerName] = useState(outlet.managerName || '');
@@ -108,9 +109,11 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
         return;
       }
       try {
-        if (!auth || !firestore) return;
-        // IMPORTANT: In a real app, user creation must be done on a secure backend (Cloud Function)
-        // to prevent unauthorized user creation. This is a simplified client-side example.
+        if (!auth || !firestore) {
+             toast({ variant: "destructive", title: "Firebase Error", description: "Firebase services are not available." });
+             return;
+        }
+        
         const userCredential = await createUserWithEmailAndPassword(auth, newStaff.email, newStaff.password);
         const newUserId = userCredential.user.uid;
 
@@ -122,7 +125,6 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             outletId: outlet.id,
         };
 
-        // This is the critical step: saving the user document to Firestore
         setDocumentNonBlocking(doc(firestore, "users", newUserId), newUser, {});
         
         toast({
@@ -138,7 +140,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             description = "The password must be at least 6 characters.";
          }
          toast({ variant: "destructive", title: "User Creation Failed", description });
-         return; // Don't close dialog
+         return;
       }
     }
     setNewStaff(initialNewStaffState);
