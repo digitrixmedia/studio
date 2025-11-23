@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/accordion";
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase';
 
 
@@ -177,7 +177,7 @@ export default function SubscriptionsPage() {
         // In a real app, you would use a Cloud Function to delete the Firebase Auth user.
         // Here, we just remove the Firestore document.
         const userRef = doc(firestore, "users", userToDelete.id);
-        setDocumentNonBlocking(userRef, {}, { merge: false }); // This will delete the doc
+        deleteDoc(userRef);
     }
     toast({ title: "Subscription Marked for Deletion", description: `The subscription has been removed.` });
   }
