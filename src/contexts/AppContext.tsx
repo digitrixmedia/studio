@@ -311,7 +311,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (!firestore || !currentUser) return null;
         
         if (currentUser.role === 'super-admin') {
-            return collectionGroup(firestore, 'orders');
+            return query(collectionGroup(firestore, 'orders'), limit(500));
         }
 
         if (selectedOutlet) {

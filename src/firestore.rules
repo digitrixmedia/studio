@@ -5,7 +5,7 @@
  * Core Philosophy:
  * This ruleset enforces a multi-tenant security model. Each 'admin' user owns one or more 'outlets'.
  * Data for each outlet (menu, tables, orders) is stored in subcollections under that outlet's document.
- * Access is granted based on a user's `outletId` claim, which must match the `outletId` in the resource path.
+ * Access is granted based on a user's `outletId` field in their user document, which must match the `outletId` in the resource path.
  * This ensures strict data isolation between different franchise outlets.
  */
 rules_version = '2';
