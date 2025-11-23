@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { SettingsPageLayout } from "@/components/settings/SettingsPageLayout";
@@ -8,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { users } from '@/lib/data';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useSettings } from "@/contexts/SettingsContext";
+import { useAppContext } from "@/contexts/AppContext";
 
 const navItems = [
     { name: 'Display Settings', id: 'display' },
@@ -24,6 +23,7 @@ const navItems = [
 
 export default function DisplaySettingsPage() {
     const { settings, setSetting, saveSettings, isSaving } = useSettings();
+    const { users } = useAppContext();
     
     const handleSaveChanges = () => {
         saveSettings('Display');

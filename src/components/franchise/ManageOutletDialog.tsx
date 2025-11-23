@@ -38,7 +38,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword, type Auth } from 'firebase/auth';
-import { collection, doc, deleteDoc, query, where, type Firestore } from 'firebase/firestore';
+import { collection, doc, deleteDoc, query, where, type Firestore, setDoc } from 'firebase/firestore';
 import { useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 
 interface ManageOutletDialogProps {
@@ -123,7 +123,9 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             outletId: outlet.id,
         };
 
-        await setDoc(doc(firestore, "users", newUserId), newUser);
+        const userDocRef = doc(firestore, "users", newUserId);
+        
+        await setDoc(userDocRef, newUser);
         
         toast({
             title: "Account Created",
@@ -136,6 +138,8 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             description = "This email is already in use by another account.";
          } else if (error.code === 'auth/weak-password') {
             description = "The password must be at least 6 characters.";
+         } else if (error.code === 'auth/invalid-email') {
+            description = "The email address is not valid."
          }
          toast({ variant: "destructive", title: "User Creation Failed", description });
          return;
