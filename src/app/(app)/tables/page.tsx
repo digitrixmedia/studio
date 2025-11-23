@@ -161,7 +161,7 @@ export default function TablesPage() {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {tables.map(table => {
-          const config = statusConfig[table.status];
+          const config = statusConfig[table.status] || { color: 'border-gray-500 bg-gray-500/10', icon: Circle };
           const orderForTable = getOrderByTable(table.id);
           const orderTotal = orderForTable ? orderForTable.items.reduce((sum, item) => sum + item.totalPrice, 0) : null;
           
