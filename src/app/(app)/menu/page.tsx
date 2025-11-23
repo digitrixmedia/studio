@@ -109,6 +109,8 @@ export default function MenuPage() {
       };
       addDocumentNonBlocking(collection(firestore, `outlets/${selectedOutlet.id}/menu_categories`), newCategory);
       setNewCategoryName('');
+      // We don't toast here anymore, optimistic UI updates handle feedback.
+      // The useCollection hook will update the categories list automatically.
     }
   };
   
