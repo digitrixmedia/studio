@@ -251,37 +251,37 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const { data: menuItemsData } = useCollection<MenuItem>(
     useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet) return null;
+      if (!firestore || !selectedOutlet || !currentUser) return null;
       return collection(firestore, `outlets/${selectedOutlet.id}/menu_items`);
-    }, [firestore, selectedOutlet])
+    }, [firestore, selectedOutlet, currentUser])
   );
 
   const { data: menuCategoriesData } = useCollection<MenuCategory>(
     useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet) return null;
+      if (!firestore || !selectedOutlet || !currentUser) return null;
       return collection(firestore, `outlets/${selectedOutlet.id}/menu_categories`);
-    }, [firestore, selectedOutlet])
+    }, [firestore, selectedOutlet, currentUser])
   );
 
   const { data: tablesData, setData: setTables } = useCollection<Table>(
     useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet) return null;
+      if (!firestore || !selectedOutlet || !currentUser) return null;
       return collection(firestore, `outlets/${selectedOutlet.id}/tables`);
-    }, [firestore, selectedOutlet])
+    }, [firestore, selectedOutlet, currentUser])
   );
 
   const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(
     useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet) return null;
+      if (!firestore || !selectedOutlet || !currentUser) return null;
       return collection(firestore, `outlets/${selectedOutlet.id}/ingredients`);
-    }, [firestore, selectedOutlet])
+    }, [firestore, selectedOutlet, currentUser])
   );
 
   const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(
     useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet) return null;
+      if (!firestore || !selectedOutlet || !currentUser) return null;
       return query(collection(firestore, `outlets/${selectedOutlet.id}/orders`), orderBy('createdAt', 'desc'), limit(100));
-    }, [firestore, selectedOutlet])
+    }, [firestore, selectedOutlet, currentUser])
   );
 
   const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
