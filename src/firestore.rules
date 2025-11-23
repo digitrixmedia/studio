@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Firestore Security Rules for DineMitra POS.
  *
@@ -73,6 +74,16 @@ service cloud.firestore {
       allow list: if isSuperAdmin();
       allow create, update, delete: if isSuperAdmin();
       allow update: if isOwner(userId);
+
+      /********** 
+       *  SETTINGS (Subcollection of User)
+       *
+       *  - Users can read and write their own settings document.
+       *  - This is used to persist UI preferences and other user-specific configurations.
+       **********/
+      match /settings/{settingsId} {
+        allow read, write: if isOwner(userId);
+      }
     }
     
     /********** 
@@ -95,16 +106,6 @@ service cloud.firestore {
            allow read, write: if isSuperAdmin();
         }
       }
-    }
-
-    /********** 
-     *  SETTINGS
-     *
-     *  - Users can read and write their own settings document.
-     *  - This is used to persist UI preferences and other user-specific configurations.
-     **********/
-    match /settings/{userId} {
-      allow read, write: if isOwner(userId);
     }
   }
 }

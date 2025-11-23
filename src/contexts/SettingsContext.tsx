@@ -179,7 +179,7 @@ autoSyncTime: string;
 interface SettingsContextType {
   settings: AppSettings;
   setSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
-  saveSettings: () => Promise<void>;
+  saveSettings: (pageName?: string) => Promise<void>;
   isSaving: boolean;
 }
 
@@ -349,19 +349,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const settingsDocId = user?.id || 'global';
+  const settingsDocId = 'app_settings'; // Use a consistent ID for the settings document within the subcollection.
 
   useEffect(() => {
     const loadSettings = async () => {
       if (!firestore || !user) return;
       
-      const settingsRef = doc(firestore, 'settings', settingsDocId);
+      const settingsRef = doc(firestore, `users/${user.uid}/settings`, settingsDocId);
       const docSnap = await getDoc(settingsRef);
 
       if (docSnap.exists()) {
         setSettings(prev => ({ ...prev, ...docSnap.data() }));
       } else {
-        // If no settings exist for the user, save the default ones
         await setDoc(settingsRef, defaultSettings);
       }
     };
@@ -373,7 +372,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings(prev => ({ ...prev, [key]: value }));
   }, []);
 
-  const saveSettings = useCallback(async () => {
+  const saveSettings = useCallback(async (pageName?: string) => {
     if (!firestore || !user) {
         toast({
             variant: "destructive",
@@ -383,12 +382,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         return;
     }
     setIsSaving(true);
-    const settingsRef = doc(firestore, 'settings', settingsDocId);
+    const settingsRef = doc(firestore, `users/${user.uid}/settings`, settingsDocId);
     try {
         await setDoc(settingsRef, settings, { merge: true });
         toast({
             title: "Settings Saved",
-            description: "Your settings have been saved to the database.",
+            description: `${pageName || 'Your'} settings have been saved.`,
         });
     } catch (error) {
         console.error("Error saving settings:", error);
