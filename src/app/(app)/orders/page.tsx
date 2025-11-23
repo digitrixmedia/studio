@@ -827,6 +827,10 @@ export default function OrdersPage() {
     if (searchQuery) {
         return matchesSearch;
     }
+    
+    if (!activeCategory) {
+      return true; // Show all items if no category is selected
+    }
 
     return item.category === activeCategory;
   });
@@ -1619,4 +1623,5 @@ function CustomizationForm({
     </div>
   );
 }
+
 
