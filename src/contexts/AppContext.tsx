@@ -184,6 +184,34 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     });
     return () => unsub();
   }, [auth, firestore, isInitializing]);
+  
+  useEffect(() => {
+    if (!currentUser) return;
+    // For NON-admin users, auto-assign their outlet
+    if (
+      currentUser.role !== 'admin' &&
+      currentUser.role !== 'super-admin' &&
+      currentUser.outletId &&
+      !selectedOutlet
+    ) {
+      const fetchOutlet = async () => {
+        const outletRef = doc(firestore, 'outlets', currentUser.outletId!);
+        const outletSnap = await getDoc(outletRef);
+        if (outletSnap.exists()) {
+          const outletData = outletSnap.data() as Omit<FranchiseOutlet, 'id'>;
+          const outlet = {
+            id: outletSnap.id,
+            ...outletData
+          }
+          setSelectedOutlet(outlet as FranchiseOutlet);
+          localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
+          loadSettingsForOutlet(outlet.id);
+        }
+      }
+      fetchOutlet();
+    }
+  }, [currentUser, selectedOutlet, firestore, loadSettingsForOutlet]);
+
 
   const { data: usersData, setData: setUsers } = useCollection<User>(
     useMemoFirebase(() => {

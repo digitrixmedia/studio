@@ -83,11 +83,14 @@ service cloud.firestore {
      *  - Any authenticated user belonging to an outlet can read/write data within that outlet's subcollections.
      **********/
     match /outlets/{outletId} {
-      // Super admins have full access.
-      allow read, write, create, delete: if isSuperAdmin();
+      // Super admins have full access. Franchise Admins can read their own outlet doc.
+      // Staff users (waiter, cashier) can also read their OWN outlet doc.
+      allow read: if isSuperAdmin() || (isSignedIn() && belongsToOutlet(outletId));
+      allow write, create, delete: if isSuperAdmin();
 
-      // Franchise owner can read/write their own outlet document.
-      allow read, update: if getUserRole() == 'admin' && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId == outletId;
+      // Franchise owner can update their own outlet document.
+      allow update: if getUserRole() == 'admin' && belongsToOutlet(outletId);
+
 
       // Rule for outlet settings subcollection
       match /settings/{settingId} {
