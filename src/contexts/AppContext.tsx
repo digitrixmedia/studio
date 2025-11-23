@@ -39,6 +39,8 @@ import {
   limit,
   getDoc,
   writeBatch,
+  DocumentData,
+  Query,
 } from 'firebase/firestore';
 
 interface AppContextType {
@@ -181,31 +183,43 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   );
   const users = usersData || [];
 
+  const { data: outletsData } = useCollection<FranchiseOutlet>(
+    useMemoFirebase(() => {
+      let q: Query<DocumentData> | null = null;
+      if (firestore && currentUser) {
+        if (currentUser.role === 'super-admin') {
+          q = collection(firestore, 'outlets');
+        } else if (currentUser.role === 'admin' && currentUser.outletId) {
+          q = query(collection(firestore, 'outlets'), where('__name__', '==', currentUser.outletId));
+        }
+      }
+      return q;
+    }, [firestore, currentUser])
+  );
+
   useEffect(() => {
-    if (currentUser?.role === 'super-admin' && users.length > 0) {
-        const adminUsers = users.filter(u => u.role === 'admin');
-        const subs: Subscription[] = adminUsers.map(u => ({
-            id: u.subscriptionId!,
-            franchiseName: u.name,
-            outletName: `${u.name}'s Outlet`,
-            adminEmail: u.email,
-            adminName: u.name,
-            startDate: new Date(), // Placeholder
-            endDate: new Date(), // Placeholder
-            status: 'active',
-            storageUsedMB: 0,
-            totalReads: 0,
-            totalWrites: 0,
-        }));
-        setSubscriptions(subs);
-        setOutlets(subs.map(s => ({
-            id: s.id,
-            name: s.outletName,
-            status: 'active',
-            managerName: s.adminName || 'N/A'
-        })));
+    if (outletsData) {
+      setOutlets(outletsData);
+      
+      const subs: Subscription[] = outletsData.map(o => {
+          const owner = users.find(u => u.id === o.ownerId);
+          return {
+              id: o.id,
+              franchiseName: owner?.name || 'Unknown Franchise',
+              outletName: o.name,
+              adminEmail: owner?.email || 'unknown',
+              adminName: owner?.name,
+              startDate: (o.createdAt as any)?.toDate() || new Date(), // Placeholder
+              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Placeholder
+              status: o.status || 'active',
+              storageUsedMB: 0,
+              totalReads: 0,
+              totalWrites: 0,
+          };
+      });
+      setSubscriptions(subs);
     }
-  }, [users, currentUser]);
+  }, [outletsData, users]);
 
 
   const { data: menuItemsData } = useCollection<MenuItem>(
