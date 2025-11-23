@@ -80,9 +80,7 @@ interface AppContextType {
   startOrderForTable: (tableId: string) => void;
   auth: ReturnType<typeof getAuth>;
   subscriptions: Subscription[];
-  setSubscriptions: React.Dispatch<React.SetStateAction<Subscription[]>>;
   outlets: FranchiseOutlet[];
-  setOutlets: React.Dispatch<React.SetStateAction<FranchiseOutlet[]>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -136,9 +134,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<AppOrder[]>([createNewOrder()]);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(orders[0].id);
   const [heldOrders, setHeldOrders] = useState<AppOrder[]>([]);
-
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [outlets, setOutlets] = useState<FranchiseOutlet[]>([]);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -209,39 +204,35 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     }, [firestore, currentUser])
   );
   
-  useEffect(() => {
-    if (currentUser?.role === 'super-admin' && allOutletsData) {
-      setOutlets(allOutletsData);
-    } else if (currentUser?.role === 'admin' && singleOutletData) {
-      setOutlets([singleOutletData]);
-    } else if (currentUser && currentUser.role !== 'super-admin' && currentUser.role !== 'admin') {
-      // For other roles, they don't manage outlets directly, so the list can be empty.
-      // They will operate on the `selectedOutlet` which is set for admins.
-       setOutlets([]);
+  const outlets = useMemo(() => {
+    if (currentUser?.role === 'super-admin') {
+      return allOutletsData || [];
     }
+    if (currentUser?.role === 'admin' && singleOutletData) {
+      return [singleOutletData];
+    }
+    return [];
   }, [currentUser, allOutletsData, singleOutletData]);
 
 
-  useEffect(() => {
-    if (outlets && users) {
-      const subs: Subscription[] = outlets.map(o => {
-          const owner = users.find(u => u.id === o.ownerId);
-          return {
-              id: o.id,
-              franchiseName: owner?.name || 'Unknown Franchise',
-              outletName: o.name,
-              adminEmail: owner?.email || 'unknown',
-              adminName: owner?.name,
-              startDate: (o.createdAt as any)?.toDate() || new Date(),
-              endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-              status: 'active', // This should come from the document data if available
-              storageUsedMB: 0,
-              totalReads: 0,
-              totalWrites: 0,
-          };
-      });
-      setSubscriptions(subs);
-    }
+  const subscriptions = useMemo(() => {
+    if (!outlets || !users) return [];
+    return outlets.map(o => {
+        const owner = users.find(u => u.id === o.ownerId);
+        return {
+            id: o.id,
+            franchiseName: owner?.name || 'Unknown Franchise',
+            outletName: o.name,
+            adminEmail: owner?.email || 'unknown',
+            adminName: owner?.name,
+            startDate: (o.createdAt as any)?.toDate() || new Date(),
+            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            status: 'active', // This should come from the document data if available
+            storageUsedMB: 0,
+            totalReads: 0,
+            totalWrites: 0,
+        };
+    });
   }, [outlets, users]);
 
 
@@ -517,7 +508,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     heldOrders, setHeldOrders, activeOrderId, setActiveOrderId, addOrder, removeOrder,
     updateOrder, finalizeOrder, holdOrder, resumeOrder, getOrderByTable, loadOrder,
     loadOnlineOrderIntoPOS, createNewOrder, startOrderForTable, auth,
-    subscriptions, setSubscriptions, outlets, setOutlets,
+    subscriptions,
+    outlets,
   } as AppContextType;
 
   if (isInitializing) return <div className="flex h-screen w-full items-center justify-center"><p>Initializing application...</p></div>;
