@@ -100,31 +100,26 @@ const createNewOrder = (): AppOrder => ({
 async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestore: any) {
   const superAdminEmail = 'superadmin@pos.com';
   const superAdminPassword = 'password123';
+  
+  // This function is for dev convenience. We'll try to create the user.
+  // If the user already exists, Firebase will throw an 'auth/email-already-in-use' error, which we can safely ignore.
+  // We will NOT automatically sign the user in.
   try {
-    // We can't check for existence by email with client SDK, so we rely on a known UID or a specific doc ID.
-    // Since we don't know the UID, we check if the user is already logged in and assume it might be the superadmin.
-    // A more robust solution would be a cloud function on user creation to set a custom claim.
-    // For this app, we'll try to create it, and if it fails with 'email-already-in-use', we sign in to get the user.
-    if (auth.currentUser?.email === superAdminEmail) return;
-    
-    if (auth.currentUser) await signOut(auth);
-
-    try {
-        const uc = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-        const superAdminUser: User = { id: uc.user.uid, name: 'Super Admin', email: superAdminEmail, role: 'super-admin' };
-        await setDoc(doc(firestore, 'users', uc.user.uid), superAdminUser);
-    } catch (creationError: any) {
-        if (creationError.code === 'auth/email-already-in-use') {
-           // If user exists, just sign in to proceed with auth state change.
-           await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-        } else {
-            console.error('Failed to create or sign in super-admin:', creationError);
-        }
+    const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+    const superAdminUser: User = { id: userCredential.user.uid, name: 'Super Admin', email: superAdminEmail, role: 'super-admin' };
+    await setDoc(doc(firestore, 'users', userCredential.user.uid), superAdminUser);
+    console.log('Super Admin user created successfully.');
+    // Sign the user out immediately after creation so they have to log in manually.
+    await signOut(auth);
+  } catch (error: any) {
+    if (error.code === 'auth/email-already-in-use') {
+      // This is expected and fine. The user exists.
+    } else {
+      console.error('Failed to ensure super-admin exists:', error);
     }
-  } catch (e) {
-    console.error('Super admin setup error:', e);
   }
 }
+
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
