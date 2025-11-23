@@ -175,7 +175,6 @@ export default function MenuPage() {
     const newIngredients = [...(variation.ingredients || []), { ingredientId: '', quantity: 0 }];
     variation.ingredients = newIngredients;
     newVariations[vIndex] = variation;
-    setVariations(newVariations);
   }
 
   const removeIngredientFromVariation = (vIndex: number, iIndex: number) => {
@@ -213,7 +212,7 @@ export default function MenuPage() {
       ingredients: v.ingredients || []
     }));
     
-    let mealDealConfig: MealDeal | undefined = undefined;
+    let mealDealConfig: MealDeal | null = null;
     if (isMealDeal) {
       if (!formData.mealDeal?.upsellPrice || formData.mealDeal.upsellPrice <= 0) {
          toast({
