@@ -258,7 +258,7 @@ export default function FranchiseDashboardPage() {
         </Card>
       </div>
 
-      {selectedOutlet && auth && firestore && (
+      {selectedOutlet && (
         <ManageOutletDialog
           outlet={selectedOutlet}
           isOpen={!!selectedOutlet}
