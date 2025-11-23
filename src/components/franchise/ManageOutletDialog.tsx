@@ -38,8 +38,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 
 interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
@@ -58,17 +58,19 @@ const initialNewStaffState = {
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  const { users, auth, firestore, setUsers } = useAppContext();
+  const { auth, firestore, setUsers } = useAppContext();
   
+  const [outletName, setOutletName] = useState(outlet.name);
+  const [managerName, setManagerName] = useState(outlet.managerName);
   const [outletStatus, setOutletStatus] = useState(outlet.status);
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 
-  const outletStaff = users.filter(u => u.outletId === outlet.id && u.role !== 'admin');
+  const { data: staffData, setData: setStaffData } = useCollection<User>(useMemoFirebase(() =>
+    firestore.collection('users').where('outletId', '==', outlet.id), [firestore, outlet.id]
+  ));
 
-  const handleInputChange = (field: keyof typeof initialNewStaffState, value: string) => {
-    setNewStaff(prev => ({ ...prev, [field]: value }));
-  }
+  const outletStaff = staffData || [];
 
   const handleCreateOrUpdateAccount = async () => {
     if (!newStaff.name || !newStaff.email || !newStaff.role) {
@@ -81,12 +83,9 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
     }
 
     if (editingStaffId) {
-      // Update existing staff
       const userDocRef = doc(firestore, 'users', editingStaffId);
-      await setDoc(userDocRef, { name: newStaff.name, email: newStaff.email, role: newStaff.role }, { merge: true });
+      setDocumentNonBlocking(userDocRef, { name: newStaff.name, email: newStaff.email, role: newStaff.role }, { merge: true });
       
-      setUsers(prev => prev.map(s => s.id === editingStaffId ? { ...s, name: newStaff.name, email: newStaff.email, role: newStaff.role as Role } : s));
-
       toast({
         title: "Account Updated",
         description: `${newStaff.name}'s information has been updated.`,
@@ -101,13 +100,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
         return;
       }
       try {
-        // This flow is tricky without admin SDK. We'll try to create a user.
-        // NOTE: This will sign the SUPER ADMIN out and sign the NEW USER in. This is a Firebase client SDK limitation.
-        // A real app would use a Cloud Function to create users.
-        
-        // Temporarily create user
-        const tempAuth = auth; // Use a copy? No, it's a singleton
-        const userCredential = await createUserWithEmailAndPassword(tempAuth, newStaff.email, newStaff.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, newStaff.email, newStaff.password);
         const newUserId = userCredential.user.uid;
 
         const newUser: User = {
@@ -118,9 +111,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             outletId: outlet.id,
         };
 
-        await setDoc(doc(firestore, "users", newUserId), newUser);
-
-        setUsers(prev => [...prev, newUser]);
+        setDocumentNonBlocking(doc(firestore, "users", newUserId), newUser, {});
         
         toast({
             title: "Account Created",
@@ -138,8 +129,6 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
          return; // Don't close dialog
       }
     }
-
-    // Reset form
     setNewStaff(initialNewStaffState);
     setEditingStaffId(null);
   };
@@ -150,7 +139,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
       name: staffMember.name,
       email: staffMember.email,
       role: staffMember.role,
-      password: '', // Don't show password on edit
+      password: '',
     });
   };
 
@@ -162,7 +151,6 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   const handleDeleteStaff = async (staffId: string) => {
     try {
         await deleteDoc(doc(firestore, "users", staffId));
-        setUsers(prev => prev.filter(s => s.id !== staffId));
         toast({
             title: "Account Deleted",
             description: "The staff member has been removed.",
@@ -174,6 +162,20 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             description: "Could not delete the staff member from the database.",
         });
     }
+  };
+
+  const handleSaveChanges = () => {
+    const outletRef = doc(firestore, 'outlets', outlet.id);
+    setDocumentNonBlocking(outletRef, {
+      name: outletName,
+      status: outletStatus,
+      managerName: managerName,
+    }, { merge: true });
+
+    toast({
+      title: 'Outlet Updated',
+      description: 'The outlet details have been saved.'
+    });
   };
 
   return (
@@ -196,13 +198,13 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                 <Label htmlFor="outlet-name" className="text-right">
                   Outlet Name
                 </Label>
-                <Input id="outlet-name" defaultValue={outlet.name} className="col-span-3" />
+                <Input id="outlet-name" value={outletName} onChange={e => setOutletName(e.target.value)} className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="manager-name" className="text-right">
                   Manager Name
                 </Label>
-                <Input id="manager-name" defaultValue={outlet.managerName} className="col-span-3" />
+                <Input id="manager-name" value={managerName} onChange={e => setManagerName(e.target.value)} className="col-span-3" />
               </div>
                <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">
@@ -218,7 +220,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                 </div>
               </div>
                <div className="flex justify-end mt-4">
-                 <Button>Save Changes</Button>
+                 <Button onClick={handleSaveChanges}>Save Changes</Button>
                </div>
             </div>
           </TabsContent>
