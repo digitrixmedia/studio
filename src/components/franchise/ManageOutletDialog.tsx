@@ -45,8 +45,6 @@ interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
   isOpen: boolean;
   onClose: () => void;
-  auth: Auth;
-  firestore: Firestore;
 }
 
 const staffRoles: Exclude<Role, 'admin' | 'super-admin'>[] = ['manager', 'cashier', 'waiter', 'kitchen'];
@@ -58,8 +56,9 @@ const initialNewStaffState = {
   password: '',
 };
 
-export function ManageOutletDialog({ outlet, isOpen, onClose, auth, firestore }: ManageOutletDialogProps) {
+export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
+  const { auth, firestore } = useAppContext();
   
   const [outletName, setOutletName] = useState(outlet.name || '');
   const [managerName, setManagerName] = useState(outlet.managerName || '');
@@ -81,6 +80,11 @@ export function ManageOutletDialog({ outlet, isOpen, onClose, auth, firestore }:
   };
 
   const handleCreateOrUpdateAccount = async () => {
+    if (!auth || !firestore) {
+        toast({ variant: "destructive", title: "Firebase Error", description: "Firebase services are not available." });
+        return;
+    }
+
     if (!newStaff.name || !newStaff.email || !newStaff.role) {
       toast({
         variant: "destructive",
@@ -91,7 +95,6 @@ export function ManageOutletDialog({ outlet, isOpen, onClose, auth, firestore }:
     }
 
     if (editingStaffId) {
-      if (!firestore) return;
       const userDocRef = doc(firestore, 'users', editingStaffId);
       setDocumentNonBlocking(userDocRef, { name: newStaff.name, email: newStaff.email, role: newStaff.role }, { merge: true });
       
@@ -109,11 +112,6 @@ export function ManageOutletDialog({ outlet, isOpen, onClose, auth, firestore }:
         return;
       }
       try {
-        if (!auth || !firestore) {
-             toast({ variant: "destructive", title: "Firebase Error", description: "Firebase services are not available." });
-             return;
-        }
-        
         const userCredential = await createUserWithEmailAndPassword(auth, newStaff.email, newStaff.password);
         const newUserId = userCredential.user.uid;
 
@@ -125,7 +123,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose, auth, firestore }:
             outletId: outlet.id,
         };
 
-        setDocumentNonBlocking(doc(firestore, "users", newUserId), newUser, {});
+        await setDoc(doc(firestore, "users", newUserId), newUser);
         
         toast({
             title: "Account Created",
