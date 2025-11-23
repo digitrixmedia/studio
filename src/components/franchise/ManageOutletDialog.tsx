@@ -38,7 +38,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 
 interface ManageOutletDialogProps {
@@ -58,17 +58,17 @@ const initialNewStaffState = {
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  const { auth, firestore, setUsers } = useAppContext();
+  const { auth, firestore, users, setUsers } = useAppContext();
   
-  const [outletName, setOutletName] = useState(outlet.name);
-  const [managerName, setManagerName] = useState(outlet.managerName);
+  const [outletName, setOutletName] = useState(outlet.name || '');
+  const [managerName, setManagerName] = useState(outlet.managerName || '');
   const [outletStatus, setOutletStatus] = useState(outlet.status);
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 
   const { data: staffData } = useCollection<User>(useMemoFirebase(() => {
     if (!firestore) return null;
-    return firestore.collection('users').where('outletId', '==', outlet.id)
+    return collection(firestore, 'users').where('outletId', '==', outlet.id)
   }, [firestore, outlet.id]));
 
   const outletStaff = staffData || [];
@@ -88,6 +88,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
     }
 
     if (editingStaffId) {
+      if (!firestore) return;
       const userDocRef = doc(firestore, 'users', editingStaffId);
       setDocumentNonBlocking(userDocRef, { name: newStaff.name, email: newStaff.email, role: newStaff.role }, { merge: true });
       
@@ -105,6 +106,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
         return;
       }
       try {
+        if (!auth || !firestore) return;
         const userCredential = await createUserWithEmailAndPassword(auth, newStaff.email, newStaff.password);
         const newUserId = userCredential.user.uid;
 
@@ -154,6 +156,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   };
 
   const handleDeleteStaff = async (staffId: string) => {
+    if (!firestore) return;
     try {
         await deleteDoc(doc(firestore, "users", staffId));
         toast({
@@ -170,6 +173,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   };
 
   const handleSaveChanges = () => {
+    if (!firestore) return;
     const outletRef = doc(firestore, 'outlets', outlet.id);
     setDocumentNonBlocking(outletRef, {
       name: outletName,
