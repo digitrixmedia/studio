@@ -41,6 +41,7 @@ import {
   writeBatch,
   DocumentData,
   Query,
+  Timestamp,
 } from 'firebase/firestore';
 
 interface AppContextType {
@@ -98,24 +99,36 @@ const createNewOrder = (): AppOrder => ({
 });
 
 async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestore: any) {
-    // This function is for dev convenience. It ensures the superadmin user
-    // exists in Firebase Auth but does NOT automatically sign them in.
     const superAdminEmail = 'superadmin@pos.com';
-    const superAdminPassword = 'password123'; // This should be a secure, known password for dev
+    const superAdminPassword = 'password123';
+    
+    // Check if a user is already logged in, if so, do nothing.
+    if (auth.currentUser) {
+        return;
+    }
+
     try {
-        // We try to create the user. If it fails because the email is in use, 
-        // that's fine, it means the user already exists. We don't need to do anything.
-        await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-        console.log('Super Admin user created successfully.');
-        
-        // IMPORTANT: Immediately sign the newly created user out.
-        // The real login flow should be handled by the login page.
-        if (auth.currentUser?.email === superAdminEmail) {
-            await signOut(auth);
-        }
+        // This is a lightweight way to check if a user exists without trying to log in.
+        // It will fail if the user doesn't exist, which is what we want.
+        await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+        // If sign-in succeeds, immediately sign out. We don't want to keep this session.
+        await signOut(auth);
     } catch (error: any) {
-        if (error.code !== 'auth/email-already-in-use') {
-            console.error('Failed to ensure super-admin exists:', error);
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+             // User doesn't exist, so create them.
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+                console.log('Super Admin user created successfully.');
+                 // And sign them out.
+                if (auth.currentUser?.uid === userCredential.user.uid) {
+                    await signOut(auth);
+                }
+            } catch (creationError) {
+                 console.error('Failed to create super-admin:', creationError);
+            }
+        } else if (error.code !== 'auth/wrong-password' && error.code !== 'auth/too-many-requests') {
+           // Log other unexpected auth errors during the check
+           console.error('Error checking for super-admin:', error);
         }
     }
 }
@@ -275,7 +288,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const menuCategories = useMemo(() => menuCategoriesData || [], [menuCategoriesData]);
   const tables = useMemo(() => tablesData || [], [tablesData]);
   const ingredients = useMemo(() => ingredientsData || [], [ingredientsData]);
-  const pastOrders = useMemo(() => pastOrdersData || [], [pastOrdersData]);
+  
+  const pastOrders = useMemo(() => {
+    if (!pastOrdersData) return [];
+    return pastOrdersData.map(order => ({
+      ...order,
+      createdAt: (order.createdAt as any instanceof Timestamp) 
+        ? (order.createdAt as unknown as Timestamp).toDate() 
+        : new Date(order.createdAt),
+    }));
+  }, [pastOrdersData]);
+
 
   const customers = useMemo(() => {
     const map = new Map<string, Customer>();
