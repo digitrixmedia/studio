@@ -11,95 +11,52 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Read the current user's document to check role.
-    // get() here is safe and does not require a prior 'read' rule.
     function isAdmin() {
       return isSignedIn() &&
-        (
-          // read the user's doc and check role
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-          ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super-admin'
-        );
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super-admin');
     }
 
     /********** USERS **********/
     match /users/{userId} {
-      // Allow the user to read and update their own profile
-      allow read, update: if isOwner(userId);
-
-      // Allow admins to create user documents (for new accounts) and manage any user
-      allow create: if isAdmin();           // admin or super-admin can create other users
-      allow delete: if isAdmin();           // only admins can delete user docs
-
-      // Allow listing users only to admins
+      allow read, update: if isOwner(userId) || isAdmin();
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
       allow list: if isAdmin();
     }
 
     /********** SUBSCRIPTIONS (Superadmin creates these) **********/
     match /subscriptions/{subscriptionId} {
-      // Only admins (or super-admin) may create/update/delete subscriptions.
       allow create, update, delete: if isAdmin();
-
-      // Allow admins to read all subscriptions; optionally allow owners to read their own subscription if you store ownerId
       allow read: if isAdmin();
     }
-
+    
     /********** OUTLETS **********/
     match /outlets/{outletId} {
-      // Admins create and manage outlet documents.
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete, read: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
 
-      // Admins can read all outlets.
-      // Optionally, if you store an 'ownerId' or 'adminUid' in outlet doc, allow that owner read access as well:
-      allow read: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
-    }
-
-    /********** PUBLIC COLLECTIONS (unchanged) **********/
-    match /menu_items/{menuItemId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /menu_categories/{menuCategoryId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /ingredients/{ingredientId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /menu_item_ingredients/{menuItemIngredientId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /tables/{tableId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    /********** ORDERS **********/
-    match /orders/{orderId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow update, delete: if isSignedIn() && (resource.data.createdBy == request.auth.uid || isAdmin());
-    }
-    match /orders/{orderId}/order_items/{orderItemId} {
-      allow read: if true;
-      allow write: if isSignedIn() && (get(/databases/$(database)/documents/orders/$(orderId)).data.createdBy == request.auth.uid || isAdmin());
-    }
-
-    /********** PAYMENTS, DISCOUNTS **********/
-    match /payments/{paymentId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /discounts/{discountId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    match /order_discounts/{orderDiscountId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      // All authenticated users of a specific outlet can read/write to its subcollections
+      match /menu_items/{menuItemId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
+      match /menu_categories/{menuCategoryId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
+      match /ingredients/{ingredientId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
+      match /tables/{tableId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
+      match /orders/{orderId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
+       match /orders/{orderId}/order_items/{orderItemId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
+       match /customers/{customerId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      }
     }
   }
 }

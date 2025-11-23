@@ -44,7 +44,7 @@ const statusConfig: { [key in TableStatus]: { color: string; icon: React.Element
 };
 
 export default function TablesPage() {
-  const { tables, setTables, startOrderForTable, getOrderByTable, setActiveOrderId, finalizeOrder } = useAppContext();
+  const { tables, setTables, startOrderForTable, getOrderByTable, setActiveOrderId, finalizeOrder, selectedOutlet } = useAppContext();
   const firestore = useFirestore();
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isAddTableOpen, setIsAddTableOpen] = useState(false);
@@ -78,8 +78,8 @@ export default function TablesPage() {
   }
 
   const handleGenerateBill = () => {
-    if (selectedTable) {
-      updateDocumentNonBlocking(doc(firestore, 'tables', selectedTable.id), { status: 'billing' });
+    if (selectedTable && selectedOutlet) {
+      updateDocumentNonBlocking(doc(firestore, `outlets/${selectedOutlet.id}/tables`, selectedTable.id), { status: 'billing' });
       toast({ title: "Bill Generated", description: `${selectedTable.name} is now in billing status.` });
       setSelectedTable(null);
     }
@@ -100,13 +100,17 @@ export default function TablesPage() {
         toast({ variant: "destructive", title: "Missing Information", description: "Please provide a name and capacity." });
         return;
     }
+    if (!selectedOutlet) {
+        toast({ variant: "destructive", title: "No Outlet Selected", description: "Cannot add a table without a selected outlet." });
+        return;
+    }
     const newTableData: Omit<Table, 'id'> = {
         name: newTableName,
         capacity: parseInt(newTableCapacity, 10),
         status: 'vacant',
     };
     
-    const tablesCollection = collection(firestore, 'tables');
+    const tablesCollection = collection(firestore, `outlets/${selectedOutlet.id}/tables`);
     try {
         await addDoc(tablesCollection, newTableData);
         toast({ title: "Table Added", description: `${newTableName} has been added.` });
@@ -127,8 +131,8 @@ export default function TablesPage() {
   };
 
   const handleDeleteTable = () => {
-    if (selectedTable) {
-        deleteDocumentNonBlocking(doc(firestore, 'tables', selectedTable.id));
+    if (selectedTable && selectedOutlet) {
+        deleteDocumentNonBlocking(doc(firestore, `outlets/${selectedOutlet.id}/tables`, selectedTable.id));
         toast({ title: "Table Removed", description: `${selectedTable.name} has been removed.`, variant: "destructive" });
         setSelectedTable(null);
     }
@@ -269,5 +273,3 @@ export default function TablesPage() {
     </div>
   );
 }
-
-    
