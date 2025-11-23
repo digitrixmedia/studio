@@ -39,21 +39,7 @@ const subsChartConfig = {
 
 export default function SuperAdminReportsPage() {
   const router = useRouter();
-  const { users } = useAppContext();
-
-  const allSubscriptions: Subscription[] = useMemo(() => users.filter(u => u.role === 'admin' && u.subscriptionId).map(u => ({
-    id: u.subscriptionId!,
-    franchiseName: u.name,
-    outletName: `${u.name}'s Outlet`,
-    adminEmail: u.email,
-    adminName: u.name,
-    startDate: new Date(),
-    endDate: new Date(),
-    status: 'active',
-    storageUsedMB: Math.random() * 1024,
-    totalReads: Math.random() * 100000,
-    totalWrites: Math.random() * 20000,
-  })), [users]);
+  const { users, subscriptions: allSubscriptions } = useAppContext();
 
 
   const topFranchisesBySales = useMemo(() => {
@@ -96,7 +82,7 @@ export default function SuperAdminReportsPage() {
   }, [date, allSubscriptions]);
 
   const outletsForSelectedFranchise = useMemo(() => {
-    const franchise = topFranchisesBySales.find(f => f.id === selectedFranchise);
+    const franchise = topFranchisesBySales.find(f => f.name === selectedFranchise);
     if (!franchise) return [];
     return allSubscriptions.filter(s => s.franchiseName === franchise.name);
   }, [selectedFranchise, allSubscriptions, topFranchisesBySales]);
@@ -288,7 +274,7 @@ export default function SuperAdminReportsPage() {
                         </SelectTrigger>
                         <SelectContent>
                             {topFranchisesBySales.map(f => (
-                                <SelectItem key={f.id} value={f.id}>{f.name}</SelectItem>
+                                <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
