@@ -38,8 +38,8 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
-import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc, deleteDoc, query, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking, errorEmitter, FirestorePermissionError } from '@/firebase';
 
 interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
@@ -66,10 +66,12 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 
-  const { data: staffData } = useCollection<User>(useMemoFirebase(() => {
+  const staffQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return collection(firestore, 'users').where('outletId', '==', outlet.id)
-  }, [firestore, outlet.id]));
+    return query(collection(firestore, 'users'), where('outletId', '==', outlet.id));
+  }, [firestore, outlet.id]);
+
+  const { data: staffData } = useCollection<User>(staffQuery);
 
   const outletStaff = staffData || [];
 
@@ -107,6 +109,8 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
       }
       try {
         if (!auth || !firestore) return;
+        // IMPORTANT: In a real app, user creation must be done on a secure backend (Cloud Function)
+        // to prevent unauthorized user creation. This is a simplified client-side example.
         const userCredential = await createUserWithEmailAndPassword(auth, newStaff.email, newStaff.password);
         const newUserId = userCredential.user.uid;
 
@@ -118,11 +122,12 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
             outletId: outlet.id,
         };
 
+        // This is the critical step: saving the user document to Firestore
         setDocumentNonBlocking(doc(firestore, "users", newUserId), newUser, {});
         
         toast({
             title: "Account Created",
-            description: `${newStaff.name} has been added. NOTE: You may have been logged out and need to log back in as super-admin.`,
+            description: `${newStaff.name} has been added.`,
         });
 
       } catch (error: any) {
@@ -158,7 +163,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
   const handleDeleteStaff = async (staffId: string) => {
     if (!firestore) return;
     try {
-        await deleteDoc(doc(firestore, "users", staffId));
+        deleteDocumentNonBlocking(doc(firestore, "users", staffId));
         toast({
             title: "Account Deleted",
             description: "The staff member has been removed.",
