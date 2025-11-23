@@ -57,7 +57,7 @@ import {
 import { useAppContext } from '@/contexts/AppContext';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, writeBatch, deleteDoc } from 'firebase/firestore';
-import { setDocumentNonBlocking } from '@/firebase';
+import { setDocumentNonBlocking, FirestorePermissionError, errorEmitter } from '@/firebase';
 
 
 const initialFormState = {
@@ -153,9 +153,21 @@ export default function SubscriptionsPage() {
             createdAt: new Date(),
         });
         
-        await batch.commit();
+        batch.commit()
+          .then(() => {
+            toast({ title: "Subscription & User Created", description: `User for ${formData.adminEmail} created.` });
+          })
+          .catch((error) => {
+              // This is where we catch the permission error
+              console.log('Caught batch commit error:', error);
+              const permissionError = new FirestorePermissionError({
+                  path: `/users/${newUser.uid}`, // Or whichever path is failing. Let's assume it's user creation.
+                  operation: 'create',
+                  requestResourceData: userDoc,
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          });
 
-        toast({ title: "Subscription & User Created", description: `User for ${formData.adminEmail} created.` });
 
        } catch (error: any) {
            let description = "An unknown error occurred.";
