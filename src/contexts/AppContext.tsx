@@ -568,38 +568,39 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     users,
     setUsers: setUsers as any,
     tables: tables || [],
-    setTables: setTables as any,
-    ingredients: ingredients || [],
-    setIngredients: setIngredients as any,
-    heldOrders,
-    setHeldOrders,
-    activeOrderId,
-    setActiveOrderId,
-    addOrder,
-    removeOrder,
-    updateOrder,
-    finalizeOrder,
-    holdOrder,
-    resumeOrder,
-    getOrderByTable,
-    loadOrder,
-    loadOnlineOrderIntoPOS,
-    createNewOrder,
-    startOrderForTable,
-    auth,
-    subscriptions,
-    setSubscriptions,
-    outlets,
-    setOutlets,
-  } as AppContextType;
+        setTables: setTables as any,
+            ingredients: ingredients || [],
+                setIngredients: setIngredients as any,
+                    heldOrders,
+                        setHeldOrders,
+                            activeOrderId,
+                                setActiveOrderId,
+                                    addOrder,
+                                        removeOrder,
+                                            updateOrder,
+                                                finalizeOrder,
+                                                    holdOrder,
+                                                        resumeOrder,
+                                                            getOrderByTable,
+                                                                loadOrder,
+                                                                    loadOnlineOrderIntoPOS,
+                                                                        createNewOrder,
+                                                                            startOrderForTable,
+                                                                                auth,
+                                                                                    subscriptions,
+                                                                                        setSubscriptions,
+                                                                                            outlets,
+                                                                                                setOutlets,
+                                                                                                  } as AppContextType;
 
-  if (isInitializing) return <div className="flex h-screen w-full items-center justify-center"><p>Initializing application...</p></div>;
+                                                                                                    if (isInitializing) return <div className="flex h-screen w-full items-center justify-center"><p>Initializing application...</p></div>;
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
-}
+                                                                                                      return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+                                                                                                      }
 
-export function useAppContext() {
-  const context = useContext(AppContext);
-  if (!context) throw new Error('useAppContext must be used within AppProvider');
-  return context;
-}
+                                                                                                      export function useAppContext() {
+                                                                                                        const context = useContext(AppContext);
+                                                                                                          if (!context) throw new Error('useAppContext must be used within AppProvider');
+                                                                                                            return context;
+                                                                                                            }
+                                                                                                            

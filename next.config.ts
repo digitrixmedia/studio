@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  output: 'export',
 };
 
 export default nextConfig;
