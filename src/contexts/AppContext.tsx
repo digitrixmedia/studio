@@ -98,26 +98,26 @@ const createNewOrder = (): AppOrder => ({
 });
 
 async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestore: any) {
-  const superAdminEmail = 'superadmin@pos.com';
-  const superAdminPassword = 'password123';
-  
-  // This function is for dev convenience. We'll try to create the user.
-  // If the user already exists, Firebase will throw an 'auth/email-already-in-use' error, which we can safely ignore.
-  // We will NOT automatically sign the user in.
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-    const superAdminUser: User = { id: userCredential.user.uid, name: 'Super Admin', email: superAdminEmail, role: 'super-admin' };
-    await setDoc(doc(firestore, 'users', userCredential.user.uid), superAdminUser);
-    console.log('Super Admin user created successfully.');
-    // Sign the user out immediately after creation so they have to log in manually.
-    await signOut(auth);
-  } catch (error: any) {
-    if (error.code === 'auth/email-already-in-use') {
-      // This is expected and fine. The user exists.
-    } else {
-      console.error('Failed to ensure super-admin exists:', error);
+    // This function is for dev convenience. It ensures the superadmin user
+    // exists in Firebase Auth but does NOT automatically sign them in.
+    const superAdminEmail = 'superadmin@pos.com';
+    const superAdminPassword = 'password123'; // This should be a secure, known password for dev
+    try {
+        // We try to create the user. If it fails because the email is in use, 
+        // that's fine, it means the user already exists. We don't need to do anything.
+        await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
+        console.log('Super Admin user created successfully.');
+        
+        // IMPORTANT: Immediately sign the newly created user out.
+        // The real login flow should be handled by the login page.
+        if (auth.currentUser?.email === superAdminEmail) {
+            await signOut(auth);
+        }
+    } catch (error: any) {
+        if (error.code !== 'auth/email-already-in-use') {
+            console.error('Failed to ensure super-admin exists:', error);
+        }
     }
-  }
 }
 
 
@@ -173,11 +173,16 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const { data: usersData, setData: setUsers } = useCollection<User>(
     useMemoFirebase(() => {
-      if (!firestore) return null;
-      return collection(firestore, 'users');
-    }, [firestore])
+      // Only fetch all users if the current user is a super-admin
+      if (firestore && currentUser?.role === 'super-admin') {
+        return collection(firestore, 'users');
+      }
+      // For all other users, or when not logged in, do not attempt to fetch the collection.
+      return null;
+    }, [firestore, currentUser])
   );
   const users = usersData || [];
+
 
   // Fetch ALL outlets if user is a super-admin
   const { data: allOutletsData } = useCollection<FranchiseOutlet>(
