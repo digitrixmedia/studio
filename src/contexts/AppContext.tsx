@@ -223,7 +223,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
-    if (outlets) {
+    if (outlets && users) {
       const subs: Subscription[] = outlets.map(o => {
           const owner = users.find(u => u.id === o.ownerId);
           return {
