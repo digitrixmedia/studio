@@ -140,7 +140,6 @@ export default function OrdersPage() {
     const uniqueCartId = `${itemToAdd.id}-${variation?.id || 'base'}-${notes || ''}-${Date.now()}`;
 
     if (variation) {
-      // priceModifier is the full price of the variation
       basePrice = variation.priceModifier;
       finalName += ` (${variation.name})`;
     }
@@ -848,6 +847,20 @@ export default function OrdersPage() {
     return placeholder?.imageUrl || "https://picsum.photos/seed/placeholder/200/200";
   }
 
+  const getDisplayPrice = (item: MenuItem) => {
+    if (item.variations && item.variations.length > 0) {
+      const prices = item.variations.map(v => v.priceModifier);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      if (minPrice === maxPrice) {
+        return minPrice.toFixed(2);
+      }
+      return `${minPrice.toFixed(2)} - ${maxPrice.toFixed(2)}`;
+    }
+    return item.price.toFixed(2);
+  };
+
+
   if (!activeOrder) {
     return (
         <div className="flex h-screen items-center justify-center">
@@ -917,8 +930,8 @@ export default function OrdersPage() {
                                 <h3 className="font-semibold text-sm sm:text-base">{item.name}</h3>
                                 <p className="text-xs text-muted-foreground whitespace-normal flex-1">{item.description}</p>
                                 <p className="text-sm flex items-center mt-auto pt-1">
-                                <IndianRupee className="h-3.5 w-3.5 mr-1" />
-                                {item.price.toFixed(2)}
+                                  <IndianRupee className="h-3.5 w-3.5 mr-1" />
+                                  {getDisplayPrice(item)}
                                 </p>
                             </div>
                           </button>
@@ -1624,5 +1637,6 @@ function CustomizationForm({
     </div>
   );
 }
+
 
 
