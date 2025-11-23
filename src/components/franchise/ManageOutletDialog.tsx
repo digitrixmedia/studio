@@ -17,7 +17,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -33,10 +32,14 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import type { FranchiseOutlet, Role, User } from '@/lib/types';
-import { useState }from 'react';
+import { useState, useEffect } from 'react';
 import { Edit, PlusCircle, Trash2, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
 
 interface ManageOutletDialogProps {
   outlet: FranchiseOutlet;
@@ -55,18 +58,19 @@ const initialNewStaffState = {
 
 export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDialogProps) {
   const { toast } = useToast();
-  const initialStaff: User[] = [];
+  const { users, auth, firestore, setUsers } = useAppContext();
+  
   const [outletStatus, setOutletStatus] = useState(outlet.status);
-  const [staff, setStaff] = useState<User[]>(initialStaff);
   const [newStaff, setNewStaff] = useState(initialNewStaffState);
   const [editingStaffId, setEditingStaffId] = useState<string | null>(null);
 
+  const outletStaff = users.filter(u => u.outletId === outlet.id && u.role !== 'admin');
 
   const handleInputChange = (field: keyof typeof initialNewStaffState, value: string) => {
     setNewStaff(prev => ({ ...prev, [field]: value }));
   }
 
-  const handleCreateOrUpdateAccount = () => {
+  const handleCreateOrUpdateAccount = async () => {
     if (!newStaff.name || !newStaff.email || !newStaff.role) {
       toast({
         variant: "destructive",
@@ -78,7 +82,11 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
 
     if (editingStaffId) {
       // Update existing staff
-      setStaff(staff.map(s => s.id === editingStaffId ? { ...s, name: newStaff.name, email: newStaff.email, role: newStaff.role as Role } : s));
+      const userDocRef = doc(firestore, 'users', editingStaffId);
+      await setDoc(userDocRef, { name: newStaff.name, email: newStaff.email, role: newStaff.role }, { merge: true });
+      
+      setUsers(prev => prev.map(s => s.id === editingStaffId ? { ...s, name: newStaff.name, email: newStaff.email, role: newStaff.role as Role } : s));
+
       toast({
         title: "Account Updated",
         description: `${newStaff.name}'s information has been updated.`,
@@ -92,19 +100,43 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
         });
         return;
       }
-      // Create new staff
-      const newStaffMember: User = {
-        id: `user-${Date.now()}`,
-        name: newStaff.name,
-        email: newStaff.email,
-        role: newStaff.role as Role,
-        avatar: `https://i.pravatar.cc/150?u=${newStaff.email}`
-      };
-      setStaff([...staff, newStaffMember]);
-      toast({
-        title: "Account Created",
-        description: `${newStaff.name} has been added as a ${newStaff.role}.`,
-      });
+      try {
+        // This flow is tricky without admin SDK. We'll try to create a user.
+        // NOTE: This will sign the SUPER ADMIN out and sign the NEW USER in. This is a Firebase client SDK limitation.
+        // A real app would use a Cloud Function to create users.
+        
+        // Temporarily create user
+        const tempAuth = auth; // Use a copy? No, it's a singleton
+        const userCredential = await createUserWithEmailAndPassword(tempAuth, newStaff.email, newStaff.password);
+        const newUserId = userCredential.user.uid;
+
+        const newUser: User = {
+            id: newUserId,
+            name: newStaff.name,
+            email: newStaff.email,
+            role: newStaff.role as Role,
+            outletId: outlet.id,
+        };
+
+        await setDoc(doc(firestore, "users", newUserId), newUser);
+
+        setUsers(prev => [...prev, newUser]);
+        
+        toast({
+            title: "Account Created",
+            description: `${newStaff.name} has been added. NOTE: You may have been logged out and need to log back in as super-admin.`,
+        });
+
+      } catch (error: any) {
+         let description = "An unknown error occurred.";
+         if (error.code === 'auth/email-already-in-use') {
+            description = "This email is already in use by another account.";
+         } else if (error.code === 'auth/weak-password') {
+            description = "The password must be at least 6 characters.";
+         }
+         toast({ variant: "destructive", title: "User Creation Failed", description });
+         return; // Don't close dialog
+      }
     }
 
     // Reset form
@@ -127,12 +159,21 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
     setNewStaff(initialNewStaffState);
   };
 
-  const handleDeleteStaff = (staffId: string) => {
-    setStaff(staff.filter(s => s.id !== staffId));
-    toast({
-      title: "Account Deleted",
-      description: "The staff member has been removed.",
-    });
+  const handleDeleteStaff = async (staffId: string) => {
+    try {
+        await deleteDoc(doc(firestore, "users", staffId));
+        setUsers(prev => prev.filter(s => s.id !== staffId));
+        toast({
+            title: "Account Deleted",
+            description: "The staff member has been removed.",
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Deletion Failed",
+            description: "Could not delete the staff member from the database.",
+        });
+    }
   };
 
   return (
@@ -252,7 +293,7 @@ export function ManageOutletDialog({ outlet, isOpen, onClose }: ManageOutletDial
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {staff.map(s => (
+                        {outletStaff.map(s => (
                             <TableRow key={s.id}>
                                 <TableCell>{s.name}</TableCell>
                                 <TableCell>{s.email}</TableCell>
