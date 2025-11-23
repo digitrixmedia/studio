@@ -188,7 +188,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [auth, firestore, isInitializing]);
   
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !firestore) return;
     // For NON-admin users, auto-assign their outlet
     if (
       currentUser.role !== 'admin' &&
@@ -208,6 +208,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
           setSelectedOutlet(outlet as FranchiseOutlet);
           localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
           loadSettingsForOutlet(outlet.id);
+        } else {
+            console.error(`Outlet with ID ${currentUser.outletId} not found.`);
         }
       }
       fetchOutlet();
