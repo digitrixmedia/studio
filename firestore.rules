@@ -10,49 +10,41 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
 
     function isAdmin() {
-      return isSignedIn() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+      return isSignedIn() && getUserData().role == 'admin';
     }
 
     /********** USERS **********/
     match /users/{userId} {
-      allow read, update: if isOwner(userId) || isAdmin();
-      allow create: if isAdmin();
-      allow delete: if isAdmin();
-      allow list: if isAdmin();
+      // Any user can read/update their own profile
+      allow read, update: if isOwner(userId);
+      
+      // Admins can manage users within their own outlet
+      allow create: if isAdmin() && request.resource.data.outletId == getUserData().outletId;
+      allow read, update, delete: if isAdmin() && get(/databases/$(database)/documents/users/$(userId)).data.outletId == getUserData().outletId;
+      
+      // Allow any authenticated user to list users only if they are querying for their own outlet
+      allow list: if isSignedIn() && request.query.where.outletId == getUserData().outletId;
     }
-    
+
     /********** OUTLETS **********/
     match /outlets/{outletId} {
-      allow create, update, delete, read, list: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      // Admins and their staff can read their own outlet doc.
+      allow read: if isSignedIn() && getUserData().outletId == outletId;
+      
+      // Franchise owner can update their own outlet document.
+      allow update: if isAdmin() && getUserData().outletId == outletId;
 
-      // All authenticated users of a specific outlet can read/write to its subcollections
-      match /menu_items/{menuItemId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+      // Rule for all subcollections within an outlet
+      match /{subcollection}/{docId=**} {
+         // Any user (cashier, waiter, manager) who belongs to the outlet can read/write data within it.
+         allow read, write: if isSignedIn() && getUserData().outletId == outletId;
       }
-      match /menu_categories/{menuCategoryId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-      }
-      match /ingredients/{ingredientId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-      }
-      match /tables/{tableId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-      }
-      match /orders/{orderId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-      }
-       match /orders/{orderId}/order_items/{orderItemId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-      }
-       match /customers/{customerId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-      }
-       match /settings/{settingId} {
-        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
-       }
     }
   }
 }
