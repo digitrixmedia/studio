@@ -1,4 +1,3 @@
-
 // src/contexts/AppContext.tsx
 'use client';
 
@@ -96,42 +95,6 @@ const createNewOrder = (): AppOrder => ({
   redeemedPoints: 0,
 });
 
-async function ensureSuperAdminExists(auth: ReturnType<typeof getAuth>, firestore: any) {
-    const superAdminEmail = 'superadmin@pos.com';
-    const superAdminPassword = 'password123';
-    
-    // Check if a user is already logged in, if so, do nothing.
-    if (auth.currentUser) {
-        return;
-    }
-
-    try {
-        await signInWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-        await signOut(auth);
-    } catch (error: any) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, superAdminEmail, superAdminPassword);
-                const superAdminUserDoc = {
-                    id: userCredential.user.uid,
-                    name: 'Super Admin',
-                    email: superAdminEmail,
-                    role: 'super-admin',
-                };
-                await setDoc(doc(firestore, "users", userCredential.user.uid), superAdminUserDoc);
-                console.log('Super Admin user created successfully.');
-                if (auth.currentUser?.uid === userCredential.user.uid) {
-                    await signOut(auth);
-                }
-            } catch (creationError) {
-                 console.error('Failed to create super-admin:', creationError);
-            }
-        } else if (error.code !== 'auth/wrong-password' && error.code !== 'auth/too-many-requests') {
-           console.error('Error checking for super-admin:', error);
-        }
-    }
-}
-
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -173,7 +136,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!currentUser || !firestore) return;
     if (
       currentUser.role !== 'admin' &&
-      currentUser.role !== 'super-admin' &&
       currentUser.outletId &&
       !selectedOutlet
     ) {
@@ -192,9 +154,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const usersQuery = useMemoFirebase(() => {
     if (isUserLoading || !currentUser || !firestore) return null;
-    if (currentUser.role === 'super-admin') {
-      return collection(firestore, 'users');
-    }
     const outletId = selectedOutlet?.id || currentUser.outletId;
     if (outletId) {
       return query(collection(firestore, 'users'), where('outletId', '==', outletId));
@@ -206,12 +165,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const outletsQuery = useMemoFirebase(() => {
     if (isUserLoading || !currentUser || !firestore) return null;
-    if (currentUser.role === 'super-admin') {
-      return collection(firestore, 'outlets');
-    }
     if (currentUser.role === 'admin' && currentUser.outletId) {
-      // Admins should fetch their own single outlet document
-      // Let's adjust this to query for it, which is more aligned with `useCollection`
       return query(collection(firestore, 'outlets'), where('ownerId', '==', currentUser.id));
     }
     return null;
@@ -265,18 +219,12 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { data: ingredientsData } = useCollection<Ingredient>(ingredientsQuery);
   
   const pastOrdersQuery = useMemoFirebase(() => {
-    if (isUserLoading || !currentUser || !firestore) return null;
-    if (currentUser.role === 'super-admin') {
-      return query(collectionGroup(firestore, 'orders'), limit(500));
-    }
-    if (selectedOutlet) {
-      return query(
-        collection(firestore, `outlets/${selectedOutlet.id}/orders`),
-        orderBy('createdAt', 'desc'),
-        limit(100)
-      );
-    }
-    return null;
+    if (isUserLoading || !currentUser || !firestore || !selectedOutlet) return null;
+    return query(
+      collection(firestore, `outlets/${selectedOutlet.id}/orders`),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    );
   }, [firestore, selectedOutlet, currentUser, isUserLoading]);
   const { data: pastOrdersData } = useCollection<Order>(pastOrdersQuery);
   
@@ -358,9 +306,8 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     if (!currentUser) return;
 
     const isLoginPage = pathname.startsWith('/login');
-    const isSuperAdminPath = pathname.startsWith('/super-admin');
     const isFranchisePath = pathname.startsWith('/franchise');
-    const isAppPath = !isSuperAdminPath && !isFranchisePath && !isLoginPage;
+    const isAppPath = !isFranchisePath && !isLoginPage;
 
     const redirectToDefaultScreen = () => {
       if (settings.defaultScreen === 'Dashboard') router.push('/dashboard');
@@ -369,17 +316,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     };
 
     if (isLoginPage) {
-      if (currentUser.role === 'super-admin') router.push('/super-admin/dashboard');
-      else if (currentUser.role === 'admin') router.push('/franchise/dashboard');
+      if (currentUser.role === 'admin') router.push('/franchise/dashboard');
       else if (currentUser.role === 'waiter' || currentUser.role === 'cashier') router.push('/orders');
       else redirectToDefaultScreen();
       return;
     }
 
     switch (currentUser.role) {
-      case 'super-admin':
-        if (!isSuperAdminPath) router.push('/super-admin/dashboard');
-        break;
       case 'admin':
         if (selectedOutlet) { if (!isAppPath) redirectToDefaultScreen(); }
         else { if (!isFranchisePath) router.push('/franchise/dashboard'); }

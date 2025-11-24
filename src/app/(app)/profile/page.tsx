@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -69,15 +68,6 @@ export default function ProfilePage() {
 
   if (!currentUser) {
     return <p>Loading...</p>;
-  }
-
-  // This page is not for Super Admins.
-  if (currentUser.role === 'super-admin') {
-    return (
-        <div className="flex h-full w-full items-center justify-center">
-             <p>Access Denied. Please use the Super Admin profile page.</p>
-        </div>
-    );
   }
 
   const { email } = currentUser;

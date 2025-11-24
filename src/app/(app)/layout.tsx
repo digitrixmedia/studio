@@ -190,7 +190,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   const sidebarContent = quickAccessItems.find((x) => x.id === sidebarContentId);
 
-  if (!currentUser || currentUser.role === 'super-admin') {
+  if (!currentUser) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p>Loading or redirecting...</p>
@@ -349,5 +349,3 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    

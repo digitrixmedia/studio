@@ -1,5 +1,4 @@
-
-export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'super-admin';
+export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen';
 
 export interface User {
   id: string;
@@ -237,6 +236,8 @@ export interface FranchiseOutlet {
   todaySales?: number;
   totalSales?: number;
   ordersToday?: number;
+  ownerId?: string;
+  createdAt?: Date;
 }
 
 
@@ -293,5 +294,3 @@ export interface AppOrder {
   paymentMethod?: PaymentMethod;
   transactionId?: string;
 }
-
-    
