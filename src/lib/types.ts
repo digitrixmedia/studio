@@ -1,3 +1,7 @@
+/* Centralized TypeScript types for DineMitra POS
+   Cleaned and extended to include Reservations, Delivery personnel,
+   and broader Order statuses used across the app.
+*/
 
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen';
 
@@ -6,11 +10,13 @@ export interface User {
   name: string;
   email: string;
   role: Role;
-  subscriptionId?: string;
   outletId?: string;
   avatar?: string;
 }
 
+// ----------------------
+// MENU SYSTEM
+// ----------------------
 export interface MenuCategory {
   id: string;
   name: string;
@@ -18,14 +24,14 @@ export interface MenuCategory {
 
 export interface MenuItemVariation {
   id: string;
-  name: string; // e.g., 'Regular', 'Large'
-  priceModifier: number; // e.g., 0 for regular, 20 for large
+  name: string;
+  priceModifier: number;
   ingredients: { ingredientId: string; quantity: number }[];
 }
 
 export interface MenuItemAddon {
   id: string;
-  name: string; // e.g., 'Extra Espresso Shot'
+  name: string;
   price: number;
 }
 
@@ -40,36 +46,50 @@ export interface MenuItem {
   name: string;
   description: string;
   price: number;
-  category: string; // categoryId
+  category: string;
   foodType?: 'veg' | 'non-veg' | 'jain';
   variations?: MenuItemVariation[];
   addons?: MenuItemAddon[];
   isAvailable: boolean;
   isBogo?: boolean;
   ingredients: { ingredientId: string; quantity: number }[];
-  mealDeal?: MealDeal;
+  // Allow mealDeal to be undefined or null (some pages set it to null)
+  mealDeal?: MealDeal | null;
 }
 
+// ----------------------
+// ORDERS
+// ----------------------
 export interface OrderItem {
-  id: string; // This will be a unique id for the cart item
+  id: string;
   name: string;
   quantity: number;
-  price: number; // base price for one unit
+  price: number;
   variation?: MenuItemVariation;
   addons?: MenuItemAddon[];
   notes?: string;
   totalPrice: number;
   isBogo?: boolean;
-  // --- Meal Deal Fields ---
-  baseMenuItemId?: string; // ID of the MenuItem this OrderItem is derived from
-  isMealParent?: boolean; // True if this is the main item that triggered a meal upsell
-  isMealChild?: boolean;  // True if this is a side/drink added as part of a meal
-  mealParentId?: string;  // The ID of the parent OrderItem if this is a meal child
+
+  baseMenuItemId?: string;
+  isMealParent?: boolean;
+  isMealChild?: boolean;
+  mealParentId?: string;
 }
 
 export type OrderType = 'dine-in' | 'takeaway' | 'delivery';
-export type OnlineOrderSource = 'zomato' | 'swiggy';
-export type OrderStatus = 'new' | 'preparing' | 'ready' | 'out-for-delivery' | 'completed' | 'cancelled' | 'incoming' | 'rejected';
+
+// Extended OrderStatus to cover incoming/rejected online flows
+export type OrderStatus =
+  | 'new'
+  | 'incoming'
+  | 'preparing'
+  | 'ready'
+  | 'out-for-delivery'
+  | 'completed'
+  | 'rejected'
+  | 'cancelled';
+
 export type PaymentMethod = 'cash' | 'upi' | 'card';
 
 export interface Order {
@@ -83,15 +103,23 @@ export interface Order {
   discount: number;
   total: number;
   status: OrderStatus;
-  createdAt: Date;
-  createdBy: string; // userId
-  paymentMethod?: PaymentMethod;
-  changeReturned?: number;
+
+  /** Firestore timestamp is allowed, so keep flexible */
+  createdAt: Date | any;
+
+  createdBy: string;
   customerName?: string;
   customerPhone?: string;
+  paymentMethod?: PaymentMethod;
   onlineOrderSource?: OnlineOrderSource;
+
+  // required for queries and security rules
+  outletId: string;
 }
 
+// ----------------------
+// TABLES
+// ----------------------
 export type TableStatus = 'vacant' | 'occupied' | 'billing';
 
 export interface Table {
@@ -102,89 +130,98 @@ export interface Table {
   currentOrderId?: string;
 }
 
+// ----------------------
+// INGREDIENTS / STOCK
+// ----------------------
 export type Unit = 'g' | 'ml' | 'pcs' | 'kg' | 'l';
 
 export interface UnitConversion {
   unit: Unit;
-  factor: number; // How many base units are in this unit (e.g., for kg, factor is 1000 if base is g)
+  factor: number;
 }
 
 export interface Ingredient {
   id: string;
   name: string;
-  baseUnit: Unit; // The smallest unit for inventory tracking
-  stock: number; // in baseUnit
-  minStock: number; // in baseUnit
-  purchaseUnits: UnitConversion[]; // Available units for purchasing
+  baseUnit: Unit;
+  stock: number;
+  minStock: number;
+  purchaseUnits: UnitConversion[];
 }
 
-// Inventory & Purchase Types
+// ----------------------
+// VENDORS / PURCHASE ORDERS
+// ----------------------
 export interface Vendor {
-    id: string;
-    name: string;
-    contactPerson: string;
-    phone: string;
-    email: string;
-    gstin?: string;
+  id: string;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  gstin?: string;
 }
 
 export interface PurchaseOrderItem {
-    id: string;
-    ingredientId: string;
-    quantity: number;
-    purchaseUnit: Unit;
-    unitPrice: number; // Price per purchaseUnit
-    amount: number; // quantity * unitPrice
-    cgst: number;
-    sgst: number;
-    igst: number;
-    description?: string;
+  id: string;
+  ingredientId: string;
+  quantity: number;
+  purchaseUnit: Unit;
+  unitPrice: number;
+  amount: number;
+  cgst: number;
+  sgst: number;
+  igst: number;
+  description?: string;
 }
 
-export type PurchaseOrderStatus = 'pending' | 'completed' | 'cancelled';
+export type PurchaseOrderStatus = 'incoming' | 'pending' | 'processing' | 'completed' | 'cancelled';
 export type PurchasePaymentStatus = 'paid' | 'unpaid';
 
 export interface PurchaseOrder {
-    id: string;
-    poNumber: string;
-    vendorId: string;
-    date: Date;
-    invoiceNumber?: string;
-    invoiceDate?: Date;
-    items: PurchaseOrderItem[];
-    subTotal: number;
-    totalDiscount: number;
-    otherCharges: number;
-    totalTaxes: number;
-    grandTotal: number;
-    status: PurchaseOrderStatus;
-    paymentStatus: PurchasePaymentStatus;
+  id: string;
+  poNumber: string;
+  vendorId: string;
+  date: Date;
+  invoiceNumber?: string;
+  invoiceDate?: Date;
+  items: PurchaseOrderItem[];
+  subTotal: number;
+  totalDiscount: number;
+  otherCharges: number;
+  totalTaxes: number;
+  grandTotal: number;
+  status: PurchaseOrderStatus;
+  paymentStatus: PurchasePaymentStatus;
 }
 
+// ----------------------
+// WASTAGE
+// ----------------------
 export interface WastageItem {
-    id: string;
-    itemId: string; // can be ingredientId or menuItemId
-    name: string; // denormalized name for display
-    quantity: number;
-    unit: 'g' | 'ml' | 'pcs' | 'kg' | 'l' | '';
-    purchasePrice?: number;
-    amount: number;
-    description?: string;
+  id: string;
+  itemId: string;
+  name: string;
+  quantity: number;
+  unit: Unit | '';
+  purchasePrice?: number;
+  amount: number;
+  description?: string;
 }
 
 export interface Wastage {
-    id: string;
-    wastageNumber: string;
-    date: Date;
-    wastageFor: 'Raw Material' | 'Item';
-    items: WastageItem[];
-    totalAmount: number;
-    userId: string;
-    reason: string;
+  id: string;
+  wastageNumber: string;
+  date: Date;
+  wastageFor: 'Raw Material' | 'Item';
+  items: WastageItem[];
+  totalAmount: number;
+  userId: string;
+  reason: string;
 }
 
-
-// Franchise Admin Types
+// ----------------------
+// FRANCHISE
+// ----------------------
 export interface FranchiseOutlet {
   id: string;
   name: string;
@@ -197,53 +234,30 @@ export interface FranchiseOutlet {
   createdAt?: Date;
 }
 
-
-// Operations Types
-export type ReservationStatus = 'confirmed' | 'pending' | 'arrived' | 'cancelled';
-
-export interface Reservation {
-    id: string;
-    name: string;
-    phone: string;
-    guests: number;
-    time: Date;
-    status: ReservationStatus;
-    tableId?: string;
-}
-
-export interface DeliveryBoy {
-    id: string;
-    name: string;
-    phone: string;
-    status: 'available' | 'on-a-delivery' | 'offline';
-    currentOrder?: string;
-}
-
+// ----------------------
+// CUSTOMERS & APP ORDERS
+// ----------------------
 export interface Customer {
-    id: string;
-    name: string;
-    phone: string;
-    totalOrders: number;
-    totalSpent: number;
-    loyaltyPoints: number;
-    tier: 'New' | 'Regular' | 'VIP';
-    firstVisit: Date;
-    lastVisit: Date;
-    address?: string;
-    birthday?: string; // Storing as string 'YYYY-MM-DD'
-    anniversary?: string; // Storing as string 'YYYY-MM-DD'
-    notes?: string;
+  id: string;
+  name: string;
+  phone: string;
+  totalOrders: number;
+  totalSpent: number;
+  loyaltyPoints: number;
+  tier: 'New' | 'Regular' | 'VIP';
+  firstVisit: Date;
+  lastVisit: Date;
+  address?: string;
+  birthday?: string;
+  anniversary?: string;
+  notes?: string;
 }
 
-// App-specific type for orders being built in the POS
 export interface AppOrder {
   id: string;
   orderNumber: string;
   items: OrderItem[];
-  customer: {
-    name: string;
-    phone: string;
-  };
+  customer: { name: string; phone: string };
   orderType: OrderType;
   tableId: string;
   discount: number;
@@ -251,3 +265,39 @@ export interface AppOrder {
   paymentMethod?: PaymentMethod;
   transactionId?: string;
 }
+
+// ----------------------
+// RESERVATIONS
+// ----------------------
+export type ReservationStatus = 'pending' | 'confirmed' | 'arrived' | 'cancelled';
+
+export interface Reservation {
+  id: string;
+  name: string;
+  phone: string;
+  guests: number;
+  time: Date;
+  tableId?: string;
+  status: ReservationStatus;
+}
+
+// ----------------------
+// DELIVERY / RIDERS
+// ----------------------
+export type DeliveryBoyStatus = 'available' | 'on-a-delivery' | 'offline';
+
+export interface DeliveryBoy {
+  id: string;
+  name: string;
+  phone: string;
+  status: DeliveryBoyStatus;
+  // optional currently assigned order label (e.g. "#1002")
+  currentOrder?: string;
+}
+
+// ----------------------
+// MISC
+// ----------------------
+export type OnlineOrderSource = 'zomato' | 'swiggy' | 'unknown';
+
+// Export everything as named exports (already done above)

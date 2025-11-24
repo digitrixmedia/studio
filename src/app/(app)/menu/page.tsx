@@ -235,7 +235,7 @@ export default function MenuPage() {
         ...formData,
         price: finalPrice,
         variations: hasCustomization ? finalVariations : [],
-        mealDeal: mealDealConfig,
+        mealDeal: mealDealConfig || undefined,
       };
       const itemRef = doc(collectionRef, editingItem.id);
       setDocumentNonBlocking(itemRef, updatedItem, { merge: true });

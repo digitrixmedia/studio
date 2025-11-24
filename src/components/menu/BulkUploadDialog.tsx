@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -35,6 +34,17 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
     }
   };
 
+  const normalizeItems = (rawItems: any[]): Omit<MenuItem, 'id' | 'isAvailable' | 'ingredients'>[] => {
+    return rawItems.map((item) => ({
+      name: item.name?.toString().trim() || "Unnamed Item",
+      price: Number(item.price) || 0,
+      category: item.category?.toString().trim() || "Uncategorized",
+      description: item.description?.toString() || "",
+      spiceLevel: item.spiceLevel || "normal",
+      variations: Array.isArray(item.variations) ? item.variations : [],
+    }));
+  };
+
   const handleUpload = async () => {
     if (!file) {
       toast({
@@ -50,6 +60,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
+
       reader.onload = async () => {
         const documentDataUri = reader.result as string;
 
@@ -57,10 +68,11 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
           const result = await extractMenuItems({ documentDataUri });
 
           if (result && result.items.length > 0) {
-            onSuccess(result.items);
+            const safeItems = normalizeItems(result.items);
+            onSuccess(safeItems);
             onClose();
           } else {
-             toast({
+            toast({
               variant: 'destructive',
               title: 'Extraction Failed',
               description: 'Could not extract any menu items. Please check the file format.',
@@ -68,16 +80,17 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
           }
         } catch (aiError) {
           console.error('AI extraction error:', aiError);
-           toast({
+          toast({
             variant: 'destructive',
             title: 'AI Error',
             description: 'The AI model failed to process the document.',
           });
         } finally {
-            setIsUploading(false);
-            setFile(null);
+          setIsUploading(false);
+          setFile(null);
         }
       };
+
       reader.onerror = (error) => {
         console.error('File reading error:', error);
         toast({
@@ -107,19 +120,27 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
             Upload a PDF, Word, or Excel document containing your menu. The AI will automatically extract the items.
           </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="menu-file">Menu File</Label>
-            <Input id="menu-file" type="file" onChange={handleFileChange} accept=".pdf,.xlsx,.csv,.doc,.docx" />
-             <p className="text-xs text-muted-foreground">
+            <Input
+              id="menu-file"
+              type="file"
+              accept=".pdf,.xlsx,.csv,.doc,.docx"
+              onChange={handleFileChange}
+            />
+            <p className="text-xs text-muted-foreground">
               For best results, use a simple, well-structured menu.
             </p>
           </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={isUploading}>
             Cancel
           </Button>
+
           <Button onClick={handleUpload} disabled={!file || isUploading}>
             {isUploading ? (
               <>
@@ -127,7 +148,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                 Processing...
               </>
             ) : (
-               <>
+              <>
                 <Upload className="mr-2 h-4 w-4" /> Upload & Extract
               </>
             )}

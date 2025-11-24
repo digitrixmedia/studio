@@ -288,24 +288,24 @@ export default function OrdersPage() {
   };
   
   const resetCurrentOrder = () => {
-    if (!activeOrder) return;
-
+    if (!activeOrder || !activeOrderId) return; // ⬅ FIX: ensure it's a string
+  
     updateOrder(activeOrderId, { paymentMethod, transactionId });
     console.log('Finalizing order with:', { paymentMethod, transactionId });
-
-    if (activeOrder && activeOrder.redeemedPoints > 0 && activeCustomer) {
+  
+    if (activeOrder.redeemedPoints > 0 && activeCustomer) {
       const newPoints = activeCustomer.loyaltyPoints - activeOrder.redeemedPoints;
       updateCustomer(activeCustomer.id, { loyaltyPoints: newPoints });
     }
-
+  
     if (orders.length === 1) {
       const newOrder = createNewOrder();
       setOrders([newOrder]);
       setActiveOrderId(newOrder.id);
     } else {
-      removeOrder(activeOrderId);
+      removeOrder(activeOrderId); // safe now
     }
-
+  
     setAmountPaid('');
     setPaymentMethod('cash');
     setTransactionId('');
@@ -315,7 +315,7 @@ export default function OrdersPage() {
     setManualTaxRate(null);
     setPointsToRedeem(0);
     setIsPaymentDialogOpen(false);
-  }
+  };  
   
   const handleSendToKitchen = () => {
     if (!activeOrder || activeOrder.items.length === 0) {

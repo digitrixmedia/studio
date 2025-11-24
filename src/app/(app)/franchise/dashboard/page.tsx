@@ -1,44 +1,77 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useAppContext } from "@/contexts/AppContext";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription
+} from "@/components/ui/card";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+
 import {
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
+  ChartTooltipContent
 } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts";
+
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Line,
+  LineChart
+} from "recharts";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { IndianRupee, BarChart3, ShoppingBag, TrendingUp, TrendingDown } from "lucide-react";
+
+import {
+  IndianRupee,
+  BarChart3,
+  ShoppingBag
+} from "lucide-react";
 
 import { ManageOutletDialog } from "@/components/franchise/ManageOutletDialog";
 
-import type { FranchiseOutlet, SubscriptionStatus } from "@/lib/types";
-
+import type { FranchiseOutlet } from "@/lib/types";
 
 const salesChartConfig = {
   total: { label: "Total Sales", color: "hsl(var(--primary))" },
-  today: { label: "Today's Sales", color: "hsl(var(--chart-2))" },
+  today: { label: "Today's Sales", color: "hsl(var(--chart-2))" }
 };
 
 const trendChartConfig = {
-  sales: { label: "Sales", color: "hsl(var(--primary))" },
+  sales: { label: "Sales", color: "hsl(var(--primary))" }
 };
 
 export default function FranchiseDashboardPage() {
   const { pastOrders, selectOutlet, outlets } = useAppContext();
 
+  // ---------------------------
+  // SUMMARY CALC
+  // ---------------------------
   const summary = useMemo(() => {
     const totalSales = outlets.reduce((sum, o) => sum + (o.totalSales || 0), 0);
     const todaySales = outlets.reduce((sum, o) => sum + (o.todaySales || 0), 0);
     const totalOrders = outlets.reduce((sum, o) => sum + (o.ordersToday || 0), 0);
 
-    const sorted = [...outlets].sort((a, b) => (b.todaySales || 0) - (a.todaySales || 0));
+    const sorted = [...outlets].sort(
+      (a, b) => (b.todaySales || 0) - (a.todaySales || 0)
+    );
 
     return {
       totalSales,
@@ -47,25 +80,37 @@ export default function FranchiseDashboardPage() {
       activeOutlets: outlets.filter((o) => o.status === "active").length,
       inactiveOutlets: outlets.filter((o) => o.status !== "active").length,
       topPerformer: sorted[0] || { name: "N/A", todaySales: 0 },
-      lowPerformer: sorted[sorted.length - 1] || { name: "N/A", todaySales: 0 },
-      avgOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0,
+      lowPerformer:
+        sorted.length > 1 ? sorted[sorted.length - 1] : { name: "N/A", todaySales: 0 },
+      avgOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0
     };
   }, [outlets]);
 
+  // ---------------------------
+  // SALES PER OUTLET BAR CHART
+  // ---------------------------
   const salesPerOutlet = useMemo(
     () =>
       outlets.map((o) => ({
         name: o.name,
         total: o.totalSales || 0,
-        today: o.todaySales || 0,
+        today: o.todaySales || 0
       })),
     [outlets]
   );
 
+  // ---------------------------
+  // SALES TREND LAST 7 DAYS
+  // ---------------------------
   const salesTrend = useMemo(() => {
     const trend = (pastOrders || []).reduce((acc, order) => {
       if (!order.createdAt) return acc;
-      const orderDate = (order.createdAt as any).toDate ? (order.createdAt as any).toDate() : new Date(order.createdAt);
+
+      const orderDate = order.createdAt instanceof Date
+        ? order.createdAt
+        : (order.createdAt as any).toDate
+          ? (order.createdAt as any).toDate()
+          : new Date(order.createdAt);
 
       const day = orderDate.toISOString().split("T")[0];
       acc[day] = (acc[day] || 0) + order.total;
@@ -78,22 +123,13 @@ export default function FranchiseDashboardPage() {
       .slice(-7);
   }, [pastOrders]);
 
-  const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(null);
+  const [selectedOutlet, setSelectedOutlet] = useState<FranchiseOutlet | null>(
+    null
+  );
 
-  const getStatusVariant = (status: SubscriptionStatus) => {
-    switch (status) {
-      case "active":
-        return "default";
-      case "inactive":
-        return "secondary";
-      case "expired":
-      case "suspended":
-        return "destructive";
-      default:
-        return "outline";
-    }
-  };
-
+  // ---------------------------
+  // RENDER
+  // ---------------------------
   if (outlets.length === 0) {
     return (
       <div className="flex flex-col gap-8 text-center items-center justify-center h-full">
@@ -105,13 +141,19 @@ export default function FranchiseDashboardPage() {
     );
   }
 
+  const getStatusVariant = (status: string) => {
+    if (status === "active") return "default";
+    return "destructive";
+  };
+
   return (
     <>
       <div className="flex flex-col gap-8">
         <h1 className="text-3xl font-bold">Franchise Dashboard</h1>
 
-        {/* Stat Cards */}
+        {/* SUMMARY CARDS */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {/* Total Sales */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm">Total Sales</CardTitle>
@@ -125,6 +167,7 @@ export default function FranchiseDashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Today's Sales */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm">Today's Sales</CardTitle>
@@ -138,6 +181,7 @@ export default function FranchiseDashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Total Orders */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm">Total Orders</CardTitle>
@@ -148,6 +192,7 @@ export default function FranchiseDashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Active Outlets */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm">Active Outlets</CardTitle>
@@ -158,6 +203,7 @@ export default function FranchiseDashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Inactive Outlets */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm">Inactive Outlets</CardTitle>
@@ -169,8 +215,9 @@ export default function FranchiseDashboardPage() {
           </Card>
         </div>
 
-        {/* Charts */}
+        {/* SALES CHARTS */}
         <div className="grid gap-4 md:grid-cols-2">
+          {/* Per Outlet */}
           <Card>
             <CardHeader>
               <CardTitle>Sales Per Outlet</CardTitle>
@@ -189,6 +236,7 @@ export default function FranchiseDashboardPage() {
             </CardContent>
           </Card>
 
+          {/* Trend */}
           <Card>
             <CardHeader>
               <CardTitle>7-Day Sales Trend</CardTitle>
@@ -207,7 +255,7 @@ export default function FranchiseDashboardPage() {
           </Card>
         </div>
 
-        {/* Outlets Table */}
+        {/* OUTLETS TABLE */}
         <Card>
           <CardHeader>
             <CardTitle>Outlets Overview</CardTitle>
@@ -231,20 +279,28 @@ export default function FranchiseDashboardPage() {
                 {outlets.map((outlet) => (
                   <TableRow key={outlet.id}>
                     <TableCell>{outlet.name}</TableCell>
+
                     <TableCell>
                       <Badge variant={getStatusVariant(outlet.status)}>
                         {outlet.status}
                       </Badge>
                     </TableCell>
+
                     <TableCell>{outlet.todaySales || 0}</TableCell>
                     <TableCell>{outlet.totalSales || 0}</TableCell>
                     <TableCell>{outlet.ordersToday || 0}</TableCell>
                     <TableCell>{outlet.managerName}</TableCell>
+
                     <TableCell className="text-right">
-                      <Button variant="outline" size="sm" className="mr-2"
-                        onClick={() => setSelectedOutlet(outlet)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mr-2"
+                        onClick={() => setSelectedOutlet(outlet)}
+                      >
                         Manage
                       </Button>
+
                       <Button size="sm" onClick={() => selectOutlet(outlet)}>
                         Open POS
                       </Button>
@@ -252,7 +308,6 @@ export default function FranchiseDashboardPage() {
                   </TableRow>
                 ))}
               </TableBody>
-
             </Table>
           </CardContent>
         </Card>

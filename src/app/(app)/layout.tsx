@@ -148,7 +148,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [sidebarContentId, setSidebarContentId] = useState<string | null>(null);
 
-  const incomingOrdersCount = pastOrders.filter(o => o.status === 'incoming').length;
+  const incomingOrdersCount = pastOrders.filter(o => o.status === "incoming" as any).length;
 
   const toggleSidebarContent = useCallback((id: string) => {
     setSidebarContentId(prevId => prevId === id ? null : id);

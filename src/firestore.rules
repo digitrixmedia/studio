@@ -1,96 +1,58 @@
-/**
- * @fileoverview Firestore Security Rules for DineMitra POS.
- *
- * Core Philosophy:
- * This ruleset enforces a multi-tenant security model. Each 'admin' user owns one or more 'outlets'.
- * Data for each outlet (menu, tables, orders) is stored in subcollections under that outlet's document.
- * Access is granted based on a user's `outletId` field in their user document, which must match the `outletId` in the resource path.
- * This ensures strict data isolation between different franchise outlets.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Checks if the request is made by a signed-in user.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * @description Checks if the authenticated user is the owner of the resource.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function userOutlet() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId;
     }
 
-    /**
-     * @description Gets the role of the currently signed-in user from their user document.
-     *              Returns null if the user is not signed in or the document doesn't exist.
-     */
-    function getUserRole() {
-      if (!isSignedIn()) {
-        return null;
-      }
-      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-      if (userDoc == null || !('data' in userDoc) || !('role' in userDoc.data)) {
-        return null;
-      }
-      return userDoc.data.role;
-    }
-    
-    /**
-     * @description Checks if the user belongs to the target outlet.
-     *              The user document must contain an 'outletId' that matches the outletId from the URL.
-     */
-    function belongsToOutlet(outletId) {
-        let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
-        return isSignedIn() && userDoc != null && userDoc.data.outletId == outletId;
-    }
-
-
-    /**********
-     *  USERS
-     *
-     *  - Users can read and update their own document.
-     *  - Franchise Admins can create/manage users for their own outlet.
-     **********/
+    // USERS
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
-      // Allow a franchise admin to manage users in their own outlet
-      allow create, list: if getUserRole() == 'admin' && request.resource.data.outletId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId;
-      allow read, update, delete: if getUserRole() == 'admin' && get(/databases/$(database)/documents/users/$(userId)).data.outletId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.outletId;
-    }
-    
-    /********** 
-     *  OUTLETS
-     *
-     *  - An "Outlet" is the top-level document for a franchise location.
-     *  - Franchise Admins ('admin' role) can manage their own outlet document.
-     *  - All data for an outlet (menu, orders, tables, settings) is stored in subcollections.
-     *  - Any authenticated user belonging to an outlet can read/write data within that outlet's subcollections.
-     **********/
-    match /outlets/{outletId} {
-      // Franchise Admins & their staff can read their own outlet doc.
-      allow read: if belongsToOutlet(outletId);
-      
-      // Franchise owner can update their own outlet document.
-      allow update: if getUserRole() == 'admin' && belongsToOutlet(outletId);
 
-      // Rule for outlet settings subcollection
+      // Any staff/admin can read users from THEIR outlet only
+      allow get: if isSignedIn() &&
+        resource.data.outletId == userOutlet();
+
+      allow list: if isSignedIn() &&
+        request.query.where.outletId == userOutlet();
+
+      // Admin can create users in their outlet
+      allow create: if isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+        request.resource.data.outletId == userOutlet();
+
+      // Admin can update/delete users in their outlet
+      allow update, delete: if isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+        resource.data.outletId == userOutlet();
+
+      // Users can update their own profile
+      allow update: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // OUTLETS
+    match /outlets/{outletId} {
+
+      allow read: if isSignedIn();
+
+      allow update: if isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+      // Settings subcollection
       match /settings/{settingId} {
-        // Allow read for any user belonging to the outlet.
-        allow read: if belongsToOutlet(outletId);
-        // Only allow write for the admin of that specific outlet.
-        allow write: if getUserRole() == 'admin' && belongsToOutlet(outletId);
+        allow read: if isSignedIn() && outletId == userOutlet();
+        allow write: if isSignedIn() &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' &&
+          outletId == userOutlet();
       }
 
-      // Rule for all other subcollections within an outlet.
-      match /{subcollection}/{docId=**} {
-         // Any user (cashier, waiter, manager) who belongs to the outlet can read/write data within it.
-         // This rule excludes the 'settings' subcollection, which has its own more specific rule above.
-         allow read, write: if belongsToOutlet(outletId) && subcollection != 'settings';
+      // ALL other outlet subcollections
+      match /{sub=**} {
+        allow read, write: if isSignedIn() && outletId == userOutlet();
       }
     }
   }

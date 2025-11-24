@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -28,49 +26,61 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import type { PurchaseOrder, Ingredient } from '@/lib/types';
+
+import type { PurchaseOrder, Ingredient, PurchaseOrderStatus } from '@/lib/types';
+
 import { PlusCircle, IndianRupee, Edit } from 'lucide-react';
 import { format } from 'date-fns';
+
 import { NewPurchaseOrderDialog } from '@/components/inventory/NewPurchaseOrderDialog';
 import { useAppContext } from '@/contexts/AppContext';
 
 export default function PurchaseOrdersPage() {
   const { ingredients } = useAppContext();
+
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [liveIngredients, setLiveIngredients] = useState<Ingredient[]>(ingredients);
+
   const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null);
   const [viewingOrder, setViewingOrder] = useState<PurchaseOrder | null>(null);
 
-  // This is a placeholder, a real app would fetch vendors from a collection.
-  const vendors: any[] = []; 
-  const getVendorName = (vendorId: string) => {
-    return vendors.find(v => v.id === vendorId)?.name || 'Unknown Vendor';
-  };
-  
-  const getIngredientName = (ingredientId: string) => {
-    return ingredients.find(i => i.id === ingredientId)?.name || 'Unknown';
-  }
+  // VENDORS – Placeholder until vendor module exists
+  const vendors: any[] = [];
+  const getVendorName = (vendorId: string) =>
+    vendors.find((v) => v.id === vendorId)?.name || 'Unknown Vendor';
 
-  const getStatusVariant = (status: 'pending' | 'completed' | 'cancelled') => {
+  const getIngredientName = (ingredientId: string) =>
+    liveIngredients.find((i) => i.id === ingredientId)?.name || 'Unknown';
+
+  // FIXED: Accepts all PurchaseOrderStatus values
+  const getStatusVariant = (status: PurchaseOrderStatus) => {
     switch (status) {
-        case 'completed': return 'default';
-        case 'pending': return 'secondary';
-        case 'cancelled': return 'destructive';
+      case 'completed':
+        return 'success';
+      case 'pending':
+        return 'secondary';
+      case 'processing':
+        return 'default';
+      case 'incoming':
+        return 'outline';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
     }
-  }
-  
-  const getPaymentStatusVariant = (status: 'paid' | 'unpaid') => {
-    return status === 'paid' ? 'default' : 'destructive';
-  }
+  };
+
+  const getPaymentStatusVariant = (status: 'paid' | 'unpaid') =>
+    status === 'paid' ? 'default' : 'destructive';
 
   const handleSaveOrder = (order: PurchaseOrder) => {
     if (editingOrder) {
-      // Update existing order
-      setPurchaseOrders(prev => prev.map(po => po.id === order.id ? order : po));
+      setPurchaseOrders((prev) =>
+        prev.map((po) => (po.id === order.id ? order : po))
+      );
     } else {
-      // Add new order
-      setPurchaseOrders(prev => [order, ...prev]);
+      setPurchaseOrders((prev) => [order, ...prev]);
     }
   };
 
@@ -79,17 +89,16 @@ export default function PurchaseOrdersPage() {
     setIsNewOrderDialogOpen(true);
     setViewingOrder(null);
   };
-  
+
   const openNewDialog = () => {
     setEditingOrder(null);
     setIsNewOrderDialogOpen(true);
-  }
+  };
 
   const handleDialogClose = () => {
     setIsNewOrderDialogOpen(false);
     setEditingOrder(null);
-  }
-
+  };
 
   return (
     <>
@@ -102,11 +111,13 @@ export default function PurchaseOrdersPage() {
                 A log of all your raw material purchases. Click a row to view details.
               </CardDescription>
             </div>
+
             <Button onClick={openNewDialog}>
               <PlusCircle className="mr-2 h-4 w-4" /> New Purchase Entry
             </Button>
           </div>
         </CardHeader>
+
         <CardContent>
           <Table>
             <TableHeader>
@@ -119,18 +130,36 @@ export default function PurchaseOrdersPage() {
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {purchaseOrders.map((po) => (
-                <TableRow key={po.id} onClick={() => setViewingOrder(po)} className="cursor-pointer">
+                <TableRow
+                  key={po.id}
+                  onClick={() => setViewingOrder(po)}
+                  className="cursor-pointer"
+                >
                   <TableCell className="font-medium">{po.poNumber}</TableCell>
                   <TableCell>{getVendorName(po.vendorId)}</TableCell>
                   <TableCell>{format(po.date, 'PPP')}</TableCell>
+
                   <TableCell>
-                    <Badge variant={getStatusVariant(po.status)} className="capitalize">{po.status}</Badge>
+                    <Badge
+                      variant={getStatusVariant(po.status)}
+                      className="capitalize"
+                    >
+                      {po.status}
+                    </Badge>
                   </TableCell>
-                   <TableCell>
-                    <Badge variant={getPaymentStatusVariant(po.paymentStatus)} className="capitalize">{po.paymentStatus}</Badge>
+
+                  <TableCell>
+                    <Badge
+                      variant={getPaymentStatusVariant(po.paymentStatus)}
+                      className="capitalize"
+                    >
+                      {po.paymentStatus}
+                    </Badge>
                   </TableCell>
+
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end">
                       <IndianRupee className="h-4 w-4 mr-1" />
@@ -139,6 +168,7 @@ export default function PurchaseOrdersPage() {
                   </TableCell>
                 </TableRow>
               ))}
+
               {purchaseOrders.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
@@ -150,45 +180,59 @@ export default function PurchaseOrdersPage() {
           </Table>
         </CardContent>
       </Card>
-      <NewPurchaseOrderDialog 
-        isOpen={isNewOrderDialogOpen} 
-        onClose={handleDialogClose} 
+
+      {/* NEW ORDER DIALOG */}
+      <NewPurchaseOrderDialog
+        isOpen={isNewOrderDialogOpen}
+        onClose={handleDialogClose}
         onSave={handleSaveOrder}
         setIngredients={setLiveIngredients}
         editingOrder={editingOrder}
       />
-       <Dialog open={!!viewingOrder} onOpenChange={() => setViewingOrder(null)}>
+
+      {/* VIEW ORDER DIALOG */}
+      <Dialog open={!!viewingOrder} onOpenChange={() => setViewingOrder(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Purchase Order: {viewingOrder?.poNumber}</DialogTitle>
             <DialogDescription>
-              Details for the purchase from {viewingOrder && getVendorName(viewingOrder.vendorId)}.
+              Details for the purchase from{' '}
+              {viewingOrder && getVendorName(viewingOrder.vendorId)}.
             </DialogDescription>
           </DialogHeader>
+
           <div className="max-h-[60vh] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
-                  <TableHead className='text-right'>Quantity</TableHead>
-                  <TableHead className='text-right'>Unit Price</TableHead>
-                  <TableHead className='text-right'>Amount</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Unit Price</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {viewingOrder?.items.map(item => (
+                {viewingOrder?.items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell>{getIngredientName(item.ingredientId)}</TableCell>
-                    <TableCell className='text-right'>{item.quantity} {item.purchaseUnit}</TableCell>
-                    <TableCell className='text-right'>
+                    <TableCell>
+                      {getIngredientName(item.ingredientId)}
+                    </TableCell>
+
+                    <TableCell className="text-right">
+                      {item.quantity} {item.purchaseUnit}
+                    </TableCell>
+
+                    <TableCell className="text-right">
                       <div className="flex items-center justify-end">
-                        <IndianRupee className="h-4 w-4 mr-1"/>
+                        <IndianRupee className="h-4 w-4 mr-1" />
                         {item.unitPrice.toFixed(2)}
                       </div>
                     </TableCell>
-                     <TableCell className='text-right'>
+
+                    <TableCell className="text-right">
                       <div className="flex items-center justify-end">
-                        <IndianRupee className="h-4 w-4 mr-1"/>
+                        <IndianRupee className="h-4 w-4 mr-1" />
                         {item.amount.toFixed(2)}
                       </div>
                     </TableCell>
@@ -196,31 +240,43 @@ export default function PurchaseOrdersPage() {
                 ))}
               </TableBody>
             </Table>
-             <div className="flex flex-col items-end mt-4 text-sm space-y-1 pr-4">
-                <div className='flex w-48 justify-between'>
-                    <span>Subtotal:</span>
-                    <span>{viewingOrder?.subTotal.toFixed(2)}</span>
-                </div>
-                 <div className='flex w-48 justify-between'>
-                    <span>Discount:</span>
-                    <span className='text-destructive'>- {viewingOrder?.totalDiscount.toFixed(2)}</span>
-                </div>
-                 <div className='flex w-48 justify-between'>
-                    <span>Other Charges:</span>
-                    <span>{viewingOrder?.otherCharges.toFixed(2)}</span>
-                </div>
-                 <div className='flex w-48 justify-between'>
-                    <span>Taxes:</span>
-                    <span>{viewingOrder?.totalTaxes.toFixed(2)}</span>
-                </div>
-                 <div className='flex w-48 justify-between font-bold text-base border-t mt-2 pt-2'>
-                    <span>Grand Total:</span>
-                    <span>{viewingOrder?.grandTotal.toFixed(2)}</span>
-                </div>
+
+            {/* Totals */}
+            <div className="flex flex-col items-end mt-4 text-sm space-y-1 pr-4">
+              <div className="flex w-48 justify-between">
+                <span>Subtotal:</span>
+                <span>{viewingOrder?.subTotal.toFixed(2)}</span>
+              </div>
+
+              <div className="flex w-48 justify-between">
+                <span>Discount:</span>
+                <span className="text-destructive">
+                  - {viewingOrder?.totalDiscount.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="flex w-48 justify-between">
+                <span>Other Charges:</span>
+                <span>{viewingOrder?.otherCharges.toFixed(2)}</span>
+              </div>
+
+              <div className="flex w-48 justify-between">
+                <span>Taxes:</span>
+                <span>{viewingOrder?.totalTaxes.toFixed(2)}</span>
+              </div>
+
+              <div className="flex w-48 justify-between font-bold text-base border-t mt-2 pt-2">
+                <span>Grand Total:</span>
+                <span>{viewingOrder?.grandTotal.toFixed(2)}</span>
+              </div>
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setViewingOrder(null)}>Close</Button>
+            <Button variant="outline" onClick={() => setViewingOrder(null)}>
+              Close
+            </Button>
+
             {viewingOrder && (
               <Button onClick={() => openEditDialog(viewingOrder)}>
                 <Edit className="mr-2 h-4 w-4" /> Edit

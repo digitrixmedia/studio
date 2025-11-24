@@ -88,7 +88,9 @@ export default function OperationsPage() {
         customers,
         loadOnlineOrderIntoPOS,
         menuItems,
-    } = useAppContext();
+        selectedOutlet,
+        currentUser
+    } = useAppContext();    
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
@@ -140,6 +142,7 @@ export default function OperationsPage() {
         const total = subTotal + tax;
         
         const newOnlineOrder: Order = {
+            outletId: selectedOutlet?.id || currentUser?.outletId || "",
             id: `online-${source}-${Date.now()}`,
             orderNumber: `Z-${Math.floor(Math.random() * 9000) + 1000}`,
             type: 'delivery',

@@ -59,7 +59,7 @@ import { useFirestore } from '@/firebase';
 
 
 export default function InventoryStockPage() {
-  const { ingredients, setIngredients } = useAppContext();
+  const { ingredients } = useAppContext();
   const firestore = useFirestore();
   const [stockUpdateIngredient, setStockUpdateIngredient] = useState<Ingredient | null>(null);
   const [stockUpdateQuantity, setStockUpdateQuantity] = useState('');
