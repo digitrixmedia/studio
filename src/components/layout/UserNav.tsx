@@ -24,13 +24,10 @@ export function UserNav() {
   }
   
   const isFranchiseAdmin = currentUser.role === 'admin';
-  const isSuperAdmin = currentUser.role === 'super-admin';
   const effectiveRole = isFranchiseAdmin && selectedOutlet ? 'manager' : currentUser.role;
 
   const { name, email } = currentUser;
   const initials = name.split(' ').map(n => n[0]).join('');
-
-  const profileLink = isSuperAdmin ? "/super-admin/profile" : "/profile";
 
   return (
     <DropdownMenu>
@@ -60,7 +57,7 @@ export function UserNav() {
               <span>Back to Franchise</span>
             </DropdownMenuItem>
           )}
-          <Link href={profileLink}>
+          <Link href="/profile">
             <DropdownMenuItem>
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Profile & Settings</span>

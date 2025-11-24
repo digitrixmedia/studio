@@ -1,3 +1,4 @@
+
 export type Role = 'admin' | 'manager' | 'cashier' | 'waiter' | 'kitchen';
 
 export interface User {
@@ -180,50 +181,6 @@ export interface Wastage {
     totalAmount: number;
     userId: string;
     reason: string;
-}
-
-
-// Super Admin Types
-export type SubscriptionStatus = 'active' | 'inactive' | 'expired' | 'suspended';
-
-export interface Franchise {
-  id: string;
-  name: string;
-  totalSales: number;
-  totalOutlets: number;
-  totalStorage: number;
-  lastActive: Date;
-  totalReads: number;
-  totalWrites: number;
-}
-export interface Subscription {
-  id: string;
-  franchiseName: string;
-  outletName: string;
-  adminEmail: string;
-  adminName?: string;
-  startDate: Date;
-  endDate: Date;
-  status: SubscriptionStatus;
-  storageUsedMB: number;
-  totalReads: number;
-  totalWrites: number;
-}
-
-export type AuditLogAction = 'login' | 'logout' | 'failed-login' | 'subscription-created' | 'subscription-suspended' | 'subscription-deleted';
-export type AuditLogStatus = 'success' | 'failure' | 'warning';
-
-export interface AuditLog {
-    id: string;
-    user: {
-        name: string;
-        role: Role;
-    };
-    action: AuditLogAction;
-    target: string; // E.g., "Subscription: Brew & Bake - Outlet 2" or "System"
-    status: AuditLogStatus;
-    ipAddress: string;
-    timestamp: Date;
 }
 
 

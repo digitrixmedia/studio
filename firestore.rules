@@ -13,8 +13,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
-        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super-admin');
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
     }
 
     /********** USERS **********/
@@ -24,16 +23,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
       allow list: if isAdmin();
     }
-
-    /********** SUBSCRIPTIONS (Superadmin creates these) **********/
-    match /subscriptions/{subscriptionId} {
-      allow create, update, delete: if isAdmin();
-      allow read: if isAdmin();
-    }
     
     /********** OUTLETS **********/
     match /outlets/{outletId} {
-      allow create, update, delete, read: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow create, update, delete, read, list: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
 
       // All authenticated users of a specific outlet can read/write to its subcollections
       match /menu_items/{menuItemId} {
@@ -57,6 +50,9 @@ service cloud.firestore {
        match /customers/{customerId} {
         allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
       }
+       match /settings/{settingId} {
+        allow read, write: if isSignedIn() && exists(/databases/$(database)/documents/outlets/$(outletId));
+       }
     }
   }
 }

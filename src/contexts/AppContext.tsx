@@ -1,3 +1,4 @@
+
 // src/contexts/AppContext.tsx
 'use client';
 
@@ -12,7 +13,6 @@ import type {
   Table,
   Customer,
   Ingredient,
-  Subscription,
 } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
@@ -77,7 +77,6 @@ interface AppContextType {
   createNewOrder: () => AppOrder;
   startOrderForTable: (tableId: string) => void;
   auth: ReturnType<typeof getAuth>;
-  subscriptions: Subscription[];
   outlets: FranchiseOutlet[];
 }
 
@@ -165,33 +164,13 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   
   const outletsQuery = useMemoFirebase(() => {
     if (isUserLoading || !currentUser || !firestore) return null;
-    if (currentUser.role === 'admin' && currentUser.outletId) {
+    if (currentUser.role === 'admin' && currentUser.id) {
       return query(collection(firestore, 'outlets'), where('ownerId', '==', currentUser.id));
     }
     return null;
   }, [firestore, currentUser, isUserLoading]);
   const { data: outletsData } = useCollection<FranchiseOutlet>(outletsQuery);
   const outlets = useMemo(() => outletsData || [], [outletsData]);
-
-  const subscriptions = useMemo(() => {
-    if (!outlets || !users) return [];
-    return outlets.map(o => {
-        const owner = users.find(u => u.id === o.ownerId);
-        return {
-            id: o.id,
-            franchiseName: owner?.name || 'Unknown Franchise',
-            outletName: o.name,
-            adminEmail: owner?.email || 'unknown',
-            adminName: owner?.name,
-            startDate: (o.createdAt as any)?.toDate() || new Date(),
-            endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-            status: 'active', // This should come from the document data if available
-            storageUsedMB: 0,
-            totalReads: 0,
-            totalWrites: 0,
-        };
-    });
-  }, [outlets, users]);
 
 
   const menuItemsQuery = useMemoFirebase(() => {
@@ -482,7 +461,6 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
     heldOrders, setHeldOrders, activeOrderId, setActiveOrderId, addOrder, removeOrder,
     updateOrder, finalizeOrder, holdOrder, resumeOrder, getOrderByTable, loadOrder,
     loadOnlineOrderIntoPOS, createNewOrder, startOrderForTable, auth,
-    subscriptions,
     outlets,
   } as AppContextType;
 
