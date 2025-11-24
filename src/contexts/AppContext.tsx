@@ -153,19 +153,26 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   const usersQuery = useMemoFirebase(() => {
     if (isUserLoading || !currentUser || !firestore) return null;
+
     const outletId = selectedOutlet?.id || currentUser.outletId;
+
     if (outletId) {
-      return query(collection(firestore, 'users'), where('outletId', '==', outletId));
+        return query(
+            collection(firestore, 'users'),
+            where('outletId', '==', outletId)
+        );
     }
-    return null;
+    
+    return null; // Don't query if there's no outletId
   }, [firestore, currentUser, selectedOutlet, isUserLoading]);
+
   const { data: usersData } = useCollection<User>(usersQuery);
   const users = useMemo(() => usersData || [], [usersData]);
   
   const outletsQuery = useMemoFirebase(() => {
     if (isUserLoading || !currentUser || !firestore) return null;
-    if (currentUser.role === 'admin' && currentUser.id) {
-      return query(collection(firestore, 'outlets'), where('ownerId', '==', currentUser.id));
+    if (currentUser.role === 'admin') {
+      return query(collection(firestore, 'outlets'));
     }
     return null;
   }, [firestore, currentUser, isUserLoading]);
