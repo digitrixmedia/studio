@@ -16,7 +16,7 @@ import type {
   Subscription,
 } from '@/lib/types';
 import { useRouter, usePathname } from 'next/navigation';
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSettings } from './SettingsContext';
 import {
@@ -27,7 +27,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { initializeFirebase, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { initializeFirebase, useCollection, useDoc, useMemoFirebase, useUser } from '@/firebase';
 import {
   collection,
   doc,
@@ -54,11 +54,8 @@ interface AppContextType {
   orders: AppOrder[];
   setOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
   pastOrders: Order[];
-  setPastOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   tables: Table[];
-  setTables: React.Dispatch<React.SetStateAction<Table[]>>;
   ingredients: Ingredient[];
-  setIngredients: React.Dispatch<React.SetStateAction<Ingredient[]>>;
   heldOrders: AppOrder[];
   setHeldOrders: React.Dispatch<React.SetStateAction<AppOrder[]>>;
   customers: Customer[];
@@ -66,7 +63,6 @@ interface AppContextType {
   activeOrderId: string | null;
   setActiveOrderId: React.Dispatch<React.SetStateAction<string | null>>;
   users: User[];
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
   addOrder: () => void;
   removeOrder: (orderId: string) => void;
   updateOrder: (orderId: string, updates: Partial<AppOrder>) => void;
@@ -152,112 +148,76 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const { settings, loadSettingsForOutlet } = useSettings();
 
   const { auth, firestore } = initializeFirebase();
+  const { user: authUser, isUserLoading } = useUser();
+
+  const userDetailsQuery = useMemoFirebase(() => {
+    if (!firestore || !authUser) return null;
+    return doc(firestore, 'users', authUser.uid);
+  }, [firestore, authUser]);
+  const { data: userDetailsData } = useDoc<User>(userDetailsQuery);
 
   useEffect(() => {
-    const setup = async () => {
-      await ensureSuperAdminExists(auth, firestore);
+    if (isUserLoading) {
+      setIsInitializing(true);
+    } else if (!authUser) {
+      setCurrentUser(null);
       setIsInitializing(false);
-    };
-    if (process.env.NODE_ENV === 'development') {
-      setup();
-    } else {
+    } else if (authUser && userDetailsData) {
+      setCurrentUser(userDetailsData);
       setIsInitializing(false);
     }
-  }, [auth, firestore]);
+  }, [authUser, userDetailsData, isUserLoading]);
+
 
   useEffect(() => {
-    if (isInitializing) return;
-    const unsub = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-      if (!fbUser) {
-        setCurrentUser(null);
-        return;
-      }
-      try {
-        const uDoc = await getDoc(doc(firestore, 'users', fbUser.uid));
-        if (uDoc.exists()) setCurrentUser(uDoc.data() as User);
-        else {
-          await signOut(auth);
-          setCurrentUser(null);
-        }
-      } catch (err) {
-        console.error('Error loading user doc:', err);
-        setCurrentUser(null);
-      }
-    });
-    return () => unsub();
-  }, [auth, firestore, isInitializing]);
-  
-  useEffect(() => {
     if (!currentUser || !firestore) return;
-    // For NON-admin users, auto-assign their outlet
     if (
       currentUser.role !== 'admin' &&
       currentUser.role !== 'super-admin' &&
       currentUser.outletId &&
       !selectedOutlet
     ) {
-      const fetchOutlet = async () => {
-        const outletRef = doc(firestore, 'outlets', currentUser.outletId!);
-        const outletSnap = await getDoc(outletRef);
-        if (outletSnap.exists()) {
-          const outletData = outletSnap.data() as Omit<FranchiseOutlet, 'id'>;
-          const outlet = {
-            id: outletSnap.id,
-            ...outletData
-          }
-          setSelectedOutlet(outlet as FranchiseOutlet);
-          localStorage.setItem('selectedOutlet', JSON.stringify(outlet));
-          loadSettingsForOutlet(outlet.id);
-        } else {
-            console.error(`Outlet with ID ${currentUser.outletId} not found.`);
-        }
-      }
-      fetchOutlet();
+        const minimalOutlet: FranchiseOutlet = {
+            id: currentUser.outletId,
+            name: 'Your Outlet',
+            status: 'active',
+            managerName: '',
+        };
+        setSelectedOutlet(minimalOutlet);
+        localStorage.setItem('selectedOutlet', JSON.stringify(minimalOutlet));
+        loadSettingsForOutlet(minimalOutlet.id);
     }
   }, [currentUser, selectedOutlet, firestore, loadSettingsForOutlet]);
 
 
-  const { data: usersData, setData: setUsers } = useCollection<User>(
-    useMemoFirebase(() => {
-      if (firestore && currentUser?.role === 'super-admin') {
-        return collection(firestore, 'users');
-      }
-      return null;
-    }, [firestore, currentUser])
-  );
-  const users = usersData || [];
-
-
-  // Fetch ALL outlets if user is a super-admin
-  const { data: allOutletsData } = useCollection<FranchiseOutlet>(
-    useMemoFirebase(() => {
-      if (firestore && currentUser?.role === 'super-admin') {
-        return collection(firestore, 'outlets');
-      }
-      return null;
-    }, [firestore, currentUser])
-  );
-
-  // Fetch a SINGLE outlet if user is an admin with an outletId
-  const { data: singleOutletData } = useDoc<FranchiseOutlet>(
-    useMemoFirebase(() => {
-      if (firestore && currentUser?.role === 'admin' && currentUser.outletId) {
-        return doc(firestore, 'outlets', currentUser.outletId);
-      }
-      return null;
-    }, [firestore, currentUser])
-  );
+  const usersQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore) return null;
+    if (currentUser.role === 'super-admin') {
+      return collection(firestore, 'users');
+    }
+    const outletId = selectedOutlet?.id || currentUser.outletId;
+    if (outletId) {
+      return query(collection(firestore, 'users'), where('outletId', '==', outletId));
+    }
+    return null;
+  }, [firestore, currentUser, selectedOutlet, isUserLoading]);
+  const { data: usersData } = useCollection<User>(usersQuery);
+  const users = useMemo(() => usersData || [], [usersData]);
   
-  const outlets = useMemo(() => {
-    if (currentUser?.role === 'super-admin') {
-      return allOutletsData || [];
+  const outletsQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore) return null;
+    if (currentUser.role === 'super-admin') {
+      return collection(firestore, 'outlets');
     }
-    if (currentUser?.role === 'admin' && singleOutletData) {
-      return [singleOutletData];
+    if (currentUser.role === 'admin' && currentUser.outletId) {
+      // Admins should fetch their own single outlet document
+      // Let's adjust this to query for it, which is more aligned with `useCollection`
+      return query(collection(firestore, 'outlets'), where('ownerId', '==', currentUser.id));
     }
-    return [];
-  }, [currentUser, allOutletsData, singleOutletData]);
-
+    return null;
+  }, [firestore, currentUser, isUserLoading]);
+  const { data: outletsData } = useCollection<FranchiseOutlet>(outletsQuery);
+  const outlets = useMemo(() => outletsData || [], [outletsData]);
 
   const subscriptions = useMemo(() => {
     if (!outlets || !users) return [];
@@ -280,59 +240,55 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, [outlets, users]);
 
 
-  const { data: menuItemsData } = useCollection<MenuItem>(
-    useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet || !currentUser) return null;
-      return collection(firestore, `outlets/${selectedOutlet.id}/menu_items`);
-    }, [firestore, selectedOutlet, currentUser])
-  );
+  const menuItemsQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore || !selectedOutlet) return null;
+    return collection(firestore, `outlets/${selectedOutlet.id}/menu_items`);
+  }, [firestore, selectedOutlet, currentUser, isUserLoading]);
+  const { data: menuItemsData } = useCollection<MenuItem>(menuItemsQuery);
 
-  const { data: menuCategoriesData } = useCollection<MenuCategory>(
-    useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet || !currentUser) return null;
-      return collection(firestore, `outlets/${selectedOutlet.id}/menu_categories`);
-    }, [firestore, selectedOutlet, currentUser])
-  );
+  const menuCategoriesQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore || !selectedOutlet) return null;
+    return collection(firestore, `outlets/${selectedOutlet.id}/menu_categories`);
+  }, [firestore, selectedOutlet, currentUser, isUserLoading]);
+  const { data: menuCategoriesData } = useCollection<MenuCategory>(menuCategoriesQuery);
+  
+  const tablesQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore || !selectedOutlet) return null;
+    return collection(firestore, `outlets/${selectedOutlet.id}/tables`);
+  }, [firestore, selectedOutlet, currentUser, isUserLoading]);
+  const { data: tablesData } = useCollection<Table>(tablesQuery);
+  
+  const ingredientsQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore || !selectedOutlet) return null;
+    return collection(firestore, `outlets/${selectedOutlet.id}/ingredients`);
+  }, [firestore, selectedOutlet, currentUser, isUserLoading]);
+  const { data: ingredientsData } = useCollection<Ingredient>(ingredientsQuery);
+  
+  const pastOrdersQuery = useMemoFirebase(() => {
+    if (isUserLoading || !currentUser || !firestore) return null;
+    if (currentUser.role === 'super-admin') {
+      return query(collectionGroup(firestore, 'orders'), limit(500));
+    }
+    if (selectedOutlet) {
+      return query(
+        collection(firestore, `outlets/${selectedOutlet.id}/orders`),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      );
+    }
+    return null;
+  }, [firestore, selectedOutlet, currentUser, isUserLoading]);
+  const { data: pastOrdersData } = useCollection<Order>(pastOrdersQuery);
+  
+  const [tables, setTables] = useState<Table[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
 
-  const { data: tablesData, setData: setTables } = useCollection<Table>(
-    useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet || !currentUser) return null;
-      return collection(firestore, `outlets/${selectedOutlet.id}/tables`);
-    }, [firestore, selectedOutlet, currentUser])
-  );
-
-  const { data: ingredientsData, setData: setIngredients } = useCollection<Ingredient>(
-    useMemoFirebase(() => {
-      if (!firestore || !selectedOutlet || !currentUser) return null;
-      return collection(firestore, `outlets/${selectedOutlet.id}/ingredients`);
-    }, [firestore, selectedOutlet, currentUser])
-  );
-
-  const { data: pastOrdersData, setData: setPastOrders } = useCollection<Order>(
-    useMemoFirebase(() => {
-        if (!firestore || !currentUser) return null;
-        
-        if (currentUser.role === 'super-admin') {
-            return query(collectionGroup(firestore, 'orders'), limit(500));
-        }
-
-        if (selectedOutlet) {
-            return query(
-                collection(firestore, `outlets/${selectedOutlet.id}/orders`),
-                orderBy('createdAt', 'desc'),
-                limit(100)
-            );
-        }
-
-        return null;
-    }, [firestore, selectedOutlet, currentUser])
-  );
+  useEffect(() => setTables(tablesData || []), [tablesData]);
+  useEffect(() => setIngredients(ingredientsData || []), [ingredientsData]);
 
 
   const menuItems = useMemo(() => menuItemsData || [], [menuItemsData]);
   const menuCategories = useMemo(() => menuCategoriesData || [], [menuCategoriesData]);
-  const tables = useMemo(() => tablesData || [], [tablesData]);
-  const ingredients = useMemo(() => ingredientsData || [], [ingredientsData]);
   
   const pastOrders = useMemo(() => {
     if (!pastOrdersData) return [];
@@ -577,8 +533,9 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   const value = {
     currentUser, selectedOutlet, logout, selectOutlet, clearSelectedOutlet,
     menuItems, menuCategories, customers, updateCustomer, orders, setOrders,
-    pastOrders, setPastOrders: setPastOrders as any, users, setUsers: setUsers as any,
-    tables, setTables: setTables as any, ingredients, setIngredients: setIngredients as any,
+    pastOrders, users,
+    tables, setTables: setTables as any,
+    ingredients, setIngredients: setIngredients as any,
     heldOrders, setHeldOrders, activeOrderId, setActiveOrderId, addOrder, removeOrder,
     updateOrder, finalizeOrder, holdOrder, resumeOrder, getOrderByTable, loadOrder,
     loadOnlineOrderIntoPOS, createNewOrder, startOrderForTable, auth,
