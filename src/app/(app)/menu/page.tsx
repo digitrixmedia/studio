@@ -81,7 +81,7 @@ const initialFormState: Partial<MenuItem> = {
 
 
 export default function MenuPage() {
-  const { menuItems, menuCategories, ingredients, setMenuItems, selectedOutlet } = useAppContext();
+  const { menuItems, menuCategories, ingredients, selectedOutlet } = useAppContext();
   const firestore = useFirestore();
 
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -705,3 +705,4 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
     </form>
   );
 }
+
