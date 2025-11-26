@@ -60,7 +60,8 @@ export default function OrdersPage() {
     updateCustomer,
     menuItems,
     menuCategories,
-    tables
+    tables,
+    finalizeOrder,
   } = useAppContext();
   const { settings, setSetting } = useSettings();
   
@@ -764,18 +765,19 @@ try {
     printContent(kotHtml);
   };
 
-  const handlePrintAndSettle = () => {
+  const handlePrintAndSettle = async () => {
     handlePrintBill();
-    resetCurrentOrder();
+    if (activeOrderId) await finalizeOrder(activeOrderId);
   };
   
-  const handleKotAndPrint = () => {
+  const handleKotAndPrint = async () => {
     handlePrintKOT();
     handlePrintBill();
-    resetCurrentOrder();
+    if (activeOrderId) await finalizeOrder(activeOrderId);
   };
   
   const handleSaveAndEbill = async () => {
+    if (activeOrderId) await finalizeOrder(activeOrderId);
     if (!activeOrder) return;
     if (!activeOrder.customer.phone) {
       toast({
