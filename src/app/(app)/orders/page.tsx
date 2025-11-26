@@ -35,9 +35,12 @@ import { generateSmsBill } from '@/ai/flows/generate-sms-bill-flow';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CustomerSearch } from '@/components/pos/CustomerSearch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { deductIngredientsForOrder } from '@/firebase/stock/deduction';
+import { initializeFirebase } from '@/firebase';
 
 
 export default function OrdersPage() {
+  const { firestore } = initializeFirebase();
   const { 
     orders,
     heldOrders,
@@ -287,12 +290,23 @@ export default function OrdersPage() {
     updateActiveOrder(updatedItems);
   };
   
-  const resetCurrentOrder = () => {
+  const resetCurrentOrder = async () => {
     if (!activeOrder || !activeOrderId) return; // ⬅ FIX: ensure it's a string
   
     updateOrder(activeOrderId, { paymentMethod, transactionId });
     console.log('Finalizing order with:', { paymentMethod, transactionId });
-  
+  // 🔥 STOCK DEDUCTION
+try {
+  await deductIngredientsForOrder(
+    activeOrder,
+    menuItems,
+    firestore,
+    currentUser?.outletId || 'default'
+  );
+} catch (e) {
+  console.error("Stock deduction failed:", e);
+}
+
     if (activeOrder.redeemedPoints > 0 && activeCustomer) {
       const newPoints = activeCustomer.loyaltyPoints - activeOrder.redeemedPoints;
       updateCustomer(activeCustomer.id, { loyaltyPoints: newPoints });
