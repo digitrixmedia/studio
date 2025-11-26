@@ -262,6 +262,7 @@ export interface AppOrder {
   tableId: string;
   discount: number;
   redeemedPoints: number;
+  createdAt?: any;
   paymentMethod?: PaymentMethod;
   transactionId?: string;
 }
