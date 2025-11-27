@@ -64,6 +64,10 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 
+function clean(obj: any) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 const initialFormState: Partial<MenuItem> = {
   name: '',
   price: 0,
@@ -238,7 +242,7 @@ export default function MenuPage() {
         mealDeal: mealDealConfig || undefined,
       };
       const itemRef = doc(collectionRef, editingItem.id);
-      setDocumentNonBlocking(itemRef, updatedItem, { merge: true });
+      setDocumentNonBlocking(itemRef, clean(updatedItem), { merge: true });
       toast({ title: "Item Updated", description: `${formData.name} has been updated.` });
     } else {
       // Create new item
@@ -250,7 +254,7 @@ export default function MenuPage() {
         variations: hasCustomization ? finalVariations : [],
         mealDeal: mealDealConfig,
       } as Omit<MenuItem, 'id'>;
-      addDocumentNonBlocking(collectionRef, newItem);
+      addDocumentNonBlocking(collectionRef, clean(newItem));
       toast({ title: "Item Created", description: `${formData.name} has been added to the menu.` });
     }
     
