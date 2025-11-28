@@ -895,7 +895,7 @@ try {
              <Tabs
               value={activeCategory}
               onValueChange={setActiveCategory}
-              className="w-full"
+              className="w-full mb-2"
             >
               <TabsList className="flex flex-wrap gap-2 w-full">
                 {menuCategories.map(category => (
