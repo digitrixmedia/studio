@@ -897,7 +897,7 @@ try {
               onValueChange={setActiveCategory}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-7">
+              <TabsList className="flex flex-wrap gap-2 w-full">
                 {menuCategories.map(category => (
                   <TabsTrigger key={category.id} value={category.id}>
                     {category.name}
