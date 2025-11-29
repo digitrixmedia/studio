@@ -890,34 +890,48 @@ try {
       {/* Menu Section */}
       <div className="lg:col-span-2">
         <Card className="h-full flex flex-col">
-          <CardHeader>
-            <CardTitle className='hidden sm:block'>Point of Sale</CardTitle>
-             <Tabs
-              value={activeCategory}
-              onValueChange={setActiveCategory}
-              className="w-full mb-2"
-            >
-              <TabsList className="flex flex-wrap gap-2 w-full">
-                {menuCategories.map(category => (
-                  <TabsTrigger key={category.id} value={category.id}>
-                    {category.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </Tabs>
-            {settings.displaySearch && (
-              <div className="relative mt-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search menu items..." 
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            )}
-          </CardHeader>
-          <CardContent className="flex-1 overflow-hidden">
+        <CardHeader>
+        
+  {/* Title + tiny search bar in one row */}
+  <div className="flex items-center justify-between gap-2 mb-3">
+  <CardTitle className="hidden sm:block">Point of Sale</CardTitle>
+  <div className="relative w-60">
+    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <Input
+      placeholder="Search menu items..."
+      className="pl-10"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+  </div>
+</div>
+
+
+  {/* Categories wrapper */}
+  <div className="w-full bg-muted rounded-md p-4 mb-4 relative z-20 min-h-[200px]">
+  <Tabs value={activeCategory} onValueChange={setActiveCategory} className="w-full">
+    <TabsList className="
+      w-full
+      grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6
+      gap-2 bg-muted p-2 border-none rounded-md
+      justify-center
+    ">
+      {menuCategories.sort((a, b) => a.name.localeCompare(b.name)).map((category) => (
+        <TabsTrigger
+          key={category.id}
+          value={category.id}
+          className="data-[state=active]:bg-white w-full text-center"
+        >
+          {category.name}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+  </Tabs>
+</div>
+
+</CardHeader>
+
+              <CardContent className="flex-1 overflow-hidden mt-8 relative z-10">
                 <ScrollArea className="h-full">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4 pr-4">
                     {filteredMenuItems.map(item => (
