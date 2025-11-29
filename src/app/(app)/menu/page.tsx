@@ -122,7 +122,7 @@ export default function MenuPage() {
   const [variations, setVariations] = useState<
     Partial<MenuItemVariation>[]
   >([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
-  const [addons, setAddons] = useState<Partial<MenuItemAddon>[]>([]);
+  const [addons, setAddons] = useState<MenuItemAddon[]>([]);
   const [hasCustomization, setHasCustomization] = useState(false);
   const [isMealDeal, setIsMealDeal] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -258,7 +258,9 @@ export default function MenuPage() {
   };
 
   const handleAddAddon = () => {
-    setAddons((prev) => [...prev, { name: '', price: 0 }]);
+    setAddons((prev) => [...prev, { id: crypto.randomUUID(),
+      name: '',
+      variations: [] }]);
   };
 
   const handleRemoveAddon = (index: number) => {
@@ -1152,13 +1154,21 @@ function CustomizationForm({
     notes?: string,
   ) => void;
 }) {
+
   const [selectedVariation, setSelectedVariation] = useState<string>(
     item.variations?.[0]?.id || '',
   );
+
   const [notes, setNotes] = useState('');
-  const [selectedAddons, setSelectedAddons] = useState<MenuItemAddon[]>(
-    [],
-  );
+  const [selectedAddons, setSelectedAddons] = useState<MenuItemAddon[]>([]);
+
+  const getAddonPriceForVariation = (addon: MenuItemAddon) => {
+    const variationPrice = addon.variations?.find(
+      (v) => v.variationId === selectedVariation
+    )?.price;
+
+    return variationPrice ?? addon.price ?? 0;
+  };
 
   const handleToggleAddon = (addon: MenuItemAddon) => {
     setSelectedAddons((prev) =>
@@ -1168,22 +1178,24 @@ function CustomizationForm({
     );
   };
 
-  const handleSubmit = (variation?: MenuItemVariation) => {
+  const handleSubmit = () => {
+    const variation = item.variations?.find(
+      (v) => v.id === selectedVariation,
+    );
     onSelectVariation(item, variation, selectedAddons, notes);
   };
 
-  const hasVariations =
-    item.variations && item.variations.length > 0;
+  const hasVariations = item.variations && item.variations.length > 0;
   const hasAddons = item.addons && item.addons.length > 0;
 
   return (
     <div className="space-y-4">
+
       {hasVariations && (
         <div>
           <Label className="font-medium">Select Variation</Label>
+
           <RadioGroup
-            name="variation"
-            defaultValue={item.variations![0].id}
             value={selectedVariation}
             onValueChange={setSelectedVariation}
             className="mt-2 space-y-2"
@@ -1191,15 +1203,10 @@ function CustomizationForm({
             {item.variations!.map((v) => (
               <div key={v.id} className="flex items-center space-x-2">
                 <RadioGroupItem value={v.id} id={v.id} />
-                <Label
-                  htmlFor={v.id}
-                  className="flex justify-between w-full"
-                >
+                <Label htmlFor={v.id} className="flex justify-between w-full">
                   <span>{v.name}</span>
                   <span className="text-muted-foreground">
-                    (
-                    <IndianRupee className="h-3.5 w-3.5 inline-block" />
-                    {v.priceModifier.toFixed(2)})
+                    (+ ₹{v.priceModifier})
                   </span>
                 </Label>
               </div>
@@ -1212,28 +1219,31 @@ function CustomizationForm({
         <div>
           <Label className="font-medium">Select Addons</Label>
           <div className="mt-2 space-y-2">
-            {item.addons!.map((addon) => (
-              <div
-                key={addon.id}
-                className="flex items-center space-x-3"
-              >
-                <Checkbox
-                  id={`addon-${addon.id}`}
-                  onCheckedChange={() => handleToggleAddon(addon)}
-                />
-                <Label
-                  htmlFor={`addon-${addon.id}`}
-                  className="flex justify-between w-full font-normal"
-                >
-                  <span>{addon.name}</span>
-                  <span className="text-muted-foreground">
-                    (+{' '}
-                    <IndianRupee className="h-3.5 w-3.5 inline-block" />
-                    {addon.price.toFixed(2)})
-                  </span>
-                </Label>
-              </div>
-            ))}
+
+            {item.addons!.map((addon) => {
+              const price = getAddonPriceForVariation(addon);
+
+              return (
+                <div key={addon.id} className="flex items-center space-x-3">
+
+                  <Checkbox
+                    id={`addon-${addon.id}`}
+                    onCheckedChange={() => handleToggleAddon(addon)}
+                  />
+
+                  <Label
+                    htmlFor={`addon-${addon.id}`}
+                    className="flex justify-between w-full font-normal"
+                  >
+                    <span>{addon.name}</span>
+                    <span className="text-muted-foreground">
+                      (+ ₹{price})
+                    </span>
+                  </Label>
+
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1241,29 +1251,19 @@ function CustomizationForm({
       <div>
         <Label className="font-medium">Special Notes</Label>
         <Textarea
-          name="notes"
-          placeholder="e.g. Extra spicy, no onions..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          placeholder="e.g. Extra spicy, no onions..."
         />
       </div>
+
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button
-          type="button"
-          onClick={() =>
-            handleSubmit(
-              item.variations?.find(
-                (v) => v.id === selectedVariation,
-              ),
-            )
-          }
-        >
-          Add to Order
-        </Button>
+        <Button onClick={handleSubmit}>Add to Order</Button>
       </DialogFooter>
     </div>
   );
 }
+

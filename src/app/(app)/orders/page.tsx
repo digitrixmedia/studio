@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import * as React from 'react';
@@ -148,7 +146,7 @@ export default function OrdersPage() {
     let finalName = variation ? `${itemToAdd.name} (${variation.name})` : itemToAdd.name;
     const uniqueCartId = `${itemToAdd.id}-${variation?.id || 'base'}-${notes || ''}-${Date.now()}`;
 
-    const addonsPrice = addons?.reduce((sum, addon) => sum + addon.price, 0) || 0;
+    const addonsPrice = addons?.reduce((sum, addon) => sum + (addon.price ?? 0), 0) ?? 0;
     const finalPrice = basePrice + addonsPrice;
 
     const existingItem = activeOrder.items.find(
@@ -356,9 +354,13 @@ try {
   const subTotal = activeOrder ? activeOrder.items.reduce((acc, item) => acc + item.totalPrice, 0) : 0;
   
   const addonsTotal = activeOrder ? activeOrder.items.reduce((acc, item) => {
-      const itemAddonsTotal = (item.addons || []).reduce((addonAcc, addon) => addonAcc + addon.price, 0);
-      return acc + (itemAddonsTotal * item.quantity);
+    const itemAddonsTotal = (item.addons || []).reduce(
+      (addonAcc, addon) => addonAcc + (addon.price ?? 0),
+      0
+    );
+    return acc + (itemAddonsTotal * item.quantity);
   }, 0) : 0;
+  
 
   const bogoDiscount = useMemo(() => {
     if (!activeOrder) return 0;
@@ -1082,9 +1084,13 @@ try {
                                   {item.notes && <p className='text-amber-700 dark:text-amber-500 flex items-center gap-1 text-[0.65rem] leading-tight'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
                                   {item.addons && item.addons.length > 0 && (
                                     <div className='text-muted-foreground text-[0.65rem] pl-4 leading-tight'>
-                                        {item.addons.map((addon, i) => <div key={i}>+ {addon.name} (+₹{addon.price})</div>)}
+                                        {item.addons.map((addon, i) => (
+                                          <div key={i}>
+                                            + {addon.name} (+₹{(addon.price ?? 0).toFixed(2)})
+                                            </div>
+                                        ))}
                                     </div>
-                                  )}
+                                  )}                                 
                               </div>
                               <div className={cn("w-[70px] flex items-center gap-1 shrink-0", item.isMealChild && "opacity-0 pointer-events-none")}>
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-3.5 w-3.5" /></Button>
@@ -1682,7 +1688,7 @@ function CustomizationForm({
                     <Checkbox id={`addon-${addon.id}`} onCheckedChange={() => handleToggleAddon(addon)} />
                     <Label htmlFor={`addon-${addon.id}`} className="flex justify-between w-full">
                         <span>{addon.name}</span>
-                         <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{addon.price.toFixed(2)})</span>
+                         <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{(addon.price ?? 0).toFixed(2)})</span>
                     </Label>
                 </div>
             ))}
@@ -1711,4 +1717,3 @@ function CustomizationForm({
     </div>
   );
 }
-

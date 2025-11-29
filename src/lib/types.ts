@@ -29,11 +29,17 @@ export interface MenuItemVariation {
   ingredients: { ingredientId: string; quantity: number }[];
 }
 
-export interface MenuItemAddon {
-  id?: string;
+export type MenuItemAddon = {
+  id: string;
   name: string;
-  price: number;
-}
+  price?: number;
+  variations?: {
+    variationId: string;
+    price: number;
+  }[];
+};
+
+
 
 export interface MealDeal {
   upsellPrice: number;
