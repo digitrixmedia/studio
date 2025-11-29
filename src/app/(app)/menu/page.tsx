@@ -375,7 +375,7 @@ export default function MenuPage() {
                     <PlusCircle className="mr-2 h-4 w-4" /> Add New Item
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingItem ? 'Edit' : 'Add New'} Menu Item</DialogTitle>
                     <DialogDescription>
@@ -383,78 +383,83 @@ export default function MenuPage() {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-6 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="name" className="text-right">Name</Label>
-                      <Input id="name" value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} className="col-span-3" />
-                    </div>
-
-                    {!hasCustomization && (
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="price" className="text-right">Base Price</Label>
-                        <div className="col-span-3 relative">
-                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                           <Label htmlFor="name">Name</Label>
+                           <Input id="name" value={formData.name || ''} onChange={e => handleInputChange('name', e.target.value)} />
                         </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="category" className="text-right">Category</Label>
-                      <div className="col-span-3 flex items-center gap-2">
-                        <Select value={formData.category || ''} onValueChange={value => handleInputChange('category', value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {menuCategories.map(cat => (
-                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="icon"><PlusCircle className="h-4 w-4" /></Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Add New Category</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <Label htmlFor="new-category-name">Category Name</Label>
-                                <Input 
-                                  id="new-category-name" 
-                                  value={newCategoryName}
-                                  onChange={(e) => setNewCategoryName(e.target.value)}
-                                />
-                              </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button onClick={handleAddCategory}>Add Category</Button>
-                                </DialogClose>
-                              </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="description" className="text-right">Description</Label>
-                      <Textarea id="description" className="col-span-3" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="is-bogo-toggle" className="text-right">Is BOGO Item?</Label>
-                      <div className="col-span-3">
-                        <Switch id="is-bogo-toggle" checked={formData.isBogo} onCheckedChange={(checked) => handleInputChange('isBogo', checked)} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="customization-toggle" className="text-right">Customization</Label>
-                      <div className="col-span-3">
-                        <Switch id="customization-toggle" checked={hasCustomization} onCheckedChange={setHasCustomization} />
-                      </div>
-                    </div>
-
+                        {!hasCustomization && (
+                          <div className="space-y-2">
+                            <Label htmlFor="price">Base Price</Label>
+                            <div className="relative">
+                                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input id="price" type="number" value={formData.price || ''} onChange={e => handleInputChange('price', Number(e.target.value))} className="pl-10" />
+                            </div>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <div className="flex items-center gap-2">
+                                <Select value={formData.category || ''} onValueChange={value => handleInputChange('category', value)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a category" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {menuCategories.map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                                </Select>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                    <Button variant="outline" size="icon"><PlusCircle className="h-4 w-4" /></Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Add New Category</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <Label htmlFor="new-category-name">Category Name</Label>
+                                        <Input 
+                                        id="new-category-name" 
+                                        value={newCategoryName}
+                                        onChange={(e) => setNewCategoryName(e.target.value)}
+                                        />
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                        <Button onClick={handleAddCategory}>Add Category</Button>
+                                        </DialogClose>
+                                    </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                           <Label htmlFor="description">Item Description</Label>
+                           <Textarea id="description" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start border-t pt-6">
+                        <div className="flex items-center space-x-4">
+                           <Label htmlFor="is-bogo-toggle" className="flex-shrink-0">BOGO Item?</Label>
+                           <Switch id="is-bogo-toggle" checked={formData.isBogo} onCheckedChange={(checked) => handleInputChange('isBogo', checked)} />
+                        </div>
+                        <div className="flex items-center space-x-4">
+                           <Label htmlFor="customization-toggle" className="flex-shrink-0">Customization</Label>
+                           <Switch id="customization-toggle" checked={hasCustomization} onCheckedChange={setHasCustomization} />
+                        </div>
+                         <div className="flex items-center space-x-4">
+                           <div className="flex flex-col">
+                              <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
+                              <p className="text-xs text-muted-foreground">Upsell as a meal.</p>
+                           </div>
+                           <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
+                        </div>
+                     </div>
+                    
                     {hasCustomization && (
-                      <div className="col-span-4 border-t pt-4">
+                      <div className="col-span-1 md:col-span-2 border-t pt-6">
                           <h4 className="text-md font-semibold mb-2">Item Variations</h4>
                           <div className="space-y-4">
                               {variations.map((variation, vIndex) => (
@@ -522,7 +527,7 @@ export default function MenuPage() {
                       </div>
                     )}
                     
-                     <div className="col-span-4 border-t pt-4">
+                     <div className="col-span-1 md:col-span-2 border-t pt-6">
                         <h4 className="text-md font-semibold mb-2">Item Addons</h4>
                         <div className="space-y-4">
                             {addons.map((addon, aIndex) => (
@@ -545,23 +550,12 @@ export default function MenuPage() {
                             <Button variant="outline" onClick={handleAddAddon}><PlusCircle className="mr-2 h-4 w-4" /> Add Addon</Button>
                         </div>
                     </div>
-
-
-                    <div className="grid grid-cols-4 items-center gap-4 border-t pt-4">
-                      <div className="text-right flex flex-col items-end">
-                          <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
-                          <p className="text-xs text-muted-foreground">This item can be upsold as a meal.</p>
-                      </div>
-                      <div className="col-span-3">
-                        <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
-                      </div>
-                    </div>
                     
                     {isMealDeal && (
-                      <div className="col-span-4 space-y-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="upsell-price" className="text-right">Upsell Price</Label>
-                          <div className="col-span-3 relative">
+                      <div className="col-span-1 md:col-span-2 border-t pt-6 space-y-4">
+                        <div className="space-y-2">
+                           <Label htmlFor="upsell-price">Upsell Price</Label>
+                           <div className="relative">
                             <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="upsell-price"
@@ -573,27 +567,23 @@ export default function MenuPage() {
                             />
                           </div>
                         </div>
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label htmlFor="side-items" className="text-right pt-2">Side Items</Label>
-                            <div className="col-span-3">
-                                <MultiSelect
-                                    options={menuItemOptions}
-                                    value={formData.mealDeal?.sideItemIds || []}
-                                    onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), sideItemIds: v })}
-                                    placeholder="Select items for sides"
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="side-items">Side Items</Label>
+                            <MultiSelect
+                                options={menuItemOptions}
+                                value={formData.mealDeal?.sideItemIds || []}
+                                onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), sideItemIds: v })}
+                                placeholder="Select items for sides"
+                            />
                         </div>
-                        <div className="grid grid-cols-4 items-start gap-4">
-                            <Label htmlFor="drink-items" className="text-right pt-2">Drink Items</Label>
-                            <div className="col-span-3">
-                                <MultiSelect
-                                    options={menuItemOptions}
-                                    value={formData.mealDeal?.drinkItemIds || []}
-                                    onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), drinkItemIds: v })}
-                                    placeholder="Select items for drinks"
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="drink-items">Drink Items</Label>
+                            <MultiSelect
+                                options={menuItemOptions}
+                                value={formData.mealDeal?.drinkItemIds || []}
+                                onValueChange={(v) => handleInputChange('mealDeal', { ...(formData.mealDeal!), drinkItemIds: v })}
+                                placeholder="Select items for drinks"
+                            />
                         </div>
                       </div>
                     )}
@@ -689,7 +679,7 @@ export default function MenuPage() {
             <DialogHeader>
                 <DialogTitle>Customize {customizationItem?.name}</DialogTitle>
             </DialogHeader>
-            {customizationItem && <CustomizationForm item={customizationItem} onClose={() => setCustomizationItem(null)} />}
+            {customizationItem && <CustomizationForm item={customizationItem} onClose={() => setCustomizationItem(null)} onSelectVariation={handleAddCustomizedItem} />}
         </DialogContent>
       </Dialog>
     </>
@@ -697,9 +687,18 @@ export default function MenuPage() {
 }
 
 
-function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => void }) {
+function CustomizationForm({ item, onClose, onSelectVariation }: { item: MenuItem, onClose: () => void, onSelectVariation: (item: MenuItem, variation?: MenuItemVariation, addons?: MenuItemAddon[], notes?: string) => void }) {
   const [selectedVariation, setSelectedVariation] = useState<string>(item.variations?.[0]?.id || '');
   const [notes, setNotes] = useState('');
+  const [selectedAddons, setSelectedAddons] = useState<MenuItemAddon[]>([]);
+
+  const handleToggleAddon = (addon: MenuItemAddon) => {
+    setSelectedAddons(prev =>
+      prev.some(a => a.id === addon.id)
+        ? prev.filter(a => a.id !== addon.id)
+        : [...prev, addon]
+    );
+  };
   
   // This would come from a global context in a real app
   const addToCart = (customizedItem: any) => {
@@ -709,30 +708,26 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
     onClose();
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const variationDetails = item.variations?.find(v => v.id === selectedVariation);
-    
-    addToCart({
-      ...item,
-      selectedVariation: variationDetails,
-      notes,
-    });
+  const handleSubmit = (variation?: MenuItemVariation) => {
+    onSelectVariation(item, variation, selectedAddons, notes);
   };
 
+  const hasVariations = item.variations && item.variations.length > 0;
+  const hasAddons = item.addons && item.addons.length > 0;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {item.variations && item.variations.length > 0 && (
+    <div className="space-y-4">
+      {hasVariations && (
         <div>
           <Label className="font-medium">Select Variation</Label>
           <RadioGroup 
             name="variation" 
-            defaultValue={item.variations[0].id}
+            defaultValue={item.variations![0].id}
             value={selectedVariation}
             onValueChange={setSelectedVariation}
             className="mt-2 space-y-2"
           >
-            {item.variations.map(v => (
+            {item.variations!.map(v => (
               <div key={v.id} className="flex items-center space-x-2">
                 <RadioGroupItem value={v.id} id={v.id} />
                 <Label htmlFor={v.id} className="flex justify-between w-full">
@@ -744,6 +739,24 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
           </RadioGroup>
         </div>
       )}
+
+      {hasAddons && (
+        <div>
+          <Label className="font-medium">Select Addons</Label>
+          <div className="mt-2 space-y-2">
+            {item.addons!.map(addon => (
+              <div key={addon.id} className="flex items-center space-x-3">
+                <Checkbox id={`addon-${addon.id}`} onCheckedChange={() => handleToggleAddon(addon)} />
+                <Label htmlFor={`addon-${addon.id}`} className="flex justify-between w-full font-normal">
+                  <span>{addon.name}</span>
+                  <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{addon.price.toFixed(2)})</span>
+                </Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div>
         <Label className="font-medium">Special Notes</Label>
         <Textarea 
@@ -754,10 +767,16 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
         />
       </div>
       <DialogFooter>
-        <Button type="submit" className="w-full">Add to Order</Button>
+        <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+        </Button>
+        <Button type="button" onClick={() => handleSubmit(item.variations?.find(v => v.id === selectedVariation))}>
+            Add to Order
+        </Button>
       </DialogFooter>
-    </form>
+    </div>
   );
 }
+
 
 
