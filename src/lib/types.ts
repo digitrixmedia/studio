@@ -30,7 +30,7 @@ export interface MenuItemVariation {
 }
 
 export interface MenuItemAddon {
-  id: string;
+  id?: string;
   name: string;
   price: number;
 }

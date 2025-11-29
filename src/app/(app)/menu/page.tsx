@@ -264,7 +264,11 @@ export default function MenuPage() {
         ...formData,
         price: finalPrice,
         variations: hasCustomization ? finalVariations : [],
-        addons: addons.filter(a => a.name),
+        addons: addons?.filter(a => a?.name)?.map(a => ({
+          id: a.id || crypto.randomUUID(),
+          name: a.name,
+          price: a.price,
+        })) ?? [],        
         mealDeal: mealDealConfig || undefined,
       };
       const itemRef = doc(collectionRef, editingItem.id);
