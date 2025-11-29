@@ -63,6 +63,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAppContext } from '@/contexts/AppContext';
 import { useFirestore, addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { Checkbox } from '@/components/ui/checkbox';
+
 
 function clean(obj: any) {
   return JSON.parse(JSON.stringify(obj));
@@ -101,6 +103,7 @@ export default function MenuPage() {
   const [addons, setAddons] = useState<Partial<MenuItemAddon>[]>([])
   const [hasCustomization, setHasCustomization] = useState(false);
   const [isMealDeal, setIsMealDeal] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   
   const { toast } = useToast();
 
@@ -341,6 +344,13 @@ export default function MenuPage() {
       .filter((item) => item.id !== formData.id)
       .map(item => ({ value: item.id, label: item.name }));
   }, [menuItems, formData.id]);
+  
+  const filteredMenuItems = useMemo(() => {
+    if (categoryFilter === 'all') {
+      return menuItems;
+    }
+    return menuItems.filter(item => item.category === categoryFilter);
+  }, [menuItems, categoryFilter]);
 
 
   useEffect(() => {
@@ -366,8 +376,21 @@ export default function MenuPage() {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {menuCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button variant="outline" onClick={() => setIsBulkUploadOpen(true)}>
-                <Upload className="mr-2 h-4 w-4" /> Bulk Upload Menu
+                <Upload className="mr-2 h-4 w-4" /> Bulk Upload
               </Button>
               <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogTrigger asChild>
@@ -440,21 +463,22 @@ export default function MenuPage() {
                            <Textarea id="description" placeholder="Item description..." value={formData.description || ''} onChange={e => handleInputChange('description', e.target.value)} />
                         </div>
                      </div>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start border-t pt-6">
-                        <div className="flex items-center space-x-4">
-                           <Label htmlFor="is-bogo-toggle" className="flex-shrink-0">BOGO Item?</Label>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start border-t pt-6">
+                        <div className="flex items-center space-x-2">
                            <Switch id="is-bogo-toggle" checked={formData.isBogo} onCheckedChange={(checked) => handleInputChange('isBogo', checked)} />
+                           <Label htmlFor="is-bogo-toggle" className="flex-shrink-0">BOGO Item?</Label>
                         </div>
-                        <div className="flex items-center space-x-4">
-                           <Label htmlFor="customization-toggle" className="flex-shrink-0">Customization</Label>
+                        <div className="flex items-center space-x-2">
                            <Switch id="customization-toggle" checked={hasCustomization} onCheckedChange={setHasCustomization} />
+                           <Label htmlFor="customization-toggle" className="flex-shrink-0">Has Variations</Label>
                         </div>
-                         <div className="flex items-center space-x-4">
+                         <div className="flex items-center space-x-2">
+                           <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
                            <div className="flex flex-col">
                               <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
                               <p className="text-xs text-muted-foreground">Upsell as a meal.</p>
                            </div>
-                           <Switch id="meal-deal-toggle" checked={isMealDeal} onCheckedChange={setIsMealDeal} />
                         </div>
                      </div>
                     
@@ -611,7 +635,7 @@ export default function MenuPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {menuItems.map(item => {
+              {filteredMenuItems.map(item => {
                 const displayPrice = item.variations && item.variations.length > 0 
                     ? item.variations[0].priceModifier 
                     : item.price;
@@ -778,5 +802,4 @@ function CustomizationForm({ item, onClose, onSelectVariation }: { item: MenuIte
   );
 }
 
-
-
+    
