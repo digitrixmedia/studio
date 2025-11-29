@@ -52,7 +52,7 @@ import {
 } from '@/components/ui/select';
 import { PlusCircle, Edit, IndianRupee, Trash2, Save, Sparkles, Upload, Gift } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
-import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal } from '@/lib/types';
+import type { MenuCategory, MenuItem, MenuItemVariation, MealDeal, MenuItemAddon } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import {
   MultiSelect,
@@ -98,6 +98,7 @@ export default function MenuPage() {
 
   const [formData, setFormData] = useState<Partial<MenuItem>>(initialFormState);
   const [variations, setVariations] = useState<Partial<MenuItemVariation>[]>([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+  const [addons, setAddons] = useState<Partial<MenuItemAddon>[]>([])
   const [hasCustomization, setHasCustomization] = useState(false);
   const [isMealDeal, setIsMealDeal] = useState(false);
   
@@ -124,6 +125,7 @@ export default function MenuPage() {
     setFormData(item);
     const itemVariations = item.variations && item.variations.length > 0 ? item.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
     setVariations(itemVariations);
+    setAddons(item.addons || []);
     setHasCustomization(!!item.variations && item.variations.length > 0);
     setIsMealDeal(!!item.mealDeal);
     setIsFormOpen(true);
@@ -133,6 +135,7 @@ export default function MenuPage() {
     setEditingItem(null);
     setFormData(initialFormState);
     setVariations([{ name: 'Regular', priceModifier: 0, ingredients: [] }]);
+    setAddons([]);
     setHasCustomization(false);
     setIsMealDeal(false);
     setIsFormOpen(true);
@@ -177,7 +180,6 @@ export default function MenuPage() {
     const variation = { ...newVariations[vIndex] };
     const newIngredients = [...(variation.ingredients || []), { ingredientId: '', quantity: 0 }];
     variation.ingredients = newIngredients;
-    newVariations[vIndex] = variation;
   }
 
   const removeIngredientFromVariation = (vIndex: number, iIndex: number) => {
@@ -187,6 +189,26 @@ export default function MenuPage() {
     newIngredients.splice(iIndex, 1);
     variation.ingredients = newIngredients;
   }
+
+    const handleAddAddon = () => {
+    setAddons([...addons, { name: '', price: 0 }]);
+  };
+
+  const handleRemoveAddon = (index: number) => {
+    const newAddons = addons.filter((_, i) => i !== index);
+    setAddons(newAddons);
+  };
+
+  const handleAddonChanage = (index: number, field: keyof Omit<MenuItemAddon, 'id'>, value: string | number) => {
+    const newAddons = [...addons];
+    if (field === 'price') {
+      newAddons[index].price = Number(value);
+    } else {
+      newAddons[index].name = value as string;
+    }
+    setAddons(newAddons);
+  };
+
 
   const getIngredientUnit = (id: string) => {
     return ingredients.find(i => i.id === id)?.baseUnit || '';
@@ -239,6 +261,7 @@ export default function MenuPage() {
         ...formData,
         price: finalPrice,
         variations: hasCustomization ? finalVariations : [],
+        addons: addons.filter(a => a.name),
         mealDeal: mealDealConfig || undefined,
       };
       const itemRef = doc(collectionRef, editingItem.id);
@@ -252,6 +275,7 @@ export default function MenuPage() {
         ...formData,
         price: finalPrice,
         variations: hasCustomization ? finalVariations : [],
+        addons: addons.filter(a => a.name),
         mealDeal: mealDealConfig,
       } as Omit<MenuItem, 'id'>;
       addDocumentNonBlocking(collectionRef, clean(newItem));
@@ -323,6 +347,7 @@ export default function MenuPage() {
     if (isFormOpen && editingItem) {
       const itemVariations = editingItem.variations && editingItem.variations.length > 0 ? editingItem.variations : [{ name: 'Regular', priceModifier: 0, ingredients: [] }];
       setVariations(itemVariations);
+      setAddons(editingItem.addons || []);
       setHasCustomization(!!editingItem.variations && editingItem.variations.length > 0);
       setIsMealDeal(!!editingItem.mealDeal);
     }
@@ -497,6 +522,31 @@ export default function MenuPage() {
                       </div>
                     )}
                     
+                     <div className="col-span-4 border-t pt-4">
+                        <h4 className="text-md font-semibold mb-2">Item Addons</h4>
+                        <div className="space-y-4">
+                            {addons.map((addon, aIndex) => (
+                                <div key={aIndex} className="flex items-end gap-4">
+                                    <div className="flex-1 space-y-2">
+                                        <Label>Addon Name</Label>
+                                        <Input placeholder="e.g., Extra Cheese" value={addon.name || ''} onChange={e => handleAddonChanage(aIndex, 'name', e.target.value)} />
+                                    </div>
+                                    <div className="w-40 space-y-2">
+                                        <Label>Price (₹)</Label>
+                                        <Input type="number" placeholder="e.g., 20" value={addon.price || ''} onChange={e => handleAddonChanage(aIndex, 'price', e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <Button variant="destructive" size="icon" onClick={() => handleRemoveAddon(aIndex)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                            <Button variant="outline" onClick={handleAddAddon}><PlusCircle className="mr-2 h-4 w-4" /> Add Addon</Button>
+                        </div>
+                    </div>
+
+
                     <div className="grid grid-cols-4 items-center gap-4 border-t pt-4">
                       <div className="text-right flex flex-col items-end">
                           <Label htmlFor="meal-deal-toggle">Meal Deal</Label>
@@ -709,4 +759,5 @@ function CustomizationForm({ item, onClose }: { item: MenuItem, onClose: () => v
     </form>
   );
 }
+
 

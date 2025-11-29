@@ -107,7 +107,7 @@ export default function OrdersPage() {
   const addToCart = (item: MenuItem) => {
     if (!activeOrder) return;
 
-    if ((item.variations && item.variations.length > 0) || settings.showItemDiscountBox) {
+    if ((item.variations && item.variations.length > 0) || (item.addons && item.addons.length > 0) || settings.showItemDiscountBox) {
       setCustomizationItem(item);
     } else {
        const uniqueCartId = `${item.id}-base-${Date.now()}`;
@@ -136,40 +136,46 @@ export default function OrdersPage() {
     }
   };
   
-    const handleAddCustomizedItem = (itemToAdd: MenuItem, variation?: MenuItemVariation, notes?: string) => {
+  const handleAddCustomizedItem = (
+    itemToAdd: MenuItem,
+    variation?: MenuItemVariation,
+    addons?: MenuItemAddon[],
+    notes?: string
+  ) => {
     if (!activeOrder) return;
 
-    let basePrice = itemToAdd.price;
-    let finalName = itemToAdd.name;
+    let basePrice = variation ? variation.priceModifier : itemToAdd.price;
+    let finalName = variation ? `${itemToAdd.name} (${variation.name})` : itemToAdd.name;
     const uniqueCartId = `${itemToAdd.id}-${variation?.id || 'base'}-${notes || ''}-${Date.now()}`;
 
-    if (variation) {
-      basePrice = variation.priceModifier;
-      finalName += ` (${variation.name})`;
-    }
+    const addonsPrice = addons?.reduce((sum, addon) => sum + addon.price, 0) || 0;
+    const finalPrice = basePrice + addonsPrice;
 
-    const existingItem = activeOrder.items.find(cartItem => 
+    const existingItem = activeOrder.items.find(
+      (cartItem) =>
         cartItem.baseMenuItemId === itemToAdd.id &&
         (cartItem.variation?.id || 'base') === (variation?.id || 'base') &&
-        (cartItem.notes || '') === (notes || '')
+        (cartItem.notes || '') === (notes || '') &&
+        JSON.stringify(cartItem.addons) === JSON.stringify(addons)
     );
 
     if (existingItem) {
-        updateQuantity(existingItem.id, existingItem.quantity + 1);
+      updateQuantity(existingItem.id, existingItem.quantity + 1);
     } else {
-        const newOrderItem: OrderItem = {
-          id: uniqueCartId,
-          baseMenuItemId: itemToAdd.id,
-          name: finalName,
-          quantity: 1,
-          price: basePrice,
-          totalPrice: basePrice,
-          variation: variation,
-          notes: notes || undefined,
-          isMealParent: !!itemToAdd.mealDeal,
-          isBogo: false,
-        };
-        updateActiveOrder([...activeOrder.items, newOrderItem]);
+      const newOrderItem: OrderItem = {
+        id: uniqueCartId,
+        baseMenuItemId: itemToAdd.id,
+        name: finalName,
+        quantity: 1,
+        price: finalPrice,
+        totalPrice: finalPrice,
+        variation: variation,
+        addons: addons,
+        notes: notes || undefined,
+        isMealParent: !!itemToAdd.mealDeal,
+        isBogo: false,
+      };
+      updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
 
     setCustomizationItem(null);
@@ -1074,6 +1080,11 @@ try {
                                   </div>
                                   )}
                                   {item.notes && <p className='text-amber-700 dark:text-amber-500 flex items-center gap-1 text-[0.65rem] leading-tight'><MessageSquarePlus className="h-3 w-3"/> {item.notes}</p>}
+                                  {item.addons && item.addons.length > 0 && (
+                                    <div className='text-muted-foreground text-[0.65rem] pl-4 leading-tight'>
+                                        {item.addons.map((addon, i) => <div key={i}>+ {addon.name} (+₹{addon.price})</div>)}
+                                    </div>
+                                  )}
                               </div>
                               <div className={cn("w-[70px] flex items-center gap-1 shrink-0", item.isMealChild && "opacity-0 pointer-events-none")}>
                                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-3.5 w-3.5" /></Button>
@@ -1590,6 +1601,7 @@ interface CustomizationFormProps {
   onSelectVariation: (
     item: MenuItem,
     variation?: MenuItemVariation,
+    addons?: MenuItemAddon[],
     notes?: string
   ) => void;
 }
@@ -1600,13 +1612,22 @@ function CustomizationForm({
   onSelectVariation,
 }: CustomizationFormProps) {
   const notesRef = React.useRef<HTMLTextAreaElement>(null);
+  const [selectedAddons, setSelectedAddons] = React.useState<MenuItemAddon[]>([]);
+
+  const handleToggleAddon = (addon: MenuItemAddon) => {
+    setSelectedAddons(prev => 
+      prev.some(a => a.id === addon.id)
+        ? prev.filter(a => a.id !== addon.id)
+        : [...prev, addon]
+    );
+  };
 
   const handleAddToCart = (variation?: MenuItemVariation) => {
     const notes = notesRef.current?.value;
-    onSelectVariation(item, variation, notes);
+    onSelectVariation(item, variation, selectedAddons, notes);
   };
 
-  if (!item.variations || item.variations.length === 0) {
+  if (!item.variations?.length && !item.addons?.length) {
     return (
       <div className="space-y-4">
         <div>
@@ -1631,26 +1652,44 @@ function CustomizationForm({
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label className="font-medium">Select Variation</Label>
-        <div className='mt-2 space-y-2'>
+      {item.variations && item.variations.length > 0 && (
+          <div>
+            <Label className="font-medium">Select Variation</Label>
             {item.variations.map((v) => (
-              <Button
-                key={v.id}
-                variant="outline"
-                className="w-full justify-between"
-                onClick={() => handleAddToCart(v)}
-              >
-                <span>{v.name}</span>
-                <span className="text-muted-foreground">
-                  (+
-                  <IndianRupee className="inline-block h-3.5 w-3.5" />
-                  {v.priceModifier.toFixed(2)})
-                </span>
-              </Button>
+                <Button
+                  key={v.id}
+                  variant="outline"
+                  className="w-full justify-between mt-2"
+                  onClick={() => handleAddToCart(v)}
+                >
+                  <span>{v.name}</span>
+                  <span className="text-muted-foreground">
+                    (+
+                    <IndianRupee className="inline-block h-3.5 w-3.5" />
+                    {v.priceModifier.toFixed(2)})
+                  </span>
+                </Button>
+              ))}
+          </div>
+      )}
+
+      {item.addons && item.addons.length > 0 && (
+        <div>
+          <Label className="font-medium">Select Addons</Label>
+          <div className="mt-2 space-y-2">
+            {item.addons.map(addon => (
+                <div key={addon.id} className="flex items-center space-x-2">
+                    <Checkbox id={`addon-${addon.id}`} onCheckedChange={() => handleToggleAddon(addon)} />
+                    <Label htmlFor={`addon-${addon.id}`} className="flex justify-between w-full">
+                        <span>{addon.name}</span>
+                         <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{addon.price.toFixed(2)})</span>
+                    </Label>
+                </div>
             ))}
+          </div>
         </div>
-      </div>
+      )}
+
       <div>
         <Label className="font-medium">Special Notes</Label>
         <Textarea
@@ -1659,14 +1698,17 @@ function CustomizationForm({
           placeholder="e.g. Extra spicy, no onions..."
         />
       </div>
+
        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Close
-          </Button>
+          {!item.variations?.length ? (
+             <Button type="button" className="w-full" onClick={() => handleAddToCart()}>Add to Order</Button>
+          ) : (
+             <Button type="button" variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          )}
         </DialogFooter>
     </div>
   );
 }
-
-
 
