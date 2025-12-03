@@ -69,6 +69,7 @@ export interface MenuItem {
 export interface OrderItem {
   id: string;
   name: string;
+  menuItemId: string;
   quantity: number;
   price: number;
   variation?: MenuItemVariation;
