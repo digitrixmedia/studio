@@ -59,7 +59,7 @@ import { useFirestore } from '@/firebase';
 
 
 export default function InventoryStockPage() {
-  const { ingredients } = useAppContext();
+  const { ingredients, selectedOutlet } = useAppContext();
   const firestore = useFirestore();
   const [stockUpdateIngredient, setStockUpdateIngredient] = useState<Ingredient | null>(null);
   const [stockUpdateQuantity, setStockUpdateQuantity] = useState('');
@@ -88,7 +88,11 @@ export default function InventoryStockPage() {
     }
 
     const newStock = stockUpdateIngredient.stock + quantityToAdd;
-    updateDocumentNonBlocking(doc(firestore, 'ingredients', stockUpdateIngredient.id), { stock: newStock });
+    updateDocumentNonBlocking(
+      doc(firestore, `outlets/${selectedOutlet?.id}/ingredients/${stockUpdateIngredient.id}`),
+      { stock: newStock }
+    );
+    
 
     toast({
         title: "Stock Updated",
@@ -100,7 +104,10 @@ export default function InventoryStockPage() {
 
   const handleDeleteIngredient = () => {
     if (!ingredientToDelete) return;
-    deleteDocumentNonBlocking(doc(firestore, 'ingredients', ingredientToDelete.id));
+    deleteDocumentNonBlocking(
+      doc(firestore, `outlets/${selectedOutlet?.id}/ingredients/${ingredientToDelete.id}`)
+    );
+    
     toast({
         title: "Ingredient Removed",
         description: `${ingredientToDelete.name} has been removed from the inventory.`,
@@ -122,7 +129,11 @@ export default function InventoryStockPage() {
       purchaseUnits: [], // This should be managed elsewhere
     };
     
-    addDocumentNonBlocking(collection(firestore, 'ingredients'), newDoc);
+    addDocumentNonBlocking(
+      collection(firestore, `outlets/${selectedOutlet?.id}/ingredients`),
+      newDoc
+    );
+    
     
     toast({ title: 'Ingredient added', description: `${newIngredient.name} added to inventory.` });
     setNewIngredient({ name: '', stock: '', minStock: '', unit: '' });
