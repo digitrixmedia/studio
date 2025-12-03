@@ -119,16 +119,18 @@ export default function OrdersPage() {
        if (existingItem) {
          updateQuantity(existingItem.id, existingItem.quantity + 1);
        } else {
-         const newOrderItem: OrderItem = {
+        const newOrderItem: OrderItem = {
           id: uniqueCartId,
           baseMenuItemId: item.id,
+          menuItemId: item.id, // 🔥 REQUIRED
           name: item.name,
           quantity: parseInt(settings.defaultQuantity, 10) || 1,
           price: item.price,
           totalPrice: item.price * (parseInt(settings.defaultQuantity, 10) || 1),
           isMealParent: !!item.mealDeal,
-          isBogo: false, 
+          isBogo: false,
         };
+        
         updateActiveOrder([...activeOrder.items, newOrderItem]);
        }
     }
@@ -163,6 +165,7 @@ export default function OrdersPage() {
       const newOrderItem: OrderItem = {
         id: uniqueCartId,
         baseMenuItemId: itemToAdd.id,
+        menuItemId: itemToAdd.id, // 🔥 ADD THIS
         name: finalName,
         quantity: 1,
         price: finalPrice,
@@ -173,6 +176,7 @@ export default function OrdersPage() {
         isMealParent: !!itemToAdd.mealDeal,
         isBogo: false,
       };
+      
       updateActiveOrder([...activeOrder.items, newOrderItem]);
     }
 
@@ -194,37 +198,41 @@ export default function OrdersPage() {
     }
     
     const mealDealItem: OrderItem = {
-        id: `meal-deal-${mealUpsellParentItem.id}`,
-        baseMenuItemId: 'meal-deal',
-        name: 'Meal Deal',
-        quantity: mealUpsellParentItem.quantity,
-        price: parentItem.mealDeal.upsellPrice,
-        totalPrice: parentItem.mealDeal.upsellPrice * mealUpsellParentItem.quantity,
-        isMealChild: true,
-        mealParentId: mealUpsellParentItem.id,
-    };
+      id: `meal-deal-${mealUpsellParentItem.id}`,
+      baseMenuItemId: 'meal-deal',
+      menuItemId: parentItem.id,
+      name: 'Meal Deal',
+      quantity: mealUpsellParentItem.quantity,
+      price: parentItem.mealDeal.upsellPrice,
+      totalPrice: parentItem.mealDeal.upsellPrice * mealUpsellParentItem.quantity,
+      isMealChild: true,
+      mealParentId: mealUpsellParentItem.id,
+  };
+  
     
-    const mealSide: OrderItem = {
-        id: `meal-side-${mealUpsellParentItem.id}`,
-        baseMenuItemId: sideItem.id,
-        name: sideItem.name,
-        quantity: mealUpsellParentItem.quantity,
-        price: 0,
-        totalPrice: 0,
-        isMealChild: true,
-        mealParentId: mealUpsellParentItem.id,
-    };
+  const mealSide: OrderItem = {
+    id: `meal-side-${mealUpsellParentItem.id}`,
+    baseMenuItemId: sideItem.id,
+    menuItemId: sideItem.id,
+    name: sideItem.name,
+    quantity: mealUpsellParentItem.quantity,
+    price: 0,
+    totalPrice: 0,
+    isMealChild: true,
+    mealParentId: mealUpsellParentItem.id,
+};
 
-    const mealDrink: OrderItem = {
-        id: `meal-drink-${mealUpsellParentItem.id}`,
-        baseMenuItemId: drinkItem.id,
-        name: drinkItem.name,
-        quantity: mealUpsellParentItem.quantity,
-        price: 0,
-        totalPrice: 0,
-        isMealChild: true,
-        mealParentId: mealUpsellParentItem.id,
-    };
+const mealDrink: OrderItem = {
+  id: `meal-drink-${mealUpsellParentItem.id}`,
+  baseMenuItemId: drinkItem.id,
+  menuItemId: drinkItem.id,
+  name: drinkItem.name,
+  quantity: mealUpsellParentItem.quantity,
+  price: 0,
+  totalPrice: 0,
+  isMealChild: true,
+  mealParentId: mealUpsellParentItem.id,
+};
 
     const updatedParentItem: OrderItem = {
         ...mealUpsellParentItem,

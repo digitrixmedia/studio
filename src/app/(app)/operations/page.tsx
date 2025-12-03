@@ -130,6 +130,7 @@ export default function OperationsPage() {
             const quantity = 1;
             return {
                 id: `${item.id}-${i}`,
+                menuItemId: item.id,
                 name: item.name,
                 quantity,
                 price: item.price,
