@@ -103,9 +103,15 @@ export default function ReportsPage() {
 
 
   // Sales metrics
-  const totalSales = filteredGlobalOrders.reduce((sum, order) => sum + order.total, 0);
+  const totalSales = filteredGlobalOrders.reduce((sum, order) => {
+    return sum + Number(order.total || 0);
+  }, 0);
+  
   const totalOrders = filteredGlobalOrders.length;
-  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+  
+  const averageOrderValue = totalOrders > 0
+    ? Number(totalSales / totalOrders)
+    : 0;  
   
   // Purchase metrics
   const totalPurchases = filteredPurchaseOrders.reduce((sum, po) => sum + po.grandTotal, 0);
@@ -318,7 +324,7 @@ export default function ReportsPage() {
             order.customerName || 'N/A',
             order.type,
             getUserName(order.createdBy),
-            order.total.toFixed(2)
+            (Number(order.total) || 0).toFixed(2)
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
     );
 
@@ -572,7 +578,7 @@ export default function ReportsPage() {
                                     <TableCell className="capitalize">{order.type.replace(/-/g, ' ')}</TableCell>
                                     <TableCell>{getUserName(order.createdBy)}</TableCell>
                                     <TableCell className="text-right">{(order.discount || 0).toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-medium">{order.total.toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-medium">{(Number(order.total) || 0).toFixed(2)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -912,7 +918,7 @@ export default function ReportsPage() {
                     <TableCell>{getUserName(order.createdBy)}</TableCell>
                     <TableCell className="text-right flex items-center justify-end">
                       <IndianRupee className="h-4 w-4 mr-1" />
-                      {order.total.toFixed(2)}
+                      {Number(order.total || 0).toFixed(2)}
                     </TableCell>
                      <TableCell className="text-right">
                         <Button variant="ghost" size="icon" onClick={() => setViewedOrder(order)}>
@@ -956,7 +962,7 @@ export default function ReportsPage() {
                                 <TableCell>{item.quantity} x {item.name}</TableCell>
                                 <TableCell className='text-right flex items-center justify-end'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
-                                    {item.totalPrice.toFixed(2)}
+                                    {(Number(item.totalPrice) || 0).toFixed(2)}
                                 </TableCell>
                             </TableRow>
                         ))}

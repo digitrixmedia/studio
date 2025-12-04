@@ -157,7 +157,7 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell className='flex items-center'>
                         <IndianRupee className="h-4 w-4 mr-1" />
-                        {order.total.toFixed(2)}
+                        {(Number(order.total) || 0).toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right"><Badge>{order.status}</Badge></TableCell>
                   </TableRow>

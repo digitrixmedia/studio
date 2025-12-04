@@ -584,7 +584,7 @@ try {
                       <td class="col-item">${item.name.replace(/\\s\\(.*\\)/, '')}</td>
                       <td class="col-qty">${item.quantity}</td>
                       <td class="col-price">${item.price.toFixed(2)}</td>
-                      <td class="col-amount">${item.totalPrice.toFixed(2)}</td>
+                      <td class="col-amount">${(Number(item.totalPrice) || 0).toFixed(2)}</td>
                     </tr>
                     ${item.variation && item.variation.name !== 'Regular' ? `<tr><td></td><td colspan="4" class="item-variation">(${item.variation.name})</td></tr>` : ''}
                     ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}`;
@@ -598,8 +598,8 @@ try {
                               <td></td>
                               <td class="col-item meal-item">+ ${mealDealItem.name}</td>
                               <td class="col-qty"></td>
-                              <td class="col-price">${mealDealItem.price.toFixed(2)}</td>
-                              <td class="col-amount">${mealDealItem.totalPrice.toFixed(2)}</td>
+                              <td class="col-price">${Number(mealDealItem.price ?? 0).toFixed(2)}</td>
+                              <td class="col-price">${Number(item.totalPrice ?? mealDealItem.price ?? 0).toFixed(2)}</td>
                            </tr>`;
                       }
                       mealItems.forEach(mealItem => {
@@ -1108,7 +1108,7 @@ try {
                               <div className="w-[60px] flex items-center shrink-0">
                                   <p className={cn("w-14 text-right font-semibold flex items-center justify-end leading-tight", item.isMealChild && "text-muted-foreground text-[0.65rem]")}>
                                       <IndianRupee className="h-3 w-3 mr-0.5" />
-                                      {item.totalPrice.toFixed(2)}
+                                      {(Number(item.totalPrice) || 0).toFixed(2)}
                                   </p>
                                   <Button variant="ghost" size="icon" className={cn("h-6 w-6 ml-1 text-destructive", item.isMealChild && "opacity-0 pointer-events-none")} onClick={() => removeFromCart(item.id)}>
                                       <X className="h-3.5 w-3.5" />

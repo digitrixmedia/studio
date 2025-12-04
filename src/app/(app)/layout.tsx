@@ -197,11 +197,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </div>
     );
   }
-// 🚑 Emergency fix: prevent crash on Reports page
-if (pathname.startsWith('/reports')) {
-  router.replace('/orders'); // Redirect to POS
-  return null;
-}
 
   const isFranchiseAdmin = currentUser.role === 'admin';
   // When an outlet is selected, the Admin effectively acts as a Manager for that outlet

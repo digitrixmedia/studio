@@ -172,15 +172,7 @@ export default function OperationsPage() {
         });
     }, [menuItems, router, setOrders, toast]);
 
-    useEffect(() => {
-        if (!menuItems || menuItems.length === 0) return;
-        const interval = setInterval(() => {
-            const source: OnlineOrderSource = Math.random() > 0.5 ? 'zomato' : 'swiggy';
-            handleSimulateOnlineOrder(source);
-        }, 15000); // Generate a new order every 15 seconds
-
-        return () => clearInterval(interval); // Clean up on component unmount
-    }, [handleSimulateOnlineOrder, menuItems]);
+    
     
     useEffect(() => {
         if (viewCustomer) {
@@ -561,9 +553,10 @@ export default function OperationsPage() {
                                     <TableCell><Badge>{order.status}</Badge></TableCell>
                                     <TableCell className='text-right flex items-center justify-end'>
                                         <IndianRupee className="h-4 w-4 mr-1" />
-                                        {order.total.toFixed(2)}
+                                        {Number(order.total || 0).toFixed(2)}
                                     </TableCell>
-                                    <TableCell>{format(order.createdAt, 'PPp')}</TableCell>
+                                    <TableCell>{order.createdAt ? format(new Date(order.createdAt), 'PPp') : '—'
+                                    }</TableCell>
                                     <TableCell className='text-right'>
                                         <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}><Eye /></Button>
                                          <Button variant="ghost" size="icon" onClick={() => handleReorder(order)}><PlusCircle /></Button>
@@ -618,7 +611,7 @@ export default function OperationsPage() {
                                         {order.items.map((item, index) => (
                                             <div key={`${item.id}-${index}`} className="flex justify-between">
                                                 <span>{item.quantity} x {item.name}</span>
-                                                <span className="flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-1" />{item.totalPrice.toFixed(2)}</span>
+                                                <span className="flex items-center"><IndianRupee className="h-3.5 w-3.5 mr-1" />{(Number(item.totalPrice) || 0).toFixed(2)}</span>
                                             </div>
                                         ))}
                                     </CardContent>
@@ -665,7 +658,7 @@ export default function OperationsPage() {
                                         ))}
                                     </CardContent>
                                     <CardFooter>
-                                        <p className="text-xs text-muted-foreground">Sent to kitchen at {format(kot.createdAt, 'p')}</p>
+                                        <p className="text-xs text-muted-foreground">Sent to kitchen at {format(new Date(kot.createdAt), 'p')}</p>
                                     </CardFooter>
                                 </Card>
                             ))}
@@ -702,7 +695,7 @@ export default function OperationsPage() {
                                         <TableCell className='text-right'>{customer.totalOrders}</TableCell>
                                         <TableCell className="text-right flex items-center justify-end">
                                             <IndianRupee className="h-4 w-4 mr-1" />
-                                            {customer.totalSpent.toFixed(2)}
+                                            {(Number(customer.totalSpent) || 0).toFixed(2)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -903,7 +896,7 @@ export default function OperationsPage() {
                                 <TableCell>{item.quantity} x {item.name}</TableCell>
                                 <TableCell className='text-right flex items-center justify-end'>
                                     <IndianRupee className="h-4 w-4 mr-1" />
-                                    {item.totalPrice.toFixed(2)}
+                                    {(Number(item.totalPrice) || 0).toFixed(2)}
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -986,7 +979,7 @@ export default function OperationsPage() {
                             <p className="text-muted-foreground">Total Orders</p>
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg">
-                            <p className="font-bold text-lg flex items-center justify-center"><IndianRupee className="h-4 w-4" />{viewCustomer?.totalSpent.toFixed(2)}</p>
+                            <p className="font-bold text-lg flex items-center justify-center"><IndianRupee className="h-4 w-4" />{(Number(viewCustomer?.totalSpent) || 0).toFixed(2)}</p>
                             <p className="text-muted-foreground">Total Spent</p>
                         </div>
                         <div className="p-4 bg-muted/50 rounded-lg">
@@ -1042,7 +1035,7 @@ export default function OperationsPage() {
                                         <TableRow key={order.id}>
                                             <TableCell>#{order.orderNumber}</TableCell>
                                             <TableCell>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</TableCell>
-                                            <TableCell className='text-right flex items-center justify-end'><IndianRupee className="h-4 w-4 mr-1" />{order.total.toFixed(2)}</TableCell>
+                                            <TableCell className='text-right flex items-center justify-end'><IndianRupee className="h-4 w-4 mr-1" />{(Number(order.total) || 0).toFixed(2)}</TableCell>
                                             <TableCell className='text-right'>
                                                 <Button variant="ghost" size="icon" onClick={() => setViewOrder(order)}>
                                                     <Eye className="h-4 w-4"/>
