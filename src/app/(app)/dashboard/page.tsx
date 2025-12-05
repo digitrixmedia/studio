@@ -14,7 +14,11 @@ export default function DashboardPage() {
 
   const todaySales = useMemo(() => {
     if (!pastOrders) return 0;
-    return pastOrders.reduce((sum, order) => sum + (order.status === 'completed' ? order.total : 0), 0);
+    return pastOrders.reduce(
+  (sum, order) =>
+    sum + (order.status === 'completed' ? Number(order.total) || 0 : 0),
+  0
+);
   }, [pastOrders]);
 
   const totalOrders = useMemo(() => pastOrders?.length || 0, [pastOrders]);
@@ -73,7 +77,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold flex items-center">
               <IndianRupee className="h-6 w-6 mr-1" />
-              {avgOrderValue.toFixed(2)}
+              {Number(avgOrderValue).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">+19% from last month</p>
           </CardContent>
