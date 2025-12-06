@@ -106,25 +106,26 @@ export interface Order {
   tableId?: string;
   items: OrderItem[];
 
-  // 🔥 Billing values - must be stored in DB
+  // 🔥 Billing values that must be stored in DB
   subTotal?: number;
   tax?: number;
-  discount?: number;
-  redeemedPoints?: number;
-  total: number;
+  discount?: number;       // manual + BOGO + etc
+  redeemedPoints?: number; // loyalty points used
+  total: number;           // final payable
 
   status: OrderStatus;
-  createdAt: Date | any;
-  createdBy: string;
 
+  /** Firestore timestamp is allowed, so keep flexible */
+  createdAt: Date | any;
+
+  createdBy: string;
   customerName?: string;
   customerPhone?: string;
-
-  // 🔥 Payment fields for settlement checks
   paymentMethod?: PaymentMethod;
   transactionId?: string;
-  onlineOrderSource?: OnlineOrderSource;
+  onlineOrderSource?: OnlineOrderSource; // keep this
 
+  // required for queries and security rules
   outletId: string;
 }
 

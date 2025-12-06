@@ -165,7 +165,7 @@ export default function OrdersPage() {
       const newOrderItem: OrderItem = {
         id: uniqueCartId,
         baseMenuItemId: itemToAdd.id,
-        menuItemId: itemToAdd.id, 
+        menuItemId: itemToAdd.id, // 🔥 ADD THIS
         name: finalName,
         quantity: 1,
         price: finalPrice,
@@ -304,127 +304,37 @@ const mealDrink: OrderItem = {
   };
   
   const resetCurrentOrder = async () => {
-    if (!activeOrder || !activeOrderId) return;
-
+    if (!activeOrder || !activeOrderId) return; // ⬅ FIX: ensure it's a string
+  
+    updateOrder(activeOrderId, { paymentMethod, transactionId });
     console.log('Finalizing order with:', { paymentMethod, transactionId });
+  // 🔥 STOCK DEDUCTION
+try {
+  await deductIngredientsForOrder(
+    activeOrder,
+    menuItems,
+    firestore,
+    currentUser?.outletId || 'default'
+  );
+} catch (e) {
+  console.error("Stock deduction failed:", e);
+}
 
-    // -------- 1. Recalculate all billing numbers from current UI state --------
-    const subTotal = activeOrder.items.reduce(
-      (sum, item) => sum + (Number(item.totalPrice) || 0),
-      0
-    );
+if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
+  const newPoints =
+    (activeCustomer.loyaltyPoints ?? 0) - (activeOrder.redeemedPoints ?? 0);
 
-    const addonsTotalForOrder = activeOrder.items.reduce((acc, item) => {
-      const itemAddonsTotal = (item.addons || []).reduce(
-        (addonAcc, addon) => addonAcc + (addon.price ?? 0),
-        0
-      );
-      return acc + itemAddonsTotal * item.quantity;
-    }, 0);
-
-    const bogoDiscountForOrder = activeOrder.items.reduce((totalDiscount, item) => {
-      if (item.isBogo && item.quantity >= 2) {
-        const freeItemsCount = Math.floor(item.quantity / 2);
-        return totalDiscount + freeItemsCount * item.price;
-      }
-      return totalDiscount;
-    }, 0);
-
-    const pointsDiscountForOrder = activeOrder.redeemedPoints || 0;
-
-    let discountableAmount = subTotal - bogoDiscountForOrder;
-    if (settings.ignoreAddonPrice) {
-      discountableAmount -= addonsTotalForOrder;
-    }
-
-    let calculatedDiscountValue = 0;
-    if (settings.discountType === 'percentage') {
-      calculatedDiscountValue = discountableAmount * (settings.discountValue / 100);
+  updateCustomer(activeCustomer.id, { loyaltyPoints: newPoints });
+}
+  
+    if (orders.length === 1) {
+      const newOrder = createNewOrder();
+      setOrders([newOrder]);
+      setActiveOrderId(newOrder.id);
     } else {
-      calculatedDiscountValue = settings.discountValue;
+      removeOrder(activeOrderId); // safe now
     }
-
-    const discountAmountForOrder = Math.min(discountableAmount, calculatedDiscountValue);
-
-    const totalBeforeTaxAndDiscount = subTotal - bogoDiscountForOrder;
-
-    const taxRate = manualTaxRate !== null ? manualTaxRate : settings.taxAmount;
-
-    let taxForOrder = 0;
-    if (taxRate > 0) {
-      if (settings.calculateBackwardTax) {
-        const totalAfterDiscounts =
-          totalBeforeTaxAndDiscount -
-          discountAmountForOrder -
-          pointsDiscountForOrder;
-        taxForOrder =
-          totalAfterDiscounts - totalAfterDiscounts / (1 + taxRate / 100);
-      } else {
-        let taxableAmount =
-          totalBeforeTaxAndDiscount -
-          discountAmountForOrder -
-          pointsDiscountForOrder;
-
-        if (settings.calculateTaxBeforeDiscount) {
-          taxableAmount = totalBeforeTaxAndDiscount;
-        }
-
-        taxForOrder = taxableAmount * (taxRate / 100);
-      }
-    }
-
-    let finalTotal =
-      totalBeforeTaxAndDiscount -
-      discountAmountForOrder -
-      pointsDiscountForOrder +
-      taxForOrder;
-
-    if (settings.isComplimentary) {
-      finalTotal = 0;
-      if (settings.disableTaxOnComplimentary) {
-        taxForOrder = 0;
-      }
-    }
-
-    const round2 = (n: number) => Number(n.toFixed(2));
-
-    // -------- 2. Persist everything into the active order document --------
-    await updateOrder(activeOrderId, {
-      paymentMethod,
-      transactionId,
-      subTotal: round2(subTotal),
-      // store FULL discount = normal discount + BOGO + points
-      discount: round2(
-        discountAmountForOrder + bogoDiscountForOrder + pointsDiscountForOrder
-      ),
-      redeemedPoints: pointsDiscountForOrder,
-      tax: round2(taxForOrder),
-      total: round2(finalTotal),
-    });
-
-    // -------- 3. Stock deduction --------
-    try {
-      await deductIngredientsForOrder(
-        activeOrder,
-        menuItems,
-        firestore,
-        currentUser?.outletId || 'default'
-      );
-    } catch (e) {
-      console.error('Stock deduction failed:', e);
-    }
-
-    // -------- 4. Loyalty points --------
-    if (pointsDiscountForOrder > 0 && activeCustomer) {
-      const newPoints =
-        activeCustomer.loyaltyPoints - pointsDiscountForOrder;
-      updateCustomer(activeCustomer.id, { loyaltyPoints: newPoints });
-    }
-
-    // -------- 5. Move order into reports (pastOrders / Firestore) --------
-    await finalizeOrder(activeOrderId);
-
-    // -------- 6. Reset UI state for the next order --------
+  
     setAmountPaid('');
     setPaymentMethod('cash');
     setTransactionId('');
@@ -874,21 +784,43 @@ const mealDrink: OrderItem = {
   };
 
   const handlePrintAndSettle = async () => {
-    if (!activeOrder || !activeOrderId) return;
+    if (!activeOrder) return;
+
+    updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
     handlePrintBill();
-    await resetCurrentOrder();
+    if (activeOrderId) await finalizeOrder(activeOrderId, {
+      subTotal,
+  discount: discountAmount,
+  tax,
+  total,
+});
   };
   
   const handleKotAndPrint = async () => {
-    if (!activeOrder || !activeOrderId) return;
+    if (!activeOrder) return;
+
+    updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
     handlePrintKOT();
     handlePrintBill();
-    await resetCurrentOrder();
+    if (activeOrderId) await finalizeOrder(activeOrderId, {
+  subTotal,
+  discount: discountAmount,
+  tax,
+  total,
+});
   };
   
   const handleSaveAndEbill = async () => {
     if (!activeOrder || !activeOrderId) return;
 
+  updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
+    if (activeOrderId) await finalizeOrder(activeOrderId, {
+  subTotal,
+  discount: discountAmount,
+  tax,
+  total,
+});
+    
     if (!activeOrder.customer.phone) {
       toast({
         variant: 'destructive',
@@ -901,11 +833,7 @@ const mealDrink: OrderItem = {
     try {
       const orderDetails = {
         customerName: activeOrder.customer.name,
-        items: activeOrder.items.map(i => ({
-          name: i.name,
-          quantity: i.quantity,
-          totalPrice: i.totalPrice,
-        })),
+        items: activeOrder.items.map(i => ({ name: i.name, quantity: i.quantity, totalPrice: i.totalPrice })),
         total: total,
         orderNumber: activeOrder.orderNumber,
         cafeName: settings.printCafeName,
@@ -917,22 +845,22 @@ const mealDrink: OrderItem = {
       console.log(`To: ${activeOrder.customer.phone}`);
       console.log(`Message: ${result.smsContent}`);
       console.log('--------------------');
-
+      
       toast({
-        title: 'eBill Sent',
-        description: `SMS bill sent to ${activeOrder.customer.phone}.`,
+          title: "eBill Sent",
+          description: `SMS bill sent to ${activeOrder.customer.phone}.`,
       });
 
-      await resetCurrentOrder();
+      resetCurrentOrder();
     } catch (error) {
-      console.error('Error generating or sending eBill:', error);
+      console.error("Error generating or sending eBill:", error);
       toast({
-        variant: 'destructive',
-        title: 'Failed to Send eBill',
-        description: 'There was a problem generating the bill content.',
+          variant: "destructive",
+          title: "Failed to Send eBill",
+          description: "There was a problem generating the bill content.",
       });
     }
-  };
+  }
 
   const handleRedeemPoints = () => {
     if (!activeOrder) return;
