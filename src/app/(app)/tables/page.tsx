@@ -169,7 +169,12 @@ export default function TablesPage() {
       return;
     }
 
-    await finalizeOrder(selectedTable.currentOrderId);
+    await finalizeOrder(selectedTable.currentOrderId, {
+  subTotal: 0,
+  discount: 0,
+  tax: 0,
+  total: 0,
+});
 
     toast({
       title: 'Table Vacated',
