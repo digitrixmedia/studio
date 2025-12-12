@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import type { MenuItem, OrderItem, OrderType, AppOrder, MenuItemAddon, MealDeal, Customer, PaymentMethod, MenuItemVariation } from '@/lib/types';
-import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift, Award } from 'lucide-react';
+import { CheckCircle, IndianRupee, Mail, MessageSquarePlus, MinusCircle, Package, PauseCircle, Phone, PlayCircle, PlusCircle, Printer, Search, Send, Sparkles, ShoppingBag, Tag, Truck, User, Utensils, X, Gift, Award, ChevronRight, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,11 @@ import { CustomerSearch } from '@/components/pos/CustomerSearch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { deductIngredientsForOrder } from '@/firebase/stock/deduction';
 import { initializeFirebase } from '@/firebase';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 
 export default function OrdersPage() {
@@ -654,142 +659,13 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
     printContent(billHtml);
   };
   
-  const handlePrintKOT = () => {
-    if (!activeOrder) return;
-     const now = new Date();
-     const kotHtml = `
-      <html>
-        <head>
-          <title>KOT</title>
-          <style>
-            @page { 
-              size: 80mm auto; 
-              margin: 0;
-            }
-            body {
-              font-family: 'Arial', 'Source Code Pro', monospace;
-              color: #000;
-              width: 76mm;
-              padding: 0;
-              margin: 0 auto;
-              -webkit-print-color-adjust: exact;
-            }
-            * { 
-              box-sizing: border-box; 
-              margin: 0;
-              padding: 0;
-            }
-            .container { 
-              display: block;
-              padding: 0 2mm;
-            }
-            .header { 
-              display: block;
-              text-align: center;
-              margin-bottom: 5px;
-            }
-            .header h2 {
-                font-weight: bold; 
-                font-size: 1.5rem;
-                margin-bottom: 4px;
-                border-bottom: 1px dashed #000;
-                padding-bottom: 4px;
-            }
-            .hr { 
-              border-top: 1px dashed #000; 
-              margin: 5px 0; 
-            }
-            .info-grid { 
-              display: grid; 
-              grid-template-columns: 1fr 1fr; 
-              font-size: 12px; 
-              font-weight: bold;
-              margin-bottom: 5px; 
-            }
-            .info-grid div { text-align: left; }
-            .info-grid div:nth-child(even) { text-align: right; }
-            
-            table { width: 100%; border-collapse: collapse; font-size: 12px; }
-            th, td { padding: 2px 0; vertical-align: top;}
-            th { text-align: left; border-bottom: 1px solid #000; font-weight: bold; }
-            
-            .col-qty { width: 15%; text-align: center; font-size: 1.1rem; font-weight: bold; }
-            .col-item { width: 85%; }
-
-            .item-name { font-weight: bold; font-size: 1rem; }
-            .item-variation { font-size: 11px; padding-left: 10px; }
-            .notes { font-size: 11px; font-style: italic; padding-left: 10px; white-space: normal; }
-            .meal-item { font-size: 11px; padding-left: 15px; color: #333; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h2>KITCHEN ORDER TICKET</h2>
-            </div>
-            
-            <div class="info-grid">
-              <div>Order: #${activeOrder.orderNumber}</div>
-              <div>${now.toLocaleTimeString()}</div>
-              <div>For: ${activeOrder.orderType === 'dine-in' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Dine-In' : activeOrder.orderType}</div>
-              <div>Cashier: ${currentUser?.name.split(' ')[0] || 'Biller'}</div>
-            </div>
-
-            <div class="hr"></div>
-
-            <table>
-              <thead>
-                <tr>
-                  <th class="col-qty">QTY</th>
-                  <th class="col-item">ITEM</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${activeOrder.items.map((item) => {
-                  if(item.baseMenuItemId === 'meal-deal') return ''; // Don't print the deal itself
-                  let itemHtml = `
-                    <tr>
-                      <td class="col-qty">${item.quantity}x</td>
-                      <td class="col-item">
-                        <div class="item-name">${item.name.replace(/\\s\\(.*\\)/, '')} ${item.isMealChild && item.mealParentId ? '(Meal)' : ''}</div>
-                        ${item.variation && item.variation.name !== 'Regular' ? `<div class="item-variation">(${item.variation.name})</div>` : ''}
-                        ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ''}
-                      </td>
-                    </tr>`;
-                    
-                  if(!item.isMealChild) {
-                     const mealChildren = activeOrder.items.filter(i => i.mealParentId === item.id);
-                     if(mealChildren.length > 0) {
-                        mealChildren.forEach(child => {
-                            if(child.baseMenuItemId !== 'meal-deal') {
-                                itemHtml += `
-                                <tr>
-                                    <td class="col-qty"></td>
-                                    <td class="col-item meal-item">+ ${child.name} (Meal)</td>
-                                </tr>`;
-                            }
-                        })
-                     }
-                  }
-                  
-                  return itemHtml;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </body>
-      </html>
-    `;
-    printContent(kotHtml);
-  };
-
   const handlePrintAndSettle = async () => {
     if (!activeOrder) return;
 
     updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
     handlePrintBill();
     if (activeOrderId) await finalizeOrder(activeOrderId, {
-      subTotal,
+  subTotal,
   discount: discountAmount,
   tax,
   total,
@@ -1714,20 +1590,42 @@ function CustomizationForm({
       )}
 
       {item.addons && item.addons.length > 0 && (
-        <div>
-          <Label className="font-medium">Select Addons</Label>
-          <div className="mt-2 space-y-2">
-            {item.addons.map(addon => (
-                <div key={addon.id} className="flex items-center space-x-2">
-                    <Checkbox id={`addon-${addon.id}`} onCheckedChange={() => handleToggleAddon(addon)} />
-                    <Label htmlFor={`addon-${addon.id}`} className="flex justify-between w-full">
-                        <span>{addon.name}</span>
-                         <span className='text-muted-foreground'>(+<IndianRupee className="h-3.5 w-3.5 inline-block" />{(addon.price ?? 0).toFixed(2)})</span>
-                    </Label>
-                </div>
-            ))}
+        <Collapsible defaultOpen={false}>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-md font-medium">Select Addons</h3>
+            <CollapsibleTrigger asChild>
+                <button className="flex items-center text-sm text-muted-foreground hover:text-foreground transition">
+                <ChevronRight className="w-4 h-4 group-data-[state=open]:hidden" />
+                <ChevronDown className="w-4 h-4 group-data-[state=closed]:hidden" />
+                </button>
+            </CollapsibleTrigger>
           </div>
-        </div>
+
+          <CollapsibleContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+              {item.addons.map((addon) => (
+                <div
+                  key={addon.id}
+                  className="flex items-center space-x-2 border rounded-md p-2 hover:bg-muted transition"
+                >
+                  <Checkbox
+                    id={`addon-${addon.id}`}
+                    checked={selectedAddons.some(a => a.id === addon.id)}
+                    onCheckedChange={(checked) => handleToggleAddon(addon)}
+                  />
+                  <Label htmlFor={`addon-${addon.id}`} className="flex flex-col cursor-pointer">
+                    <span>{addon.name}</span>
+                    {(addon.price ?? 0) > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        (+ ₹{addon.price})
+                      </span>
+                    )}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       <div>
