@@ -683,43 +683,185 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
   const handlePrintKOT = () => {
     if (!activeOrder) return;
     const now = new Date();
+  
     const kotHtml = `
       <html>
         <head>
           <title>KOT</title>
           <style>
-            body {
-              font-family: 'Arial', monospace;
-              width: 76mm;
+            @page { 
+              size: 80mm auto; 
               margin: 0;
-              padding: 0 2mm;
+            }
+            body {
+              font-family: 'Arial', 'Source Code Pro', monospace;
+              color: #000;
+              width: 76mm;
+              padding: 0;
+              margin: 0 auto;
               -webkit-print-color-adjust: exact;
             }
-            .qty { font-size: 1.2rem; font-weight: bold; }
-            .item { font-size: 1rem; font-weight: bold; }
-            .notes { font-size: 0.9rem; padding-left: 10px; }
+            * { 
+              box-sizing: border-box; 
+              margin: 0;
+              padding: 0;
+            }
+            .container { 
+              display: block;
+              padding: 0 2mm;
+            }
+            .header { 
+              display: block;
+              text-align: center;
+              margin-bottom: 5px;
+            }
+            .header h2 {
+                font-weight: bold; 
+                font-size: 1.5rem;
+                margin-bottom: 4px;
+                border-bottom: 1px dashed #000;
+                padding-bottom: 4px;
+            }
+            .hr { 
+              border-top: 1px dashed #000; 
+              margin: 5px 0; 
+            }
+            .info-grid { 
+              display: grid; 
+              grid-template-columns: 1fr 1fr; 
+              font-size: 12px; 
+              font-weight: bold;
+              margin-bottom: 5px; 
+            }
+            .info-grid div:nth-child(even) { text-align: right; }
+  
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { padding: 2px 0; vertical-align: top;}
+            th { text-align: left; border-bottom: 1px solid #000; font-weight: bold; }
+  
+            .col-qty { width: 15%; text-align: center; font-size: 1.1rem; font-weight: bold; }
+            .col-item { width: 85%; }
+  
+            .item-name { font-weight: bold; font-size: 1rem; }
+            .item-variation { font-size: 11px; padding-left: 10px; }
+            .notes { font-size: 11px; font-style: italic; padding-left: 10px; white-space: normal; }
+  
+            .addon-line { 
+              font-size: 11px;
+              padding-left: 10px; 
+              color: #444;
+            }
+  
+            .meal-item { 
+              font-size: 11px; 
+              padding-left: 15px; 
+              color: #333; 
+            }
           </style>
         </head>
-        <body>
-          <h2 style="text-align:center;border-bottom:1px dashed black;">KOT</h2>
-          <p><b>Order:</b> #${activeOrder.orderNumber}</p>
-          <p><b>Time:</b> ${now.toLocaleTimeString()}</p>
-          <hr />
   
-          ${activeOrder.items.map(item => `
-            <div>
-              <span class="qty">${item.quantity}x</span>
-              <span class="item">${item.name}</span>
-              ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ""}
-              ${item.addons?.map(a => `<div class="notes">+ ${a.name}</div>`).join("")}
+        <body>
+          <div class="container">
+  
+            <div class="header">
+              <h2>KITCHEN ORDER TICKET</h2>
             </div>
-            <br />
-          `).join('')}
+            
+            <div class="info-grid">
+              <div>Order: #${activeOrder.orderNumber}</div>
+              <div>${now.toLocaleTimeString()}</div>
+  
+              <div>For: ${
+                activeOrder.orderType === "dine-in"
+                  ? tables.find((t) => t.id === activeOrder.tableId)?.name || "Dine-In"
+                  : activeOrder.orderType
+              }</div>
+  
+              <div>Cashier: ${currentUser?.name.split(" ")[0] || "Biller"}</div>
+            </div>
+  
+            <div class="hr"></div>
+  
+            <table>
+              <thead>
+                <tr>
+                  <th class="col-qty">QTY</th>
+                  <th class="col-item">ITEM</th>
+                </tr>
+              </thead>
+              <tbody>
+  
+                ${activeOrder.items
+                  .map((item) => {
+                    if (item.baseMenuItemId === "meal-deal") return "";
+  
+                    let html = `
+                      <tr>
+                        <td class="col-qty">${item.quantity}x</td>
+                        <td class="col-item">
+                          <div class="item-name">
+                            ${item.name.replace(/\s\(.*\)/, "")}
+                            ${item.isMealChild ? "(Meal)" : ""}
+                          </div>
+  
+                          ${
+                            item.variation &&
+                            item.variation.name !== "Regular"
+                              ? `<div class="item-variation">(${item.variation.name})</div>`
+                              : ""
+                          }
+  
+                          ${
+                            item.notes
+                              ? `<div class="notes">- ${item.notes}</div>`
+                              : ""
+                          }
+                    `;
+  
+                    if (item.addons && item.addons.length > 0) {
+                      html += item.addons
+                        .map(
+                          (a) => `
+                          <div class="addon-line">
+                            + ${a.name}
+                          </div>
+                        `
+                        )
+                        .join("");
+                    }
+  
+                    if (!item.isMealChild) {
+                      const mealChildren = activeOrder.items.filter(
+                        (i) => i.mealParentId === item.id
+                      );
+  
+                      if (mealChildren.length > 0) {
+                        mealChildren.forEach((child) => {
+                          if (child.baseMenuItemId !== "meal-deal") {
+                            html += `
+                              <div class="meal-item">
+                                + ${child.name}
+                              </div>
+                            `;
+                          }
+                        });
+                      }
+                    }
+  
+                    html += `</td></tr>`;
+                    return html;
+                  })
+                  .join("")}
+  
+              </tbody>
+            </table>
+          </div>
         </body>
       </html>
     `;
+  
     printContent(kotHtml);
-  };  
+  };    
   const handleKotAndPrint = async () => {
     if (!activeOrder) return;
 
