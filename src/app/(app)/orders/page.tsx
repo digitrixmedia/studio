@@ -670,16 +670,36 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
   
   const handlePrintAndSettle = async () => {
     if (!activeOrder) return;
-
-    updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
-    handlePrintBill();
-    if (activeOrderId) await finalizeOrder(activeOrderId, {
-  subTotal,
-  discount: discountAmount,
-  tax,
-  total,
-});
+  
+    updateOrder(activeOrder.id, {
+      subTotal,
+      discount: discountAmount,
+      tax,
+      total,
+    });
+  
+    try {
+      if (activeOrderId) {
+        await finalizeOrder(activeOrderId, {
+          subTotal,
+          discount: discountAmount,
+          tax,
+          total,
+        });
+      }
+  
+      // PRINT ONLY AFTER SUCCESSFUL SAVE
+      handlePrintBill();
+  
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Order Save Failed",
+        description: "Bill was not printed because Firestore save failed. Please try again.",
+      });
+    }
   };
+  
   const handlePrintKOT = () => {
     if (!activeOrder) return;
     const now = new Date();
@@ -864,28 +884,64 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
   };    
   const handleKotAndPrint = async () => {
     if (!activeOrder) return;
-
-    updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
-    handlePrintKOT();
-    handlePrintBill();
-    if (activeOrderId) await finalizeOrder(activeOrderId, {
-  subTotal,
-  discount: discountAmount,
-  tax,
-  total,
-});
-  };
+  
+    updateOrder(activeOrder.id, {
+      subTotal,
+      discount: discountAmount,
+      tax,
+      total,
+    });
+  
+    try {
+      if (activeOrderId) {
+        await finalizeOrder(activeOrderId, {
+          subTotal,
+          discount: discountAmount,
+          tax,
+          total,
+        });
+      }
+  
+      // ONLY PRINT AFTER SAVE IS SUCCESSFUL
+      handlePrintKOT();
+      handlePrintBill();
+  
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Order Save Failed",
+        description: "KOT/Bill not printed because Firestore save failed.",
+      });
+    }
+  };  
   
   const handleSaveAndEbill = async () => {
     if (!activeOrder || !activeOrderId) return;
 
-  updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
-    if (activeOrderId) await finalizeOrder(activeOrderId, {
-  subTotal,
-  discount: discountAmount,
-  tax,
-  total,
-});
+    updateOrder(activeOrder.id, {
+      subTotal,
+      discount: discountAmount,
+      tax,
+      total,
+    });
+    
+    try {
+      if (activeOrderId) {
+        await finalizeOrder(activeOrderId, {
+          subTotal,
+          discount: discountAmount,
+          tax,
+          total,
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Order Save Failed",
+        description: "E-Bill will not be sent because Firestore save failed.",
+      });
+      return;
+    }
     
     if (!activeOrder.customer.phone) {
       toast({
@@ -894,7 +950,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
         description: 'Please enter a customer phone number to send an e-bill.',
       });
       return;
-    }
+    }    
 
     try {
       const orderDetails = {
