@@ -676,7 +676,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
     if (!activeOrder) return;
 
     updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
-    handlePrintKOT();
+    handleSendToKitchen();
     handlePrintBill();
     if (activeOrderId) await finalizeOrder(activeOrderId, {
   subTotal,
