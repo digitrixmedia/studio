@@ -594,7 +594,16 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
                       <td class="col-amount">${(Number(item.totalPrice) || 0).toFixed(2)}</td>
                     </tr>
                     ${item.variation && item.variation.name !== 'Regular' ? `<tr><td></td><td colspan="4" class="item-variation">(${item.variation.name})</td></tr>` : ''}
-                    ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}`;
+                    ${item.notes ? `<tr><td></td><td colspan="4" class="notes">- ${item.notes}</div></td></tr>` : ''}${item.addons && item.addons.length > 0
+  ? item.addons.map(a => `
+      <tr>
+        <td></td>
+        <td colspan="4" class="notes">+ ${a.name} (+₹${(a.price ?? 0).toFixed(2)})</td>
+      </tr>
+    `).join('')
+  : ''
+}`;
+                    
 
                   const mealItems = activeOrder.items.filter(i => i.mealParentId === item.id);
                   if (mealItems.length > 0) {
@@ -671,12 +680,51 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
   total,
 });
   };
+  const handlePrintKOT = () => {
+    if (!activeOrder) return;
+    const now = new Date();
+    const kotHtml = `
+      <html>
+        <head>
+          <title>KOT</title>
+          <style>
+            body {
+              font-family: 'Arial', monospace;
+              width: 76mm;
+              margin: 0;
+              padding: 0 2mm;
+              -webkit-print-color-adjust: exact;
+            }
+            .qty { font-size: 1.2rem; font-weight: bold; }
+            .item { font-size: 1rem; font-weight: bold; }
+            .notes { font-size: 0.9rem; padding-left: 10px; }
+          </style>
+        </head>
+        <body>
+          <h2 style="text-align:center;border-bottom:1px dashed black;">KOT</h2>
+          <p><b>Order:</b> #${activeOrder.orderNumber}</p>
+          <p><b>Time:</b> ${now.toLocaleTimeString()}</p>
+          <hr />
   
+          ${activeOrder.items.map(item => `
+            <div>
+              <span class="qty">${item.quantity}x</span>
+              <span class="item">${item.name}</span>
+              ${item.notes ? `<div class="notes">- ${item.notes}</div>` : ""}
+              ${item.addons?.map(a => `<div class="notes">+ ${a.name}</div>`).join("")}
+            </div>
+            <br />
+          `).join('')}
+        </body>
+      </html>
+    `;
+    printContent(kotHtml);
+  };  
   const handleKotAndPrint = async () => {
     if (!activeOrder) return;
 
     updateOrder(activeOrder.id, { subTotal, discount: discountAmount, tax, total });
-    handleSendToKitchen();
+    handlePrintKOT();
     handlePrintBill();
     if (activeOrderId) await finalizeOrder(activeOrderId, {
   subTotal,
