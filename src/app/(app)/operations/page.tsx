@@ -544,7 +544,7 @@ export default function OperationsPage() {
                         <TableBody>
                             {filteredOrders.map(order => (
                                 <TableRow key={order.id}>
-                                    <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
+                                    <TableCell className='font-bold'>{order.orderNumber}</TableCell>
                                     <TableCell>
                                         <div>{order.customerName || 'N/A'}</div>
                                         {order.customerPhone && <div className='text-xs text-muted-foreground'>{order.customerPhone}</div>}
@@ -569,7 +569,7 @@ export default function OperationsPage() {
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>This will cancel order #{order.orderNumber}. This action cannot be undone.</AlertDialogDescription>
+                                                    <AlertDialogDescription>This will cancel order {order.orderNumber}. This action cannot be undone.</AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Close</AlertDialogCancel>
@@ -601,7 +601,7 @@ export default function OperationsPage() {
                                 <Card key={order.id} className={cn("flex flex-col", order.status === 'rejected' && 'bg-destructive/10 border-destructive/50')}>
                                     <CardHeader>
                                         <CardTitle className="flex justify-between items-center">
-                                            <span>#{order.orderNumber}</span>
+                                            <span>{order.orderNumber}</span>
                                             {order.onlineOrderSource === 'zomato' && <ZappyyIcon className="h-6 w-6 text-red-500" />}
                                             {order.onlineOrderSource === 'swiggy' && <ZappyyIcon className="h-6 w-6 text-orange-500" />}
                                         </CardTitle>
@@ -722,7 +722,7 @@ export default function OperationsPage() {
                                         {orders.map(order => (
                                             <Card key={order.id} className={cn("p-3", status === 'new' && 'bg-blue-500/10 border-blue-500', status === 'preparing' && 'bg-orange-500/10 border-orange-500', status === 'ready' && 'bg-green-500/10 border-green-500')}>
                                                 <div className="flex justify-between font-bold">
-                                                    <span>#{order.orderNumber}</span>
+                                                    <span>{order.orderNumber}</span>
                                                     <Badge variant="secondary">{order.type}</Badge>
                                                 </div>
                                                 <div className="text-sm mt-1">
@@ -847,7 +847,7 @@ export default function OperationsPage() {
                                         <CardContent className="p-4">
                                             <div className="flex justify-between items-start">
                                                 <div>
-                                                    <p className="font-bold">#{order.orderNumber}</p>
+                                                    <p className="font-bold">{order.orderNumber}</p>
                                                     <p className="text-sm text-muted-foreground">{order.customerName}</p>
                                                 </div>
                                                 <Select onValueChange={(deliveryBoyId) => handleAssignRider(order.id, deliveryBoyId)}>
@@ -1033,7 +1033,7 @@ export default function OperationsPage() {
                                 <TableBody>
                                     {orders.filter(o => o.customerPhone === viewCustomer?.phone).map(order => (
                                         <TableRow key={order.id}>
-                                            <TableCell>#{order.orderNumber}</TableCell>
+                                            <TableCell>{order.orderNumber}</TableCell>
                                             <TableCell>{formatDistanceToNow(order.createdAt, { addSuffix: true })}</TableCell>
                                             <TableCell className='text-right flex items-center justify-end'><IndianRupee className="h-4 w-4 mr-1" />{(Number(order.total) || 0).toFixed(2)}</TableCell>
                                             <TableCell className='text-right'>

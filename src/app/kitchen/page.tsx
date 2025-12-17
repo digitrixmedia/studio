@@ -86,7 +86,7 @@ function OrderTicket({ order, onUpdateStatus }: { order: Order, onUpdateStatus: 
     )}>
       <CardHeader className="pb-2">
         <CardTitle className="flex justify-between items-center">
-            <span>#{order.orderNumber}</span>
+            <span>{order.orderNumber}</span>
             <Badge variant="secondary">{order.type === 'dine-in' ? `Table: ${order.tableId?.split('-')[1]}` : order.type}</Badge>
         </CardTitle>
       </CardHeader>

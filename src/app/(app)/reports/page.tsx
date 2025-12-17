@@ -572,7 +572,7 @@ export default function ReportsPage() {
                             </TableRow>
                             {filteredSalesReportOrders.map(order => (
                                 <TableRow key={order.id} onClick={() => setViewedOrder(order)} className="cursor-pointer">
-                                    <TableCell>#{order.orderNumber}</TableCell>
+                                    <TableCell>{order.orderNumber}</TableCell>
                                     <TableCell>{format(order.createdAt, 'dd-MM-yy, p')}</TableCell>
                                     <TableCell className="capitalize">{order.paymentMethod}</TableCell>
                                     <TableCell className="capitalize">{order.type.replace(/-/g, ' ')}</TableCell>
@@ -911,7 +911,7 @@ export default function ReportsPage() {
               <TableBody>
                 {selectedDay?.orders.map(order => (
                   <TableRow key={order.id}>
-                    <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+                    <TableCell className="font-medium">{order.orderNumber}</TableCell>
                     <TableCell>{format(order.createdAt, 'p')}</TableCell>
                     <TableCell>{order.customerName || 'N/A'}</TableCell>
                     <TableCell><Badge variant="outline">{order.type}</Badge></TableCell>

@@ -1491,7 +1491,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
                         <TableBody>
                             {filteredHeldOrders.length > 0 ? filteredHeldOrders.map(order => (
                                 <TableRow key={order.id}>
-                                    <TableCell className='font-bold'>#{order.orderNumber}</TableCell>
+                                    <TableCell className='font-bold'>{order.orderNumber}</TableCell>
                                     <TableCell>{order.customer.name || 'N/A'}</TableCell>
                                     <TableCell><Badge variant="outline">{order.orderType}</Badge></TableCell>
                                     <TableCell>{order.items.length}</TableCell>

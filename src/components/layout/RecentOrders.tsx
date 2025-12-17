@@ -33,7 +33,7 @@ export function RecentOrders() {
                 {recentOrders.map(order => (
                   <TableRow key={order.id}>
                     <TableCell>
-                      <div className="font-medium">#{order.orderNumber}</div>
+                      <div className="font-medium">{order.orderNumber}</div>
                       <div className="text-sm text-muted-foreground">{order.customerName || 'N/A'}</div>
                     </TableCell>
                     <TableCell className='flex items-center'>

@@ -331,7 +331,7 @@ export default function TablesPage() {
 
                 {order && table.status !== 'vacant' && (
                   <div className="mt-2 text-xs">
-                    <p>Order: #{order.orderNumber}</p>
+                    <p>Order: {order.orderNumber}</p>
 
                     {total !== null && (
                       <p className="flex items-center font-semibold">
