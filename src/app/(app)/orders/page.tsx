@@ -35,6 +35,7 @@ import { CustomerSearch } from '@/components/pos/CustomerSearch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { deductIngredientsForOrder } from '@/firebase/stock/deduction';
 import { initializeFirebase } from '@/firebase';
+import { formatOrderNumber } from '@/lib/utils';
 import {
   Collapsible,
   CollapsibleContent,
@@ -466,6 +467,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
     if (!activeOrder) return;
   
     const now = new Date();
+    console.log("PRINTING ORDER NUMBER:", activeOrder.orderNumber);
     const billHtml = `
       <html>
         <head>
@@ -566,7 +568,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
               <div>Date: ${now.toLocaleDateString()}</div>
               <div>${activeOrder.orderType}: ${activeOrder.orderType === 'dine-in' ? tables.find(t => t.id === activeOrder.tableId)?.name || 'Self' : 'Self'}</div>
               <div>Time: ${now.toLocaleTimeString()}</div>
-              <div>Bill No.: ${activeOrder.orderNumber}</div>
+              <div>Bill No.: ${formatOrderNumber(activeOrder.orderNumber)}</div>
               <div>Cashier: ${currentUser?.name.split(' ')[0] || 'Biller'}</div>
             </div>
 
@@ -788,7 +790,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
             </div>
             
             <div class="info-grid">
-              <div>Order: #${activeOrder.orderNumber}</div>
+              <div>Order: ${formatOrderNumber(activeOrder.orderNumber)}</div>
               <div>${now.toLocaleTimeString()}</div>
   
               <div>For: ${
