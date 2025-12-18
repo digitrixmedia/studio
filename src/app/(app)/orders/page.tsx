@@ -91,6 +91,7 @@ export default function OrdersPage() {
   const [billSearchQuery, setBillSearchQuery] = useState('');
   const [manualTaxRate, setManualTaxRate] = useState<number | null>(null);
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   useEffect(() => {
     if (menuCategories.length > 0 && !activeCategory) {
@@ -671,16 +672,18 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
   };
   
   const handlePrintAndSettle = async () => {
-    if (!activeOrder) return;
-  
-    updateOrder(activeOrder.id, {
-      subTotal,
-      discount: discountAmount,
-      tax,
-      total,
-    });
+    if (!activeOrder || isSavingOrder) return;
   
     try {
+      setIsSavingOrder(true);
+  
+      updateOrder(activeOrder.id, {
+        subTotal,
+        discount: discountAmount,
+        tax,
+        total,
+      });
+  
       if (activeOrderId) {
         await finalizeOrder(activeOrderId, {
           subTotal,
@@ -690,7 +693,6 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
         });
       }
   
-      // PRINT ONLY AFTER SUCCESSFUL SAVE
       handlePrintBill();
   
     } catch (err) {
@@ -699,8 +701,10 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
         title: "Order Save Failed",
         description: "Bill was not printed because Firestore save failed. Please try again.",
       });
+    } finally {
+      setIsSavingOrder(false);
     }
-  };
+  };  
   
   const handlePrintKOT = () => {
     if (!activeOrder) return;
@@ -885,16 +889,18 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
     printContent(kotHtml);
   };    
   const handleKotAndPrint = async () => {
-    if (!activeOrder) return;
-  
-    updateOrder(activeOrder.id, {
-      subTotal,
-      discount: discountAmount,
-      tax,
-      total,
-    });
+    if (!activeOrder || isSavingOrder) return;
   
     try {
+      setIsSavingOrder(true);
+  
+      updateOrder(activeOrder.id, {
+        subTotal,
+        discount: discountAmount,
+        tax,
+        total,
+      });
+  
       if (activeOrderId) {
         await finalizeOrder(activeOrderId, {
           subTotal,
@@ -904,7 +910,6 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
         });
       }
   
-      // ONLY PRINT AFTER SAVE IS SUCCESSFUL
       handlePrintKOT();
       handlePrintBill();
   
@@ -914,11 +919,15 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
         title: "Order Save Failed",
         description: "KOT/Bill not printed because Firestore save failed.",
       });
+    } finally {
+      setIsSavingOrder(false);
     }
-  };  
+  };    
   
   const handleSaveAndEbill = async () => {
-    if (!activeOrder || !activeOrderId) return;
+    if (!activeOrder || !activeOrderId || isSavingOrder) return;
+  
+    setIsSavingOrder(true);  
 
     updateOrder(activeOrder.id, {
       subTotal,
@@ -943,6 +952,8 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
         description: "E-Bill will not be sent because Firestore save failed.",
       });
       return;
+    } finally {
+      setIsSavingOrder(false);
     }
     
     if (!activeOrder.customer.phone) {
@@ -984,7 +995,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
           description: "There was a problem generating the bill content.",
       });
     }
-  }
+  } 
 
   const handleRedeemPoints = () => {
     if (!activeOrder) return;
@@ -1655,15 +1666,27 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
                  )}
                  <DialogFooter className='sm:flex-col sm:space-x-0 gap-2'>
                     <div className='grid grid-cols-2 gap-2'>
-                      <Button variant="outline" onClick={handlePrintAndSettle}>
+                      <Button variant="outline" onClick={handlePrintAndSettle}disabled={isSavingOrder}>
                         <Printer className="mr-2" /> Print Bill
                       </Button>
-                       <Button variant="outline" onClick={handleKotAndPrint}>
+                       <Button variant="outline" onClick={handleKotAndPrint}disabled={isSavingOrder}>
+
                         <Printer className="mr-2" /> KOT & Print
                       </Button>
-                      <Button variant="outline" onClick={handleSaveAndEbill} className="col-span-2">
-                        <Mail className="mr-2" /> Save & eBill
-                      </Button>
+                      <Button
+  variant="outline"
+  onClick={handleSaveAndEbill}
+  className="col-span-2"
+  disabled={isSavingOrder}
+>
+  {isSavingOrder ? (
+    <>Saving Order…</>
+  ) : (
+    <>
+      <Mail className="mr-2" /> Save & eBill
+    </>
+  )}
+</Button>
                     </div>
                 </DialogFooter>
             </DialogContent>
