@@ -694,6 +694,8 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
       }
   
       handlePrintBill();
+        resetCurrentOrder();
+
   
     } catch (err) {
       toast({
@@ -912,6 +914,7 @@ if ((activeOrder.redeemedPoints ?? 0) > 0 && activeCustomer) {
   
       handlePrintKOT();
       handlePrintBill();
+      resetCurrentOrder();
   
     } catch (err) {
       toast({
