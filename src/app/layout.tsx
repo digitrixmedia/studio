@@ -10,6 +10,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 export const metadata: Metadata = {
   title: 'DineMitra POS',
   description: 'Comprehensive Cafe Management System',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -28,5 +29,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
