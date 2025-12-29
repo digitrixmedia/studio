@@ -25,6 +25,9 @@ import type {
                               import { useToast } from '@/hooks/use-toast';
                               import { useSettings } from './SettingsContext';
                               import { deductIngredientsForOrder } from '@/firebase/stock/deduction';
+                              import { saveOfflineOrder } from "@/lib/offlineDB";
+                              import { generateTempOrderNumber } from "@/lib/utils";
+                              import { getPendingOrders, markOrderAsSynced } from "@/lib/offlineDB";
                             
 
                               
@@ -185,6 +188,40 @@ import type {
                                                                                                                                                                                     
                                                                                                                                                                                       const [pastOrders, setPastOrders] = useState<Order[]>([]);
                                                                                                                                                                                         const [tables, setTables] = useState<Table[]>([]);
+                                                                                                                                                                                        // ================= OFFLINE → ONLINE SYNC =================
+                                                                                                                                                                                        const syncOfflineOrders = async () => {
+                                                                                                                                                                                          if (!firestore || !selectedOutlet || !currentUser) return;
+                                                                                                                                                                                        
+                                                                                                                                                                                          const pendingOrders = await getPendingOrders(selectedOutlet.id);
+                                                                                                                                                                                        
+                                                                                                                                                                                          console.log("🔄 Pending offline orders:", pendingOrders.length);
+                                                                                                                                                                                        
+                                                                                                                                                                                          for (const offlineOrder of pendingOrders) {
+                                                                                                                                                                                            const finalOrderNumber = `#${await getNextOrderNumber(
+                                                                                                                                                                                              firestore,
+                                                                                                                                                                                              selectedOutlet.id
+                                                                                                                                                                                            )}`;
+                                                                                                                                                                                        
+                                                                                                                                                                                            const orderRef = doc(
+                                                                                                                                                                                              collection(firestore, `outlets/${selectedOutlet.id}/orders`)
+                                                                                                                                                                                            );
+                                                                                                                                                                                        
+                                                                                                                                                                                            await setDoc(orderRef, {
+                                                                                                                                                                                              ...offlineOrder.orderData,
+                                                                                                                                                                                              orderNumber: finalOrderNumber,
+                                                                                                                                                                                              syncedFromOffline: true,
+                                                                                                                                                                                              syncedAt: Date.now(),
+                                                                                                                                                                                              createdBy: currentUser.id,
+                                                                                                                                                                                            });
+                                                                                                                                                                                        
+                                                                                                                                                                                            await markOrderAsSynced(offlineOrder.id);
+                                                                                                                                                                                          }
+                                                                                                                                                                                        
+                                                                                                                                                                                          console.log("✅ Offline orders synced");
+                                                                                                                                                                                        };
+                                                                                                                                                                                        
+// =========================================================
+
                                                                                                                                                                                         
                                                                                                                                                                                           // ----------------------------
                                                                                                                                                                                             // Fetch user document
@@ -577,6 +614,91 @@ import type {
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       total: number;
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     }
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ) => {
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    // ================= OFFLINE MODE =================
+if (!navigator.onLine) {
+  if (!selectedOutlet) {
+    toast({
+      title: "Outlet not selected",
+      description: "Please select an outlet before billing.",
+      variant: "destructive",
+    });
+    return;
+  }
+  
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+
+  const tempOrderNumber = generateTempOrderNumber(selectedOutlet.id);
+
+  const offlineOrder = {
+    id: crypto.randomUUID(),
+    outletId: selectedOutlet.id,
+    orderNumber: tempOrderNumber,
+    orderData: {
+      ...order,
+      ...totals,
+      orderNumber: tempOrderNumber,
+      status: "COMPLETED",
+      createdAt: Date.now(),
+    },
+    synced: false,
+    createdAt: Date.now(),
+  };
+
+  await saveOfflineOrder(offlineOrder);
+
+
+  // Clean UI state
+  removeOrder(orderId);
+
+  toast({
+    title: "Offline Mode",
+    description: "Bill saved locally. It will sync when internet is back.",
+  });
+
+  return; // ⛔ VERY IMPORTANT
+}
+// ================= END OFFLINE MODE =================
+// ================= ONLINE RECONNECT SYNC =================
+useEffect(() => {
+  console.log("🧩 Sync effect triggered", {
+    selectedOutlet,
+    currentUser,
+    online: navigator.onLine,
+  });
+
+  if (!selectedOutlet || !currentUser) {
+    console.log("⛔ Sync blocked — missing context", {
+      hasOutlet: !!selectedOutlet,
+      hasUser: !!currentUser,
+    });
+    return;
+  }
+
+  const trySync = () => {
+    console.log("🌐 trySync called");
+    if (navigator.onLine) {
+      console.log("🔄 App ready & online — attempting offline sync");
+      syncOfflineOrders();
+    } else {
+      console.log("📴 Still offline — skipping sync");
+    }
+  };
+
+  // Run once on app load
+  trySync();
+
+  // Also run when internet comes back
+  window.addEventListener("online", trySync);
+
+  return () => {
+    window.removeEventListener("online", trySync);
+  };
+}, [selectedOutlet, currentUser]);
+
+// =========================================================
+
+
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       console.log('FINALIZE ORDER CALLED:', orderId);
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       

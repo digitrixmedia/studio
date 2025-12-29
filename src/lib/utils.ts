@@ -10,4 +10,6 @@ export function formatOrderNumber(orderNumber?: string | number) {
   if (typeof orderNumber === 'number') return `#${orderNumber}`;
   return orderNumber.startsWith('#') ? orderNumber : `#${orderNumber}`;
 }
-   
+export function generateTempOrderNumber(outletId: string) {
+  return `TMP-${outletId}-${Date.now()}`;
+}
