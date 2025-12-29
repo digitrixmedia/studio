@@ -172,7 +172,8 @@ export default function ReportsPage() {
     }));
 
     const orderTypeSales = filteredGlobalOrders.reduce((acc, order) => {
-        acc[order.type] = (acc[order.type] || 0) + order.total;
+        const type = order.type ?? 'unknown';
+acc[type] = (acc[type] || 0) + order.total;
         return acc;
     }, {} as Record<string, number>);
 
@@ -575,7 +576,7 @@ export default function ReportsPage() {
                                     <TableCell>{order.orderNumber}</TableCell>
                                     <TableCell>{format(order.createdAt, 'dd-MM-yy, p')}</TableCell>
                                     <TableCell className="capitalize">{order.paymentMethod}</TableCell>
-                                    <TableCell className="capitalize">{order.type.replace(/-/g, ' ')}</TableCell>
+                                    <TableCell className="capitalize">{(order.type ?? 'unknown').replace(/-/g, ' ')}</TableCell>
                                     <TableCell>{getUserName(order.createdBy)}</TableCell>
                                     <TableCell className="text-right">{(order.discount || 0).toFixed(2)}</TableCell>
                                     <TableCell className="text-right font-medium">{(Number(order.total) || 0).toFixed(2)}</TableCell>
