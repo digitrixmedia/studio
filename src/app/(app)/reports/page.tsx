@@ -78,7 +78,7 @@ export default function ReportsPage() {
 
   const filterOrdersByDate = (dateRange: DateRange | undefined) => {
     return orders.filter(o => {
-        const isCompleted = o.status === 'completed';
+        const isCompleted = o.status?.toLowerCase() === 'completed';
         if (!dateRange?.from || !isCompleted) return isCompleted;
         const isInInterval = isWithinInterval(o.createdAt, {
             start: startOfDay(dateRange.from),

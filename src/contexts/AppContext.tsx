@@ -208,12 +208,23 @@ import type {
                                                                                                                                                                                         
                                                                                                                                                                                             await setDoc(orderRef, {
                                                                                                                                                                                               ...offlineOrder.orderData,
+                                                                                                                                                                                              status: "completed",
                                                                                                                                                                                               orderNumber: finalOrderNumber,
                                                                                                                                                                                               syncedFromOffline: true,
                                                                                                                                                                                               syncedAt: Date.now(),
                                                                                                                                                                                               createdBy: currentUser.id,
                                                                                                                                                                                               createdAt: serverTimestamp(),
                                                                                                                                                                                             });
+
+                                                                                                                                                                                            await deductIngredientsForOrder(
+                                                                                                                                                                                              offlineOrder.orderData, // AppOrder
+                                                                                                                                                                                              menuItems,              // MenuItem[]
+                                                                                                                                                                                              ingredients,            // Ingredient[]
+                                                                                                                                                                                              selectedOutlet.id       // outletId
+                                                                                                                                                                                            );
+                                                                                                                                                                                            
+                                                                                                                                                                                            
+                                                                                                                                                                                            
                                                                                                                                                                                         
                                                                                                                                                                                             await markOrderAsSynced(offlineOrder.id);
                                                                                                                                                                                           }
