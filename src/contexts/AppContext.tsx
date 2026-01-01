@@ -125,7 +125,8 @@ import type {
                                                                                                                               auth: ReturnType<typeof getAuth>;
                                                                                                                                 outlets: FranchiseOutlet[];
                                                                                                                                 }
-                                                                                                                                
+                                                                                                                              
+
                                                                                                                                 const AppContext = createContext<AppContextType | undefined>(undefined);
                                                                                                                                 
                                                                                                                                 // ------------------------------------------------------
@@ -166,6 +167,8 @@ import type {
                                                                                                                                                 // ------------------------------------------------------
                                                                                                                                                 export function AppContextProvider({ children }: { children: ReactNode }) {
                                                                                                                                                   const router = useRouter();
+                                                                                                                                                  const isSyncingRef = React.useRef(false);
+                                                                                                                                                  const hasSyncedOnceRef = React.useRef(false);
                                                                                                                                                     const pathname = usePathname();
                                                                                                                                                       const { toast } = useToast();
                                                                                                                                                         const { settings, loadSettingsForOutlet } = useSettings();
@@ -190,80 +193,70 @@ import type {
                                                                                                                                                                                         const [tables, setTables] = useState<Table[]>([]);
                                                                                                                                                                                         // ================= OFFLINE → ONLINE SYNC =================
                                                                                                                                                                                         const syncOfflineOrders = async () => {
-                                                                                                                                                                                          if (!firestore || !selectedOutlet || !currentUser) return;
-                                                                                                                                                                                        
-                                                                                                                                                                                          const pendingOrders = await getPendingOrders(selectedOutlet.id);
-                                                                                                                                                                                        
-                                                                                                                                                                                          console.log("🔄 Pending offline orders:", pendingOrders.length);
-                                                                                                                                                                                        
-                                                                                                                                                                                          for (const offlineOrder of pendingOrders) {
-                                                                                                                                                                                            const finalOrderNumber = `#${await getNextOrderNumber(
-                                                                                                                                                                                              firestore,
-                                                                                                                                                                                              selectedOutlet.id
-                                                                                                                                                                                            )}`;
-                                                                                                                                                                                        
-                                                                                                                                                                                            const orderRef = doc(
-                                                                                                                                                                                              collection(firestore, `outlets/${selectedOutlet.id}/orders`)
-                                                                                                                                                                                            );
-                                                                                                                                                                                        
-                                                                                                                                                                                            await setDoc(orderRef, {
-                                                                                                                                                                                              ...offlineOrder.orderData,
-                                                                                                                                                                                              status: "completed",
-                                                                                                                                                                                              orderNumber: finalOrderNumber,
-                                                                                                                                                                                              syncedFromOffline: true,
-                                                                                                                                                                                              syncedAt: Date.now(),
-                                                                                                                                                                                              createdBy: currentUser.id,
-                                                                                                                                                                                              createdAt: serverTimestamp(),
-                                                                                                                                                                                            });
-
-                                                                                                                                                                                            await deductIngredientsForOrder(
-                                                                                                                                                                                              offlineOrder.orderData, // AppOrder
-                                                                                                                                                                                              menuItems,              // MenuItem[]
-                                                                                                                                                                                              ingredients,            // Ingredient[]
-                                                                                                                                                                                              selectedOutlet.id       // outletId
-                                                                                                                                                                                            );
-                                                                                                                                                                                            
-                                                                                                                                                                                            
-                                                                                                                                                                                            
-                                                                                                                                                                                        
-                                                                                                                                                                                            await markOrderAsSynced(offlineOrder.id);
+                                                                                                                                                                                          if (isSyncingRef.current) {
+                                                                                                                                                                                            console.log("⏸ Sync already running");
+                                                                                                                                                                                            return;
                                                                                                                                                                                           }
                                                                                                                                                                                         
-                                                                                                                                                                                          console.log("✅ Offline orders synced");
+                                                                                                                                                                                          if (!firestore || !selectedOutlet || !currentUser) return;
+                                                                                                                                                                                          if (!navigator.onLine) return;
+                                                                                                                                                                                        
+                                                                                                                                                                                          isSyncingRef.current = true;
+                                                                                                                                                                                        
+                                                                                                                                                                                          try {
+                                                                                                                                                                                            const pendingOrders = await getPendingOrders(selectedOutlet.id);
+                                                                                                                                                                                        
+                                                                                                                                                                                            for (const offlineOrder of pendingOrders) {
+                                                                                                                                                                                              const orderRef = doc(
+                                                                                                                                                                                                collection(firestore, `outlets/${selectedOutlet.id}/orders`)
+                                                                                                                                                                                              );
+                                                                                                                                                                                        
+                                                                                                                                                                                              await setDoc(orderRef, {
+                                                                                                                                                                                                ...offlineOrder.orderData,
+                                                                                                                                                                                                syncedFromOffline: true,
+                                                                                                                                                                                                syncedAt: Date.now(),
+                                                                                                                                                                                                createdAt: serverTimestamp(),
+                                                                                                                                                                                                createdBy: currentUser.id,
+                                                                                                                                                                                              });
+                                                                                                                                                                                        
+                                                                                                                                                                                              await deductIngredientsForOrder(
+                                                                                                                                                                                                offlineOrder.orderData,
+                                                                                                                                                                                                menuItems,
+                                                                                                                                                                                                ingredients,
+                                                                                                                                                                                                selectedOutlet.id
+                                                                                                                                                                                              );
+                                                                                                                                                                                        
+                                                                                                                                                                                              // 🔥 MUST DELETE
+                                                                                                                                                                                              await markOrderAsSynced(offlineOrder.id);
+                                                                                                                                                                                            }
+                                                                                                                                                                                        
+                                                                                                                                                                                            console.log("✅ Offline sync completed");
+                                                                                                                                                                                          } finally {
+                                                                                                                                                                                            isSyncingRef.current = false;
+                                                                                                                                                                                          }
                                                                                                                                                                                         };
+                                                                                                                                                                                        
+                                                                                                                                                                                        
                                                                                                                                                                                         
 // =========================================================
 
                                                                                                                                                                                         
 // ================= OFFLINE → ONLINE AUTO SYNC =================
+
 useEffect(() => {
-  console.log("🌐 Offline Sync Effect Mounted");
+  if (hasSyncedOnceRef.current) return;
+  if (!selectedOutlet || !currentUser) return;
+  if (!navigator.onLine) return;
 
-  if (!selectedOutlet || !currentUser) {
-    console.log("⛔ Sync skipped — missing outlet or user");
-    return;
-  }
+  hasSyncedOnceRef.current = true;
+  syncOfflineOrders();
 
-  const sync = async () => {
-    if (!navigator.onLine) {
-      console.log("📴 Still offline — will not sync");
-      return;
-    }
+  const handleOnline = () => syncOfflineOrders();
+  window.addEventListener("online", handleOnline);
 
-    console.log("🔄 Internet detected — syncing offline orders");
-    await syncOfflineOrders();
-  };
-
-  // Run once when app is ready
-  sync();
-
-  // Run again when internet comes back
-  window.addEventListener("online", sync);
-
-  return () => {
-    window.removeEventListener("online", sync);
-  };
+  return () => window.removeEventListener("online", handleOnline);
 }, [selectedOutlet?.id, currentUser?.id]);
+
 
 
 
@@ -404,7 +397,7 @@ useEffect(() => {
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   return query(
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         collection(firestore, `outlets/${selectedOutlet.id}/orders`),
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               orderBy('createdAt', 'desc'),
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    limit(10000)
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    limit(1000)
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         );
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           }, [firestore, selectedOutlet, currentUser, isUserLoading]);
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           

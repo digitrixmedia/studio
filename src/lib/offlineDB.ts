@@ -1,29 +1,26 @@
-import Dexie, { Table } from "dexie";
+// offlineDB.ts
+import Dexie, { Table } from 'dexie';
 
 export interface OfflineOrder {
-  id: string;                 // local UUID
+  id: string;
   outletId: string;
-  orderNumber: string;        // TEMP number when offline
   orderData: any;
-  synced: boolean;            // false = not uploaded
+  synced: boolean;
   createdAt: number;
 }
 
 class OfflineDatabase extends Dexie {
-  orders!: Table<OfflineOrder>;
+  orders!: Table<OfflineOrder, string>;
 
   constructor() {
-    super("POSOfflineDB");
-
+    super('OfflinePOSDB');
     this.version(1).stores({
-      orders: "id, outletId, synced, createdAt",
+      orders: 'id, outletId, synced, createdAt',
     });
   }
 }
 
 export const offlineDB = new OfflineDatabase();
-
-/* ---------- Helper functions ---------- */
 
 export async function saveOfflineOrder(order: OfflineOrder) {
   await offlineDB.orders.put(order);
@@ -31,12 +28,13 @@ export async function saveOfflineOrder(order: OfflineOrder) {
 
 export async function getPendingOrders(outletId: string) {
   return offlineDB.orders
-    .where("outletId")
+    .where('outletId')
     .equals(outletId)
     .and(o => o.synced === false)
     .toArray();
 }
 
+// 🔴 THIS IS THE MOST IMPORTANT PART
 export async function markOrderAsSynced(id: string) {
-  await offlineDB.orders.update(id, { synced: true });
+  await offlineDB.orders.delete(id); // HARD DELETE
 }
