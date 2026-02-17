@@ -602,6 +602,7 @@ export default function OperationsPage() {
 >
   Confirm Delete
 </AlertDialogAction>
+</AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </TableCell>
