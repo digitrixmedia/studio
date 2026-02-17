@@ -62,8 +62,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { DateRange } from 'react-day-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { ZappyyIcon } from '@/components/icons';
-import { deleteDoc, doc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 
 
 const initialReservationState = {
@@ -122,6 +123,8 @@ export default function OperationsPage() {
     
     const [isEditingCustomer, setIsEditingCustomer] = useState(false);
     const [customerFormData, setCustomerFormData] = useState<Partial<Customer>>({});
+    const [deletePassword, setDeletePassword] = useState('');
+const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
     const defaultTab = searchParams.get('tab') || 'orders';
 
@@ -207,7 +210,9 @@ export default function OperationsPage() {
     });
     
 
-    const handleDeleteOrder = async (orderId: string) => {
+    const handleDeleteOrder = async () => {
+        if (!orderToDelete) return;
+      
         if (!selectedOutlet?.id) {
           toast({
             variant: 'destructive',
@@ -217,32 +222,55 @@ export default function OperationsPage() {
         }
       
         try {
+          const auth = getAuth();
+          const user = auth.currentUser;
+      
+          if (!user || !user.email) {
+            toast({
+              variant: 'destructive',
+              title: 'User not authenticated',
+            });
+            return;
+          }
+      
+          // 🔐 Re-authenticate with entered password
+          const credential = EmailAuthProvider.credential(
+            user.email,
+            deletePassword
+          );
+      
+          await reauthenticateWithCredential(user, credential);
+      
+          // If password correct → delete
           const orderRef = doc(
             firestore,
             'outlets',
             selectedOutlet.id,
             'orders',
-            orderId
+            orderToDelete
           );
       
           await deleteDoc(orderRef);
       
-          // remove from UI immediately
-          setOrders(prev => prev.filter(o => o.id !== orderId));
+          setOrders(prev => prev.filter(o => o.id !== orderToDelete));
       
           toast({
             title: 'Order deleted',
             description: 'The order has been permanently deleted.',
           });
-        } catch (err) {
-          console.error('Delete failed:', err);
+      
+          // Reset
+          setDeletePassword('');
+          setOrderToDelete(null);
+      
+        } catch (error) {
           toast({
             variant: 'destructive',
-            title: 'Delete failed',
-            description: 'You may not have permission to delete this order.',
+            title: 'Wrong Password',
+            description: 'Password is incorrect. Order not deleted.',
           });
         }
-      };
+      };      
       
 
     const handleCreateReservation = () => {
@@ -598,7 +626,7 @@ export default function OperationsPage() {
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Close</AlertDialogCancel>
                                                     <AlertDialogAction
-  onClick={() => handleDeleteOrder(order.id)}
+  onClick={() => setOrderToDelete(order.id)}
 >
   Confirm Delete
 </AlertDialogAction>
@@ -652,6 +680,7 @@ export default function OperationsPage() {
                                                 <Button className="w-full" size="sm" variant="destructive" onClick={() => handleOnlineOrderAction(order.id, 'reject')}>
                                                     <Ban className="mr-2" /> Reject
                                                 </Button>
+                                                
                                             </>
                                         )}
                                         {order.status === 'rejected' && (
@@ -901,48 +930,50 @@ export default function OperationsPage() {
         </Tabs>
     </div>
 
-     {/* Dialog for viewing an order */}
-    <Dialog open={!!viewOrder} onOpenChange={() => setViewOrder(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Order #{viewOrder?.orderNumber}</DialogTitle>
-                <DialogDescription>
-                    {viewOrder?.customerName} | {viewOrder?.type}
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Item</TableHead>
-                            <TableHead className='text-right'>Total</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {viewOrder?.items.map((item, index) => (
-                            <TableRow key={`${item.id}-${index}`}>
-                                <TableCell>{item.quantity} x {item.name}</TableCell>
-                                <TableCell className='text-right flex items-center justify-end'>
-                                    <IndianRupee className="h-4 w-4 mr-1" />
-                                    {(Number(item.totalPrice) || 0).toFixed(2)}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                 <div className='mt-4 pt-4 border-t font-bold flex justify-between'>
-                    <span>Total</span>
-                    <span className='flex items-center'>
-                        <IndianRupee className="h-5 w-5 mr-1" />
-                        {viewOrder?.total.toFixed(2)}
-                    </span>
-                </div>
-            </div>
-             <DialogFooter>
-                <Button variant="outline" onClick={() => setViewOrder(null)}>Close</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
+     {/* Password Confirm Dialog */}
+<Dialog 
+  open={!!orderToDelete} 
+  onOpenChange={(open) => {
+    if (!open) {
+      setOrderToDelete(null);
+      setDeletePassword('');
+    }
+  }}
+>
+
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Confirm Your Password</DialogTitle>
+      <DialogDescription>
+        Enter your account password to delete this order.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="py-4 space-y-4">
+      <Input
+        type="password"
+        placeholder="Enter your password"
+        value={deletePassword}
+        onChange={(e) => setDeletePassword(e.target.value)}
+      />
+    </div>
+
+    <DialogFooter>
+      <Button
+        variant="outline"
+        onClick={() => {
+          setOrderToDelete(null);
+          setDeletePassword('');
+        }}
+      >
+        Cancel
+      </Button>
+      <Button onClick={handleDeleteOrder}>
+        Verify & Delete
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
     {/* Dialog for viewing a customer */}
     <Dialog open={!!viewCustomer} onOpenChange={(open) => { if (!open) { setViewCustomer(null); setIsEditingCustomer(false); } }}>
