@@ -208,24 +208,39 @@ import type {
                                                                                                                                                                                         
                                                                                                                                                                                             for (const offlineOrder of pendingOrders) {
                                                                                                                                                                                               const orderRef = doc(
-                                                                                                                                                                                                collection(firestore, `outlets/${selectedOutlet.id}/orders`)
-                                                                                                                                                                                              );
+                                                                                                                                                                                                firestore,
+                                                                                                                                                                                                `outlets/${selectedOutlet.id}/orders`,
+                                                                                                                                                                                                offlineOrder.id   // 🔥 SAME ID ALWAYS
+                                                                                                                                                                                              );  
+                                                                                                                                                                                              const existing = await getDoc(orderRef);
+if (existing.exists()) {
+  console.log("⚠️ Order already synced, deleting from offlineDB:", offlineOrder.id);
+  await markOrderAsSynced(offlineOrder.id);
+  continue;
+}
+const finalOrderNumber = await getNextOrderNumber(
+  firestore,
+  selectedOutlet.id
+);                                                                                                                                                                                           
                                                                                                                                                                                         
                                                                                                                                                                                               await setDoc(orderRef, {
                                                                                                                                                                                                 ...offlineOrder.orderData,
                                                                                                                                                                                                 syncedFromOffline: true,
                                                                                                                                                                                                 syncedAt: Date.now(),
+                                                                                                                                                                                                status: "completed",
                                                                                                                                                                                                 createdAt: serverTimestamp(),
                                                                                                                                                                                                 createdBy: currentUser.id,
                                                                                                                                                                                               });
-                                                                                                                                                                                        
+                                                                                                                                                                                              try {
                                                                                                                                                                                               await deductIngredientsForOrder(
                                                                                                                                                                                                 offlineOrder.orderData,
                                                                                                                                                                                                 menuItems,
                                                                                                                                                                                                 ingredients,
                                                                                                                                                                                                 selectedOutlet.id
                                                                                                                                                                                               );
-                                                                                                                                                                                        
+                                                                                                                                                                                            } catch (e) {
+                                                                                                                                                                                              console.error("Stock deduction failed:", e);
+                                                                                                                                                                                            }
                                                                                                                                                                                               // 🔥 MUST DELETE
                                                                                                                                                                                               await markOrderAsSynced(offlineOrder.id);
                                                                                                                                                                                             }
