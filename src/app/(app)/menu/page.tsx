@@ -126,6 +126,9 @@ export default function MenuPage() {
   const [hasCustomization, setHasCustomization] = useState(false);
   const [isMealDeal, setIsMealDeal] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+const [categoryToDelete, setCategoryToDelete] = useState<MenuCategory | null>(null);
+
 
   const { toast } = useToast();
 
@@ -420,6 +423,47 @@ export default function MenuPage() {
     });
     setItemToDelete(null);
   };
+  const handleDeleteCategory = async () => {
+    if (!categoryToDelete || !selectedOutlet) return;
+  
+    const categoryId = categoryToDelete.id;
+  
+    // 1️⃣ Hide all items of this category
+    const itemsToUpdate = menuItems.filter(
+      (item) => item.category === categoryId
+    );
+  
+    for (const item of itemsToUpdate) {
+      const itemRef = doc(
+        firestore,
+        `outlets/${selectedOutlet.id}/menu_items`,
+        item.id
+      );
+  
+      await setDocumentNonBlocking(itemRef, {
+        isAvailable: false,
+      }, { merge: true });
+    }
+  
+    // 2️⃣ Delete category document
+    const categoryRef = doc(
+      firestore,
+      `outlets/${selectedOutlet.id}/menu_categories`,
+      categoryId
+    );
+  
+    await deleteDocumentNonBlocking(categoryRef);
+  
+    toast({
+      variant: "destructive",
+      title: "Category Deleted",
+      description:
+        "Category removed. Related items are now hidden from POS.",
+    });
+  
+    setCategoryToDelete(null);
+    setIsCategoryManagerOpen(false);
+  };  
 
   const handleBulkUploadSuccess = (
     newItems: Omit<
@@ -531,6 +575,13 @@ export default function MenuPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <Button
+  variant="outline"
+  onClick={() => setIsCategoryManagerOpen(true)}
+>
+  Manage Categories
+</Button>
+
               <Button
                 variant="outline"
                 onClick={() => setIsBulkUploadOpen(true)}
@@ -1136,6 +1187,82 @@ export default function MenuPage() {
           )}
         </DialogContent>
       </Dialog>
+      <Dialog
+  open={isCategoryManagerOpen}
+  onOpenChange={setIsCategoryManagerOpen}
+>
+  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto rounded-xl">
+    <DialogHeader>
+      <DialogTitle>Manage Categories</DialogTitle>
+      <DialogDescription>
+        Delete categories you no longer need.
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="space-y-3 mt-4">
+      {menuCategories.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center">
+          No categories found.
+        </p>
+      )}
+
+      {menuCategories.map((cat) => (
+        <div
+          key={cat.id}
+          className="flex items-center justify-between p-3 border rounded-lg bg-muted/40"
+        >
+          <span className="font-medium">{cat.name}</span>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-destructive hover:text-destructive/80"
+                onClick={() => setCategoryToDelete(cat)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Delete "{cat.name}"?
+                </AlertDialogTitle>
+
+                <AlertDialogDescription>
+                  All items in this category will be hidden from POS.
+                  This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteCategory}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      ))}
+    </div>
+
+    <DialogFooter className="mt-4">
+      <Button
+        variant="outline"
+        onClick={() => setIsCategoryManagerOpen(false)}
+      >
+        Close
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+
     </>
   );
 }
