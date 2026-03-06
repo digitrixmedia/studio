@@ -5,11 +5,17 @@ import type { AppOrder, MenuItem, Ingredient } from "@/lib/types";
  * Deduct stock for a completed order
  */
 export async function deductIngredientsForOrder(
+  
   order: AppOrder,
   menuItems: MenuItem[],
   firestore: any,
   outletId: string,
 ) {
+  // Prevent double stock deduction
+if ((order as any).stockDeducted) {
+  console.log("⚠️ Stock already deducted for this order. Skipping.");
+  return;
+}
   console.log("🔧 Running stock deduction for:", order.orderNumber);
 
   // ingredientId -> total qty to deduct
@@ -125,5 +131,14 @@ export async function deductIngredientsForOrder(
   }
 
   await batch.commit();
+  // mark order so deduction never runs twice
+const orderRef = doc(
+  firestore,
+  `outlets/${outletId}/orders/${order.id}`
+);
+
+await writeBatch(firestore).update(orderRef, {
+  stockDeducted: true,
+});
   console.log("✅ Stock deduction completed");
 }
