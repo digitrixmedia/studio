@@ -109,6 +109,11 @@ export default function OperationsPage() {
         from: undefined,
         to: undefined,
     });
+
+    // Customer Filter States
+    const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+    const [customerSort, setCustomerSort] = useState<'newest' | 'oldest' | 'spent-desc' | 'spent-asc' | 'orders-desc'>('spent-desc');
+    const [customerDateFilter, setCustomerDateFilter] = useState<DateRange | undefined>(undefined);
     
     const [viewOrder, setViewOrder] = useState<Order | null>(null);
     const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
@@ -208,6 +213,42 @@ const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
         return statusMatch && typeMatch && searchMatch && dateMatch;
     });
+
+    const filteredCustomers = useMemo(() => {
+        let result = [...customers];
+
+        // Search Filter
+        if (customerSearchQuery) {
+            const q = customerSearchQuery.toLowerCase();
+            result = result.filter(c => 
+                c.name.toLowerCase().includes(q) || 
+                c.phone.includes(q)
+            );
+        }
+
+        // Date Filter (based on lastVisit)
+        if (customerDateFilter?.from) {
+            result = result.filter(c => {
+                const start = startOfDay(customerDateFilter.from!);
+                const end = customerDateFilter.to ? endOfDay(customerDateFilter.to) : endOfDay(customerDateFilter.from!);
+                return isWithinInterval(c.lastVisit, { start, end });
+            });
+        }
+
+        // Sorting Logic
+        result.sort((a, b) => {
+            switch (customerSort) {
+                case 'newest': return b.lastVisit.getTime() - a.lastVisit.getTime();
+                case 'oldest': return a.lastVisit.getTime() - b.lastVisit.getTime();
+                case 'spent-desc': return b.totalSpent - a.totalSpent;
+                case 'spent-asc': return a.totalSpent - b.totalSpent;
+                case 'orders-desc': return b.totalOrders - a.totalOrders;
+                default: return 0;
+            }
+        });
+
+        return result;
+    }, [customers, customerSearchQuery, customerSort, customerDateFilter]);
     
 
     const handleDeleteOrder = async () => {
@@ -726,8 +767,48 @@ const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
             <TabsContent value="customers">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Customer Directory</CardTitle>
-                        <CardDescription>Overview of your customer base. Click on a row to view details.</CardDescription>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <CardTitle>Customer Directory</CardTitle>
+                                <CardDescription>Overview of your customer base. Click on a row to view details.</CardDescription>
+                            </div>
+                            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                                <div className="relative w-full sm:w-auto">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input 
+                                        placeholder="Search Name or Phone..." 
+                                        className="pl-10 w-full sm:w-64"
+                                        value={customerSearchQuery}
+                                        onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant={"outline"} className={cn("w-full sm:w-[240px] justify-start text-left font-normal", !customerDateFilter && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {customerDateFilter?.from ? (
+                                                customerDateFilter.to ? (
+                                                    <>{format(customerDateFilter.from, "LLL dd, y")} - {format(customerDateFilter.to, "LLL dd, y")}</>
+                                                ) : (format(customerDateFilter.from, "LLL dd, y"))
+                                            ) : (<span>Filter by Visit Date</span>)}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="end">
+                                        <Calendar initialFocus mode="range" selected={customerDateFilter} onSelect={setCustomerDateFilter} numberOfMonths={2} />
+                                    </PopoverContent>
+                                </Popover>
+                                <Select value={customerSort} onValueChange={(val) => setCustomerSort(val as any)}>
+                                    <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Sort by..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="spent-desc">Spent: High to Low</SelectItem>
+                                        <SelectItem value="spent-asc">Spent: Low to High</SelectItem>
+                                        <SelectItem value="newest">Latest Visit</SelectItem>
+                                        <SelectItem value="oldest">First Visit</SelectItem>
+                                        <SelectItem value="orders-desc">Most Orders</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -737,10 +818,11 @@ const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
                                     <TableHead>Tier</TableHead>
                                     <TableHead className='text-right'>Total Orders</TableHead>
                                     <TableHead className="text-right">Total Spent</TableHead>
+                                    <TableHead className="text-right">Last Visit</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {customers.map(customer => (
+                                {filteredCustomers.map(customer => (
                                     <TableRow key={customer.phone} onClick={() => setViewCustomer(customer)} className="cursor-pointer">
                                         <TableCell>
                                             <div className="font-medium">{customer.name}</div>
@@ -754,8 +836,18 @@ const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
                                             <IndianRupee className="h-4 w-4 mr-1" />
                                             {(Number(customer.totalSpent) || 0).toFixed(2)}
                                         </TableCell>
+                                        <TableCell className="text-right">
+                                            {format(customer.lastVisit, 'dd MMM yyyy')}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
+                                {filteredCustomers.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                            No customers found matching your filters.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
