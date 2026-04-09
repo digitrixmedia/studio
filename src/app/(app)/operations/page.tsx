@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -48,7 +47,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Order, OrderStatus, OrderType, Reservation, DeliveryBoy, ReservationStatus, Table as TableType, AppOrder, OrderItem, Customer, OnlineOrderSource } from '@/lib/types';
-import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban, ArrowRight } from 'lucide-react';
+import { Eye, IndianRupee, XCircle, Phone, Clock, CookingPot, Check, User, Users, Calendar as CalendarIcon, PlusCircle, Bike, Trash2, Search, KeyRound, Star, Award, History, Edit, Home, Cake, Gift, MessageSquare, CheckCircle, Wifi, Ban, ArrowRight, Download } from 'lucide-react';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { format, setHours, setMinutes, isWithinInterval, startOfDay, endOfDay, formatDistanceToNow, differenceInDays, getYear, setYear } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -520,6 +519,30 @@ const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
     
     const onlineOrders = orders.filter(o => o.status === 'incoming' || o.status === 'rejected');
 
+    const handleExportCustomers = () => {
+        const headers = ['Name', 'Phone', 'Tier', 'Total Orders', 'Total Spent', 'Last Visit', 'Loyalty Points'];
+        const rows = filteredCustomers.map(c => [
+            `"${c.name.replace(/"/g, '""')}"`,
+            `"${c.phone}"`,
+            c.tier,
+            c.totalOrders,
+            c.totalSpent.toFixed(2),
+            format(c.lastVisit, 'yyyy-MM-dd'),
+            c.loyaltyPoints
+        ].join(','));
+
+        const csvContent = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `customers_export_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
 
   return (
     <>
@@ -773,6 +796,10 @@ const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
                                 <CardDescription>Overview of your customer base. Click on a row to view details.</CardDescription>
                             </div>
                             <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                                <Button variant="outline" onClick={handleExportCustomers}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Export
+                                </Button>
                                 <div className="relative w-full sm:w-auto">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input 
